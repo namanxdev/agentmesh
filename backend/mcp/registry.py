@@ -1,0 +1,53 @@
+from backend.events.bus import EventBus
+from .client import MCPClientWrapper
+
+
+class MCPRegistry:
+    """Registry of MCP server configurations and connected clients."""
+
+    def __init__(self, event_bus: EventBus):
+        self._event_bus = event_bus
+        self._clients: dict[str, MCPClientWrapper] = {}
+        self._configs: dict[str, dict] = {}
+
+    def register(self, name: str, **transport_config):
+        """Register an MCP server by name and transport config."""
+        self._configs[name] = transport_config
+        self._clients[name] = MCPClientWrapper(
+            server_name=name,
+            transport_config=transport_config,
+            event_bus=self._event_bus,
+        )
+
+    def get_client(self, name: str) -> MCPClientWrapper:
+        """Get a registered MCP client by server name."""
+        if name not in self._clients:
+            raise KeyError(f"MCP server '{name}' not registered.")
+        return self._clients[name]
+
+    async def connect_all(self):
+        """Connect to all registered MCP servers (graceful on failure)."""
+        for name, client in self._clients.items():
+            try:
+                await client.connect()
+            except Exception as exc:
+                await self._event_bus.emit({
+                    "type": "mcp.connection_error",
+                    "workflow_id": "",
+                    "server": name,
+                    "error": str(exc),
+                })
+
+    def get_server_info(self) -> dict:
+        """Return status info for all registered servers (for REST API)."""
+        return {
+            "servers": [
+                {
+                    "name": name,
+                    "connected": self._clients[name].is_connected,
+                    "tools": self._clients[name].get_tool_definitions(),
+                    **config,
+                }
+                for name, config in self._configs.items()
+            ]
+        }

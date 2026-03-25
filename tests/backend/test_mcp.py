@@ -94,3 +94,34 @@ async def test_mcp_client_call_tool_emits_events():
     calls = [c[0][0]["type"] for c in event_bus.emit.call_args_list]
     assert "tool.called" in calls
     assert "tool.result" in calls
+
+
+from backend.mcp.registry import MCPRegistry
+
+
+@pytest.mark.asyncio
+async def test_mcp_registry_register_and_get():
+    event_bus = MagicMock()
+    event_bus.emit = AsyncMock()
+    registry = MCPRegistry(event_bus=event_bus)
+
+    registry.register("github", transport="stdio", command="mcp-server-github")
+    client = registry.get_client("github")
+    assert client is not None
+    assert client.server_name == "github"
+
+
+def test_mcp_registry_get_unknown_raises():
+    event_bus = MagicMock()
+    registry = MCPRegistry(event_bus=event_bus)
+    with pytest.raises(KeyError):
+        registry.get_client("nonexistent")
+
+
+def test_mcp_registry_get_server_info():
+    event_bus = MagicMock()
+    registry = MCPRegistry(event_bus=event_bus)
+    registry.register("github", transport="stdio", command="mcp-server-github")
+    info = registry.get_server_info()
+    assert len(info["servers"]) == 1
+    assert info["servers"][0]["name"] == "github"
