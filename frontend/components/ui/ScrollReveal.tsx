@@ -6,11 +6,12 @@ import { cn } from "@/lib/utils";
 interface ScrollRevealProps {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   delay?: number;
   direction?: "up" | "left" | "right" | "none";
 }
 
-export function ScrollReveal({ children, className, delay = 0, direction = "up" }: ScrollRevealProps) {
+export function ScrollReveal({ children, className, style, delay = 0, direction = "up" }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-60px" });
 
@@ -21,6 +22,7 @@ export function ScrollReveal({ children, className, delay = 0, direction = "up" 
     <motion.div
       ref={ref}
       className={cn(className)}
+      style={style}
       initial={{ opacity: 0, y: initialY, x: initialX }}
       animate={isInView ? { opacity: 1, y: 0, x: 0 } : {}}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
