@@ -44,11 +44,9 @@ export function ToolCallInspector() {
   const events = useEventStore((s) => s.events);
   const agentStates = useEventStore((s) => s.agentStates);
   const totalTokens = useEventStore((s) => s.totalTokens);
-  const { selectedAgent, inspectorTab, setInspectorTab } = useUIStore((s) => ({
-    selectedAgent: s.selectedAgent,
-    inspectorTab: s.inspectorTab,
-    setInspectorTab: s.setInspectorTab,
-  }));
+  const selectedAgent = useUIStore((s) => s.selectedAgent);
+  const inspectorTab = useUIStore((s) => s.inspectorTab);
+  const setInspectorTab = useUIStore((s) => s.setInspectorTab);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 

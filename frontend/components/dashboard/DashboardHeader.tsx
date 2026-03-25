@@ -23,10 +23,8 @@ const WORKFLOW_STATUS_COLOR = {
 
 export function DashboardHeader() {
   const workflowStatus = useEventStore((s) => s.workflowStatus);
-  const { connectionStatus, activeWorkflowName } = useUIStore((s) => ({
-    connectionStatus: s.connectionStatus,
-    activeWorkflowName: s.activeWorkflowName,
-  }));
+  const connectionStatus = useUIStore((s) => s.connectionStatus);
+  const activeWorkflowName = useUIStore((s) => s.activeWorkflowName);
 
   const [elapsed, setElapsed] = useState(0);
 

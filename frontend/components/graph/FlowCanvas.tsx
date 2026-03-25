@@ -25,10 +25,8 @@ interface FlowCanvasProps {
 
 export function FlowCanvas({ agentNames, edges }: FlowCanvasProps) {
   const agentStates = useEventStore((s) => s.agentStates);
-  const { selectedAgent, selectAgent } = useUIStore((s) => ({
-    selectedAgent: s.selectedAgent,
-    selectAgent: s.selectAgent,
-  }));
+  const selectedAgent = useUIStore((s) => s.selectedAgent);
+  const selectAgent = useUIStore((s) => s.selectAgent);
 
   // Layout agents left-to-right with equal spacing
   const nodes: AgentFlowNodeType[] = useMemo(() => {

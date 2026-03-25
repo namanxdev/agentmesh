@@ -11,10 +11,8 @@ interface AgentCardProps {
 
 export function AgentCard({ name, index }: AgentCardProps) {
   const state = useEventStore((s) => s.agentStates[name]);
-  const { selectedAgent, selectAgent } = useUIStore((s) => ({
-    selectedAgent: s.selectedAgent,
-    selectAgent: s.selectAgent,
-  }));
+  const selectedAgent = useUIStore((s) => s.selectedAgent);
+  const selectAgent = useUIStore((s) => s.selectAgent);
 
   const status = state?.status ?? "idle";
   const isSelected = selectedAgent === name;
