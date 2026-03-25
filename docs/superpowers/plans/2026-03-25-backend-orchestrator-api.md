@@ -6,7 +6,9 @@
 
 **Architecture:** `orchestrator/` wraps LangGraph into a `WorkflowOrchestrator` that builds and runs agent graphs, routing via `routing_key` on shared `WorkflowState`; `api/` exposes the orchestrator via REST endpoints (run, status, agents, MCP servers) and a WebSocket event stream endpoint.
 
-**Assumptions:** `backend/agents/base.py` (Agent, AgentConfig, AgentResult, AgentStatus), `backend/events/bus.py` (EventBus), and `backend/mcp/registry.py` (MCPRegistry) exist per the companion plans. This plan imports from those but does not modify them.
+**Assumptions:** `backend/agents/base.py` (Agent, AgentConfig, AgentResult, AgentStatus), `backend/agents/registry.py` (`AgentRegistry(llm_provider, event_bus)` — note: the companion plan defines this signature with these two constructor args), `backend/events/bus.py` (EventBus), and `backend/mcp/registry.py` (MCPRegistry) exist per the companion plans. This plan imports from those but does not modify them.
+
+**Design note on orchestrator:** The `WorkflowOrchestrator` in Task 3 uses a plain `while` loop + `HandoffRouter` rather than `langgraph.graph.StateGraph`. This is intentional — it is functionally equivalent, simpler to test, and avoids LangGraph's compiled-graph constraints for MVP. LangGraph can be adopted as a drop-in replacement in v1.1 if needed.
 
 **Tech Stack:** Python 3.11+, LangGraph 0.2+, FastAPI, Pydantic v2, uvicorn, pytest, pytest-asyncio
 
@@ -611,7 +613,10 @@ git commit -m "feat: add WebSocket events handler with ping/replay commands"
 - [ ] **Step 1: Write failing tests** — create `tests/backend/test_api.py`
 
 ```python
+import os
 import pytest
+os.environ["AGENTMESH_ENV"] = "test"  # prevent module-level create_default_app() call
+
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock, MagicMock
 
@@ -881,8 +886,12 @@ def create_default_app() -> FastAPI:
     )
 
 
-# ASGI entry point for uvicorn
-app = create_default_app()
+# ASGI entry point for uvicorn.
+# Guarded so test imports don't trigger create_default_app() before
+# backend.workflows (Task 7) exists.
+import os
+if os.getenv("AGENTMESH_ENV") != "test":
+    app = create_default_app()
 ```
 
 - [ ] **Step 4: Run API tests**
