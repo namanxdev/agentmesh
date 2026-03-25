@@ -10,6 +10,7 @@ from backend.events.bus import EventBus
 from backend.agents.registry import AgentRegistry
 from backend.mcp.registry import MCPRegistry
 from backend.orchestrator.graph import WorkflowOrchestrator
+from backend.llm.base import BaseLLMProvider
 from backend.api.middleware import add_middleware
 from backend.api.websocket import websocket_events_handler
 
@@ -23,6 +24,33 @@ class WorkflowRunRequest(BaseModel):
     config_overrides: dict = {}
 
 
+class PipelineNodeModel(BaseModel):
+    id: str
+    kind: str
+    config: dict
+    position: dict
+
+
+class PipelineEdgeModel(BaseModel):
+    id: str
+    source: str
+    target: str
+    source_handle: Optional[str] = None
+    target_handle: Optional[str] = None
+
+
+class PipelineDefinitionModel(BaseModel):
+    name: str
+    nodes: list[PipelineNodeModel]
+    edges: list[PipelineEdgeModel]
+
+
+class PipelineRunRequest(BaseModel):
+    pipeline: PipelineDefinitionModel
+    task: str
+    initial_state: dict = {}
+
+
 # -- App factory --------------------------------------------------------------
 
 def create_app(
@@ -30,6 +58,7 @@ def create_app(
     agent_registry: AgentRegistry,
     mcp_registry: MCPRegistry,
     workflow_definitions: dict,  # name -> {agents, graph_config, ...}
+    llm_provider: BaseLLMProvider = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application."""
 
@@ -155,6 +184,86 @@ def create_app(
     async def list_mcp_servers():
         return mcp_registry.get_server_info()
 
+    # -- Pipeline endpoints ----------------------------------------------------
+
+    @app.post("/api/pipelines/validate")
+    async def validate_pipeline_endpoint(definition: PipelineDefinitionModel):
+        from backend.pipelines.validator import validate_pipeline
+        nodes = [{"id": n.id, "kind": n.kind, "config": n.config} for n in definition.nodes]
+        edges = [{"id": e.id, "source": e.source, "target": e.target} for e in definition.edges]
+        return validate_pipeline(nodes, edges)
+
+    @app.post("/api/pipelines/run")
+    async def run_pipeline_endpoint(request: PipelineRunRequest):
+        from backend.pipelines.validator import validate_pipeline, pipeline_to_workflow_config
+        import asyncio
+
+        defn = request.pipeline
+        nodes = [{"id": n.id, "kind": n.kind, "config": n.config} for n in defn.nodes]
+        edges = [
+            {"id": e.id, "source": e.source, "target": e.target,
+             "source_handle": e.source_handle, "target_handle": e.target_handle}
+            for e in defn.edges
+        ]
+
+        validation = validate_pipeline(nodes, edges)
+        if not validation["is_dag"]:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=422, detail={"errors": validation["errors"]})
+
+        # Convert pipeline definition to dicts for pipeline_to_workflow_config
+        defn_dict = {
+            "name": defn.name,
+            "nodes": [{"id": n.id, "kind": n.kind, "config": n.config} for n in defn.nodes],
+            "edges": edges,
+        }
+
+        config = pipeline_to_workflow_config(defn_dict, llm_provider, event_bus)
+        agent_reg = config["agent_registry"]
+        graph_cfg = config["graph_config"]
+        task = request.task or config["task"]
+
+        workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
+        agents = {name: agent_reg.get(name) for name in agent_reg._agents}
+
+        orchestrator = WorkflowOrchestrator(
+            agents=agents,
+            graph_config=graph_cfg,
+            event_bus=event_bus,
+            workflow_id=workflow_id,
+            max_iterations=20,
+            timeout_seconds=120,
+        )
+
+        _runs[workflow_id] = {
+            "workflow_id": workflow_id,
+            "status": "running",
+            "started_at": time.time(),
+        }
+
+        async def _run():
+            result = await orchestrator.run(
+                task=task,
+                initial_state=request.initial_state,
+            )
+            _runs[workflow_id].update({
+                "status": "completed" if result.success else "error",
+                "result": result.state.messages[-1] if result.state.messages else {},
+                "token_usage": result.state.token_usage,
+                "duration_seconds": result.total_duration,
+                "error": result.error,
+            })
+
+        asyncio.create_task(_run())
+
+        return {
+            "workflow_id": workflow_id,
+            "status": "running",
+            "agents": list(agents.keys()),
+            "started_at": _runs[workflow_id]["started_at"],
+            "websocket_url": f"/ws/events?workflow_id={workflow_id}",
+        }
+
     # -- WebSocket endpoint ----------------------------------------------------
 
     @app.websocket("/ws/events")
@@ -195,6 +304,7 @@ def create_default_app() -> FastAPI:
         agent_registry=agent_registry,
         mcp_registry=mcp_registry,
         workflow_definitions=DEMO_WORKFLOWS.get("definitions", {}),
+        llm_provider=llm,
     )
 
 
