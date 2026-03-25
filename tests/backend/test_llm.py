@@ -50,3 +50,30 @@ async def test_gemini_generate_text():
     assert result.text == "Looks good."
     assert result.has_tool_calls is False
     assert result.usage["input"] == 100
+
+
+from backend.llm.groq import GroqProvider
+
+
+@pytest.mark.asyncio
+async def test_groq_generate_text():
+    mock_choice = MagicMock()
+    mock_choice.message.content = "Security scan complete."
+    mock_choice.message.tool_calls = None
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_response.usage.prompt_tokens = 80
+    mock_response.usage.completion_tokens = 40
+
+    with patch("backend.llm.groq.AsyncGroq") as MockGroq:
+        instance = MagicMock()
+        instance.chat.completions.create = AsyncMock(return_value=mock_response)
+        MockGroq.return_value = instance
+
+        provider = GroqProvider(api_key="test")
+        result = await provider.generate(
+            messages=[{"role": "user", "content": "Scan for vulnerabilities"}],
+        )
+
+    assert result.text == "Security scan complete."
+    assert result.has_tool_calls is False
