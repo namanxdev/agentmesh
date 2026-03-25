@@ -123,3 +123,36 @@ async def test_agent_process_handles_tool_calls():
 
     assert result.output == "Fetched successfully."
     mock_mcp.call_tool.assert_called_once()
+
+
+from backend.agents.registry import AgentRegistry
+from backend.agents.base import AgentConfig, Agent, AgentStatus
+
+
+def test_agent_registry_register_and_get():
+    mock_llm = MagicMock()
+    mock_bus = MagicMock()
+    registry = AgentRegistry(llm_provider=mock_llm, event_bus=mock_bus)
+
+    config = AgentConfig(name="Fetcher", role="Fetcher", system_prompt="Fetch.")
+    agent = registry.register(config)
+    assert isinstance(agent, Agent)
+    assert registry.get("Fetcher") is agent
+
+
+def test_agent_registry_get_unknown_raises():
+    registry = AgentRegistry(llm_provider=MagicMock(), event_bus=MagicMock())
+    with pytest.raises(KeyError):
+        registry.get("Unknown")
+
+
+def test_agent_registry_status_map():
+    mock_llm = MagicMock()
+    mock_bus = MagicMock()
+    registry = AgentRegistry(llm_provider=mock_llm, event_bus=mock_bus)
+    registry.register(AgentConfig(name="A", role="A", system_prompt="A"))
+    registry.register(AgentConfig(name="B", role="B", system_prompt="B"))
+
+    status_map = registry.get_status_map()
+    assert status_map["A"] == AgentStatus.IDLE
+    assert status_map["B"] == AgentStatus.IDLE
