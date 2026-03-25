@@ -224,7 +224,7 @@ def create_app(
         task = request.task or config["task"]
 
         workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
-        agents = {name: agent_reg.get(name) for name in agent_reg._agents}
+        agents = {a.config.name: agent_reg.get(a.config.name) for a in agent_reg.list_all()}
 
         orchestrator = WorkflowOrchestrator(
             agents=agents,
