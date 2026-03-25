@@ -17,6 +17,7 @@ import {
   ValidateResponse,
   PipelineDefinition,
 } from "@/types/pipeline";
+import { type AgentStatus } from "@/types/agents";
 
 // Default configs per kind
 const DEFAULT_CONFIGS: Record<NodeKind, NodeConfig> = {
@@ -58,7 +59,7 @@ interface PipelineStore {
   onConnect: (connection: Connection) => void;
   addNode: (kind: NodeKind, position: XYPosition) => void;
   updateNodeConfig: (nodeId: string, patch: Partial<NodeConfig>) => void;
-  updateNodeStatus: (nodeId: string, status: string) => void;
+  updateNodeStatus: (nodeId: string, status: AgentStatus) => void;
   selectNode: (id: string | null) => void;
   deleteNode: (id: string) => void;
   serializePipeline: () => PipelineDefinition;
@@ -122,8 +123,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
   updateNodeStatus: (nodeId, status) => {
     set((state) => ({
       nodes: state.nodes.map((n) =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        n.id === nodeId ? { ...n, data: { ...n.data, status: status as any } } : n
+        n.id === nodeId ? { ...n, data: { ...n.data, status } } : n
       ),
     }));
   },
@@ -166,6 +166,10 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(definition),
     });
+    if (!res.ok) {
+      set({ isValidating: false });
+      throw new Error(`Validation failed: ${res.statusText}`);
+    }
     const result: ValidateResponse = await res.json();
     set({ validationResult: result, isValidating: false });
     return result;
@@ -197,6 +201,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       mode: "build",
       pipelineName: "My Pipeline",
       selectedNodeId: null,
+      isValidating: false,
       validationResult: null,
       isRunning: false,
     }),
