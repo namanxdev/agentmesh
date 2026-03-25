@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import AsyncMock, MagicMock
 from backend.events.models import (
     AgentActivatedEvent, AgentCompletedEvent, ToolCalledEvent,
     TokenUsageEvent, WorkflowStartedEvent, WorkflowCompletedEvent,
@@ -35,3 +36,56 @@ def test_event_serializes_to_dict():
     assert d["type"] == "agent.activated"
     assert "id" in d
     assert "timestamp" in d
+
+
+from backend.events.bus import EventBus
+
+
+@pytest.mark.asyncio
+async def test_bus_broadcasts_to_subscribers():
+    bus = EventBus()
+    ws = MagicMock()
+    ws.accept = AsyncMock()
+    ws.send_json = AsyncMock()
+
+    await bus.subscribe(ws)
+    event = AgentActivatedEvent(workflow_id="wf_1", agentName="Fetcher", role="Fetcher")
+    await bus.emit(event.model_dump())
+
+    # Called once for buffered replay (0 events) + once for emit
+    assert ws.send_json.call_count == 1
+    sent = ws.send_json.call_args[0][0]
+    assert sent["type"] == "agent.activated"
+
+
+@pytest.mark.asyncio
+async def test_bus_buffers_events():
+    bus = EventBus()
+    for i in range(5):
+        await bus.emit({"type": "test", "workflow_id": "wf_1", "i": i})
+    assert len(bus._event_buffer) == 5
+
+
+@pytest.mark.asyncio
+async def test_bus_replays_buffer_on_subscribe():
+    bus = EventBus()
+    await bus.emit({"type": "workflow.started", "workflow_id": "wf_1"})
+
+    ws = MagicMock()
+    ws.accept = AsyncMock()
+    ws.send_json = AsyncMock()
+    await bus.subscribe(ws)
+
+    # Should get the 1 buffered event
+    assert ws.send_json.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_bus_removes_disconnected_ws():
+    bus = EventBus()
+    ws = MagicMock()
+    ws.accept = AsyncMock()
+    ws.send_json = AsyncMock(side_effect=Exception("gone"))
+    await bus.subscribe(ws)
+    await bus.emit({"type": "test", "workflow_id": "wf_1"})
+    assert ws not in bus._subscribers
