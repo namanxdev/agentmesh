@@ -1,7 +1,16 @@
 "use client";
-import { memo, useCallback, useRef } from "react";
+
+import { memo, useCallback, useRef, type ChangeEvent } from "react";
 import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
-import { BaseNode, NODE_COLORS } from "./BaseNode";
+import {
+  BaseNode,
+  NODE_COLORS,
+  NODE_CONTENT_STYLES,
+  getAccentChipStyle,
+  getHandleLabelStyle,
+  getHandleStyle,
+  getTextareaStyle,
+} from "./BaseNode";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { PipelineNode, TextNodeConfig } from "@/types/pipeline";
 
@@ -27,30 +36,30 @@ export const TextNode = memo(function TextNode({
   const variables = config.variables ?? [];
 
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
       const content = e.target.value;
       const newVars = extractVariables(content);
 
-      // Auto-resize via mirror div
       if (mirrorRef.current && textareaRef.current) {
-        mirrorRef.current.textContent = content + "\u200b";
-        const newHeight = Math.max(80, mirrorRef.current.scrollHeight);
+        mirrorRef.current.textContent = content + " ";
+        const newHeight = Math.max(116, mirrorRef.current.scrollHeight);
         const newWidth = Math.min(
-          600,
-          Math.max(200, mirrorRef.current.scrollWidth + 24)
+          560,
+          Math.max(260, mirrorRef.current.scrollWidth + 28)
         );
+
         updateNode(id, {
-          style: { height: newHeight + 48, width: newWidth },
+          style: { height: newHeight + 116, width: newWidth },
         });
       }
 
       updateNodeConfig(id, { content, variables: newVars });
     },
-    [id, updateNodeConfig, updateNode]
+    [id, updateNode, updateNodeConfig]
   );
 
-  const handleSpacing = 24;
-  const topOffset = 48; // account for BaseNode header
+  const handleSpacing = 32;
+  const topOffset = 136;
 
   return (
     <BaseNode
@@ -60,127 +69,89 @@ export const TextNode = memo(function TextNode({
       selected={!!selected}
       hideDefaultHandles
     >
-      {/* Variable pills preview */}
-      {variables.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 3,
-            marginBottom: 6,
-          }}
-        >
-          {variables.map((v) => (
-            <span
-              key={v}
-              style={{
-                background: `${color}22`,
-                color,
-                border: `1px solid ${color}44`,
-                borderRadius: 4,
-                padding: "1px 5px",
-                fontSize: 10,
-                fontFamily: "monospace",
-              }}
-            >
-              {`{{${v}}}`}
-            </span>
-          ))}
+      <div className="pipeline-node__stack" style={NODE_CONTENT_STYLES.stack}>
+        <div className="pipeline-node__chips" style={NODE_CONTENT_STYLES.chips}>
+          <span
+            className="pipeline-node__chip pipeline-node__chip--accent"
+            style={getAccentChipStyle(color)}
+          >
+            template
+          </span>
+          <span className="pipeline-node__chip" style={NODE_CONTENT_STYLES.chip}>
+            {variables.length} var{variables.length === 1 ? "" : "s"}
+          </span>
         </div>
-      )}
 
-      {/* Textarea */}
-      <div style={{ position: "relative" }}>
-        <textarea
-          ref={textareaRef}
-          value={config.content}
-          onChange={handleChange}
-          placeholder="Enter text with {{variables}}…"
-          className="nodrag"
-          style={{
-            width: "100%",
-            minHeight: 80,
-            resize: "none",
-            background: "var(--bg-tertiary)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 4,
-            color: "var(--text-primary)",
-            fontSize: 11,
-            fontFamily: "monospace",
-            padding: "6px 8px",
-            outline: "none",
-            boxSizing: "border-box",
-            lineHeight: 1.5,
-          }}
-          onFocus={(e) =>
-            (e.target.style.borderColor = "var(--accent-primary)")
-          }
-          onBlur={(e) =>
-            (e.target.style.borderColor = "var(--border-subtle)")
-          }
-        />
-        {/* Hidden mirror for auto-resize measurement */}
-        <div
-          ref={mirrorRef}
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            visibility: "hidden",
-            pointerEvents: "none",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            fontSize: 11,
-            fontFamily: "monospace",
-            padding: "6px 8px",
-            lineHeight: 1.5,
-            minWidth: 200,
-            maxWidth: 600,
-          }}
-        />
+        {variables.length > 0 ? (
+          <div className="pipeline-node__chips" style={NODE_CONTENT_STYLES.chips}>
+            {variables.map((v) => (
+              <span
+                key={v}
+                className="pipeline-node__chip"
+                style={{
+                  ...NODE_CONTENT_STYLES.chip,
+                  borderColor: `${color}44`,
+                  color,
+                }}
+              >
+                {`{{${v}}}`}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div style={{ position: "relative" }}>
+          <textarea
+            ref={textareaRef}
+            value={config.content}
+            onChange={handleChange}
+            placeholder="Write prompt text with {{variables}}..."
+            className="pipeline-node__textarea nodrag"
+            style={getTextareaStyle(color)}
+          />
+
+          <div
+            ref={mirrorRef}
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              visibility: "hidden",
+              pointerEvents: "none",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              fontSize: 12,
+              fontFamily: "var(--font-mono)",
+              padding: "14px 16px",
+              lineHeight: 1.7,
+              minWidth: 260,
+              maxWidth: 560,
+            }}
+          />
+        </div>
       </div>
 
-      {/* Source handle on right */}
       <Handle
         type="source"
         position={Position.Right}
-        style={{
-          background: color,
-          width: 8,
-          height: 8,
-          border: "2px solid var(--bg-primary)",
-        }}
+        className="pipeline-node__handle"
+        style={getHandleStyle(color)}
       />
 
-      {/* Dynamic target handles per variable */}
       {variables.map((varName, i) => (
         <Handle
           key={varName}
           id={varName}
           type="target"
           position={Position.Left}
-          style={{
-            background: color,
-            width: 8,
-            height: 8,
-            border: "2px solid var(--bg-primary)",
-            top: topOffset + i * handleSpacing,
-            left: -4,
-          }}
+          className="pipeline-node__handle"
+          style={getHandleStyle(color, { top: topOffset + i * handleSpacing })}
           title={`{{${varName}}}`}
         >
           <span
-            style={{
-              position: "absolute",
-              left: 12,
-              top: -6,
-              fontSize: 9,
-              fontFamily: "monospace",
-              color,
-              whiteSpace: "nowrap",
-              pointerEvents: "none",
-            }}
+            className="pipeline-node__handle-label"
+            style={getHandleLabelStyle(color)}
           >
             {`{{${varName}}}`}
           </span>

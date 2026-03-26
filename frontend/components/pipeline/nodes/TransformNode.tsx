@@ -1,7 +1,13 @@
 "use client";
+
 import { memo } from "react";
 import { type NodeProps } from "@xyflow/react";
-import { BaseNode, NODE_COLORS } from "./BaseNode";
+import {
+  BaseNode,
+  NODE_COLORS,
+  NODE_CONTENT_STYLES,
+  getAccentChipStyle,
+} from "./BaseNode";
 import type { PipelineNode, TransformNodeConfig } from "@/types/pipeline";
 
 export const TransformNode = memo(function TransformNode({
@@ -11,41 +17,36 @@ export const TransformNode = memo(function TransformNode({
 }: NodeProps<PipelineNode>) {
   const config = data.config as TransformNodeConfig;
   const color = NODE_COLORS.transform;
+
   return (
     <BaseNode id={id} kind="transform" label={data.label} selected={!!selected}>
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
-        <span
-          style={{
-            background: `${color}22`,
-            color,
-            border: `1px solid ${color}44`,
-            borderRadius: 4,
-            padding: "1px 6px",
-            fontSize: 10,
-            fontWeight: 600,
-          }}
-        >
-          {config.transform_type}
-        </span>
-        {config.expression && (
+      <div className="pipeline-node__stack" style={NODE_CONTENT_STYLES.stack}>
+        <div className="pipeline-node__chips" style={NODE_CONTENT_STYLES.chips}>
           <span
-            style={{
-              fontFamily: "monospace",
-              fontSize: 10,
-              color: "var(--text-secondary)",
-              background: "var(--bg-tertiary)",
-              borderRadius: 4,
-              padding: "1px 6px",
-              border: "1px solid var(--border-subtle)",
-              maxWidth: 120,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
+            className="pipeline-node__chip pipeline-node__chip--accent"
+            style={getAccentChipStyle(color)}
           >
-            {config.expression}
+            {config.transform_type}
           </span>
-        )}
+          <span className="pipeline-node__chip" style={NODE_CONTENT_STYLES.chip}>
+            shape
+          </span>
+        </div>
+
+        <div className="pipeline-node__preview" style={NODE_CONTENT_STYLES.preview}>
+          <span
+            className="pipeline-node__metric-label"
+            style={NODE_CONTENT_STYLES.metricLabel}
+          >
+            Expression
+          </span>
+          <p
+            className="pipeline-node__preview-copy"
+            style={NODE_CONTENT_STYLES.previewCopy}
+          >
+            {config.expression || "Add a transform expression to parse, extract, or format the incoming payload."}
+          </p>
+        </div>
       </div>
     </BaseNode>
   );

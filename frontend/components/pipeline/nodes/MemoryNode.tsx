@@ -1,7 +1,13 @@
 "use client";
+
 import { memo } from "react";
 import { type NodeProps } from "@xyflow/react";
-import { BaseNode, NODE_COLORS } from "./BaseNode";
+import {
+  BaseNode,
+  NODE_COLORS,
+  NODE_CONTENT_STYLES,
+  getAccentChipStyle,
+} from "./BaseNode";
 import type { PipelineNode, MemoryNodeConfig } from "@/types/pipeline";
 
 export const MemoryNode = memo(function MemoryNode({
@@ -11,33 +17,55 @@ export const MemoryNode = memo(function MemoryNode({
 }: NodeProps<PipelineNode>) {
   const config = data.config as MemoryNodeConfig;
   const color = NODE_COLORS.memory;
+
   return (
     <BaseNode id={id} kind="memory" label={data.label} selected={!!selected}>
-      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-        <span
-          style={{
-            background: `${color}22`,
-            color,
-            border: `1px solid ${color}44`,
-            borderRadius: 4,
-            padding: "1px 6px",
-            fontSize: 10,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-          }}
+      <div className="pipeline-node__stack" style={NODE_CONTENT_STYLES.stack}>
+        <div className="pipeline-node__chips" style={NODE_CONTENT_STYLES.chips}>
+          <span
+            className="pipeline-node__chip pipeline-node__chip--accent"
+            style={getAccentChipStyle(color)}
+          >
+            {config.memory_type}
+          </span>
+          <span className="pipeline-node__chip" style={NODE_CONTENT_STYLES.chip}>
+            {config.key}
+          </span>
+        </div>
+
+        <div
+          className="pipeline-node__metric-grid"
+          style={NODE_CONTENT_STYLES.metricGrid}
         >
-          {config.memory_type}
-        </span>
-        <span
-          style={{
-            color: "var(--text-muted)",
-            fontSize: 11,
-            fontFamily: "monospace",
-          }}
-        >
-          {config.key}
-        </span>
+          <div className="pipeline-node__metric" style={NODE_CONTENT_STYLES.metric}>
+            <span
+              className="pipeline-node__metric-label"
+              style={NODE_CONTENT_STYLES.metricLabel}
+            >
+              Store
+            </span>
+            <span
+              className="pipeline-node__metric-value"
+              style={NODE_CONTENT_STYLES.metricValue}
+            >
+              {config.memory_type === "vector" ? "Embedding index" : "Session context"}
+            </span>
+          </div>
+          <div className="pipeline-node__metric" style={NODE_CONTENT_STYLES.metric}>
+            <span
+              className="pipeline-node__metric-label"
+              style={NODE_CONTENT_STYLES.metricLabel}
+            >
+              Key
+            </span>
+            <span
+              className="pipeline-node__metric-value"
+              style={NODE_CONTENT_STYLES.metricValue}
+            >
+              {config.key}
+            </span>
+          </div>
+        </div>
       </div>
     </BaseNode>
   );
