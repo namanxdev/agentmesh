@@ -1,19 +1,25 @@
 "use client";
 import { useAgentMeshEvents } from "@/hooks/useAgentMeshEvents";
-import { DashboardHeader } from "./DashboardHeader";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import { AgentSidebar } from "./AgentSidebar";
-import { AgentGraph } from "./AgentGraph";
 import { ToolCallInspector } from "./ToolCallInspector";
 import { MessageStream } from "./MessageStream";
+import { PipelineHeader } from "@/components/pipeline/PipelineHeader";
+import { PipelineCanvas } from "@/components/pipeline/PipelineCanvas";
+import { NodePalette } from "@/components/pipeline/NodePalette";
+import { NodeConfigInspector } from "@/components/pipeline/NodeConfigInspector";
 
-interface DashboardLayoutProps {
-  agentNames: string[];
-  edges: Array<{ from: string; to: string }>;
-}
-
-export function DashboardLayout({ agentNames, edges }: DashboardLayoutProps) {
+export function DashboardLayout() {
   // Start WebSocket and pipe events into store
   useAgentMeshEvents(true);
+
+  const mode = usePipelineStore((s) => s.mode);
+  const nodes = usePipelineStore((s) => s.nodes);
+
+  // Derive agent names from LLM agent nodes for sidebar in run mode
+  const agentNames = nodes
+    .filter((n) => n.data.kind === "llm_agent")
+    .map((n) => (n.data.config as { name?: string }).name ?? n.data.label);
 
   return (
     <div
@@ -33,10 +39,23 @@ export function DashboardLayout({ agentNames, edges }: DashboardLayoutProps) {
         boxSizing: "border-box",
       }}
     >
-      <DashboardHeader />
-      <AgentSidebar agentNames={agentNames} />
-      <AgentGraph agentNames={agentNames} edges={edges} />
-      <ToolCallInspector />
+      <PipelineHeader />
+
+      {/* Left panel: palette in build mode, agent list in run mode */}
+      {mode === "build" ? (
+        <NodePalette />
+      ) : (
+        <AgentSidebar agentNames={agentNames} />
+      )}
+
+      {/* Canvas: unified for both modes */}
+      <div style={{ gridArea: "graph", minHeight: 0, minWidth: 0 }}>
+        <PipelineCanvas mode={mode} />
+      </div>
+
+      {/* Right panel: config forms in build mode, tool inspector in run mode */}
+      {mode === "build" ? <NodeConfigInspector /> : <ToolCallInspector />}
+
       <MessageStream />
     </div>
   );
