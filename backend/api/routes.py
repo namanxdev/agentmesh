@@ -3,7 +3,7 @@ import uuid
 import time
 from typing import Optional
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Depends
 from fastapi.responses import JSONResponse
 
 from backend.events.bus import EventBus
@@ -13,6 +13,8 @@ from backend.orchestrator.graph import WorkflowOrchestrator
 from backend.llm.base import BaseLLMProvider
 from backend.api.middleware import add_middleware
 from backend.api.websocket import websocket_events_handler
+from backend.api.auth_middleware import get_current_user as get_current_user_dep
+from backend.db.engine import get_db  # noqa: F401 — used by auth_middleware via Depends
 
 
 # -- Request / Response models ------------------------------------------------
@@ -265,6 +267,12 @@ def create_app(
             "started_at": _runs[workflow_id]["started_at"],
             "websocket_url": f"/ws/events?workflow_id={workflow_id}",
         }
+
+    # -- Auth endpoint ---------------------------------------------------------
+
+    @app.get("/api/me")
+    async def get_me(user_id: str = Depends(get_current_user_dep)):
+        return {"user_id": user_id}
 
     # -- WebSocket endpoint ----------------------------------------------------
 
