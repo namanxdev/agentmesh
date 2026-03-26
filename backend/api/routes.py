@@ -2,7 +2,7 @@ import os
 import uuid
 import time
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import JSONResponse
 
@@ -35,8 +35,10 @@ class PipelineEdgeModel(BaseModel):
     id: str
     source: str
     target: str
-    source_handle: Optional[str] = None
-    target_handle: Optional[str] = None
+    source_handle: Optional[str] = Field(None, alias="sourceHandle")
+    target_handle: Optional[str] = Field(None, alias="targetHandle")
+
+    model_config = {"populate_by_name": True}
 
 
 class PipelineDefinitionModel(BaseModel):

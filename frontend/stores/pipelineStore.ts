@@ -176,10 +176,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
   },
 
   runPipeline: async (task) => {
-    const { validatePipeline, serializePipeline } = get();
-    const validation = await validatePipeline();
-    if (!validation.is_dag) throw new Error("Pipeline is not a valid DAG");
-
+    const { serializePipeline } = get();
     set({ isRunning: true });
     const definition = serializePipeline();
     const res = await fetch("/api/pipelines/run", {
@@ -191,7 +188,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       set({ isRunning: false });
       throw new Error(`Run failed: ${res.statusText}`);
     }
-    set({ mode: "run" });
+    set({ mode: "run", isRunning: false });
   },
 
   reset: () =>

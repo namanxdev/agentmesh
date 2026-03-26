@@ -1,6 +1,6 @@
 "use client";
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { BaseNode, NODE_COLORS } from "./BaseNode";
 import type { PipelineNode, LLMAgentConfig } from "@/types/pipeline";
 
@@ -61,10 +61,6 @@ export const LLMAgentNode = memo(function LLMAgentNode({
           {config.system_prompt}
         </div>
       )}
-      <Handle type="target" position={Position.Left}
-        style={{ background: color, width: 8, height: 8, border: "2px solid var(--bg-primary)" }} />
-      <Handle type="source" position={Position.Right}
-        style={{ background: color, width: 8, height: 8, border: "2px solid var(--bg-primary)" }} />
     </BaseNode>
   );
 });
