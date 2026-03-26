@@ -98,3 +98,9 @@ body {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
+
+/* Pipeline node: show delete button on hover */
+.react-flow__node:hover .node-delete-btn {
+  opacity: 1 !important;
+  color: #ef4444 !important;
+}
