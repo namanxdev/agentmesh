@@ -13,16 +13,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async jwt({ token, account, profile }) {
-      // On first sign-in, profile contains the Google user info
       if (account && profile) {
-        token.sub = profile.sub ?? token.sub;  // Google user ID → our user_id
+        token.sub = profile.sub ?? token.sub;
         token.picture = (profile.picture as string | undefined) ?? token.picture;
       }
+
       return token;
     },
     async session({ session, token }) {
-      // Expose user ID to server-side components and API routes
       session.user.id = token.sub as string;
+      session.user.image =
+        (token.picture as string | undefined) ?? session.user.image;
+      session.user.name = token.name ?? session.user.name;
+      session.user.email = token.email ?? session.user.email;
+
       return session;
     },
   },

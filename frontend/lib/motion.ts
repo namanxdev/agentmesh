@@ -1,7 +1,7 @@
 import type { Variants } from "framer-motion";
 
 export const motionDefaults = {
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0.55, y: 12 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -10 },
   transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
@@ -18,7 +18,7 @@ export const staggerContainer: Variants = {
 };
 
 export const staggerItem: Variants = {
-  initial: { opacity: 0, y: 24 },
+  initial: { opacity: 0.55, y: 12 },
   animate: {
     opacity: 1,
     y: 0,

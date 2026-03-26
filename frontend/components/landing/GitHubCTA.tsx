@@ -15,7 +15,7 @@ export function GitHubCTA() {
   };
 
   return (
-    <section id="launch" className="py-24 sm:py-28">
+    <section id="launch" className="py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
         <ScrollReveal className="landing-panel-dark overflow-hidden rounded-[38px] p-6 sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">

@@ -1,5 +1,6 @@
 from typing import Optional
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from .base import BaseLLMProvider, LLMResponse
 
 
@@ -7,7 +8,7 @@ class GeminiProvider(BaseLLMProvider):
     """Gemini LLM provider (Gemini 2.0 Flash)."""
 
     def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
+        self._client = genai.Client(api_key=api_key)
 
     async def generate(
         self,
@@ -17,42 +18,44 @@ class GeminiProvider(BaseLLMProvider):
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> LLMResponse:
-        gen_model = genai.GenerativeModel(model)
-        response = await gen_model.generate_content_async(
+        response = await self._client.aio.models.generate_content(
+            model=model,
             contents=self._format_messages(messages),
-            tools=self._format_tools(tools) if tools else None,
-            generation_config=genai.GenerationConfig(
+            config=types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
+                tools=self._format_tools(tools) if tools else None,
             ),
         )
         return self._parse_response(response)
 
-    def _format_messages(self, messages: list[dict]) -> list[dict]:
+    def _format_messages(self, messages: list[dict]) -> list[types.Content]:
         result = []
         for msg in messages:
             role = "user" if msg["role"] in ("user", "tool") else "model"
-            result.append({"role": role, "parts": [{"text": str(msg.get("content", ""))}]})
+            result.append(types.Content(
+                role=role,
+                parts=[types.Part.from_text(text=str(msg.get("content", "")))],
+            ))
         return result
 
-    def _format_tools(self, tools: list[dict]) -> list:
+    def _format_tools(self, tools: list[dict]) -> list[types.Tool]:
         declarations = [
-            genai.protos.FunctionDeclaration(
+            types.FunctionDeclaration(
                 name=t["function"]["name"],
                 description=t["function"].get("description", ""),
-                parameters=t["function"].get("parameters", {}),
+                parameters=t["function"].get("parameters"),
             )
             for t in tools
         ]
-        return [genai.protos.Tool(function_declarations=declarations)]
+        return [types.Tool(function_declarations=declarations)]
 
     def _parse_response(self, response) -> LLMResponse:
         text, tool_calls = "", []
-        for part in response.parts:
-            fc = part.function_call
-            if fc and fc.name:
-                tool_calls.append({"name": fc.name, "args": dict(fc.args)})
-            elif hasattr(part, "text"):
+        for part in response.candidates[0].content.parts:
+            if part.function_call and part.function_call.name:
+                tool_calls.append({"name": part.function_call.name, "args": dict(part.function_call.args)})
+            elif part.text:
                 text += part.text
         return LLMResponse(
             text=text,

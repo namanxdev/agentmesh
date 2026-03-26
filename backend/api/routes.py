@@ -3,8 +3,9 @@ import uuid
 import time
 from typing import Optional
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, WebSocket, Depends
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, WebSocket, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
 from backend.events.bus import EventBus
 from backend.agents.registry import AgentRegistry
@@ -14,7 +15,7 @@ from backend.llm.base import BaseLLMProvider
 from backend.api.middleware import add_middleware
 from backend.api.websocket import websocket_events_handler
 from backend.api.auth_middleware import get_current_user as get_current_user_dep
-from backend.db.engine import get_db  # noqa: F401 — used by auth_middleware via Depends
+from backend.db.engine import get_db
 
 
 # -- Request / Response models ------------------------------------------------
@@ -68,6 +69,9 @@ def create_app(
 
     app = FastAPI(title="AgentMesh API", version="1.0.0")
     add_middleware(app)
+
+    from backend.api.keys import router as keys_router
+    app.include_router(keys_router)
 
     # In-memory run tracking for GET /api/workflows/{workflow_id}
     _runs: dict[str, dict] = {}
@@ -198,9 +202,45 @@ def create_app(
         return validate_pipeline(nodes, edges)
 
     @app.post("/api/pipelines/run")
-    async def run_pipeline_endpoint(request: PipelineRunRequest):
+    async def run_pipeline_endpoint(
+        request: PipelineRunRequest,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
         from backend.pipelines.validator import validate_pipeline, pipeline_to_workflow_config
+        from backend.crypto import decrypt
+        from backend.llm.multi import MultiProvider
         import asyncio
+
+        # Fetch and decrypt user's API keys
+        result = await db.execute(
+            text("SELECT provider, encrypted_key FROM api_keys WHERE user_id = :uid"),
+            {"uid": user_id},
+        )
+        rows = result.fetchall()
+        if not rows:
+            raise HTTPException(
+                status_code=403,
+                detail={"error": "no_keys", "message": "No API keys saved. Add your keys in Settings."},
+            )
+
+        providers: dict[str, BaseLLMProvider] = {}
+        for row in rows:
+            try:
+                api_key = decrypt(row.encrypted_key)
+            except Exception:
+                continue
+            if row.provider == "gemini":
+                from backend.llm.gemini import GeminiProvider
+                providers["gemini"] = GeminiProvider(api_key=api_key)
+            elif row.provider == "groq":
+                from backend.llm.groq import GroqProvider
+                providers["groq"] = GroqProvider(api_key=api_key)
+            elif row.provider == "openai":
+                from backend.llm.openai_provider import OpenAIProvider
+                providers["openai"] = OpenAIProvider(api_key=api_key)
+
+        user_llm = MultiProvider(providers)
 
         defn = request.pipeline
         nodes = [{"id": n.id, "kind": n.kind, "config": n.config} for n in defn.nodes]
@@ -212,17 +252,15 @@ def create_app(
 
         validation = validate_pipeline(nodes, edges)
         if not validation["is_dag"]:
-            from fastapi import HTTPException
             raise HTTPException(status_code=422, detail={"errors": validation["errors"]})
 
-        # Convert pipeline definition to dicts for pipeline_to_workflow_config
         defn_dict = {
             "name": defn.name,
             "nodes": [{"id": n.id, "kind": n.kind, "config": n.config} for n in defn.nodes],
             "edges": edges,
         }
 
-        config = pipeline_to_workflow_config(defn_dict, llm_provider, event_bus)
+        config = pipeline_to_workflow_config(defn_dict, user_llm, event_bus)
         agent_reg = config["agent_registry"]
         graph_cfg = config["graph_config"]
         task = request.task or config["task"]

@@ -40,7 +40,7 @@ const COMPATIBILITY_CARDS = [
 
 export function TechStack() {
   return (
-    <section id="tech-stack" className="border-b border-[color:var(--border-subtle)] py-24 sm:py-28">
+    <section id="tech-stack" className="border-b border-[color:var(--border-subtle)] py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
         <ScrollReveal className="max-w-[820px]">
           <p className="landing-kicker">03 / Compatibility</p>
@@ -60,7 +60,7 @@ export function TechStack() {
           </p>
         </ScrollReveal>
 
-        <div className="mt-12 space-y-4">
+        <div className="mt-10 space-y-4">
           <div className="landing-panel rounded-[30px] px-4 py-4">
             <div className="landing-marquee">
               <div className="landing-marquee-track">

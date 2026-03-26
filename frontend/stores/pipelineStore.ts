@@ -186,7 +186,19 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
     });
     if (!res.ok) {
       set({ isRunning: false });
-      throw new Error(`Run failed: ${res.statusText}`);
+      let errorMsg = `Run failed: ${res.statusText}`;
+      try {
+        const body = await res.json();
+        const detail = body?.detail;
+        if (detail?.error === "no_keys") {
+          errorMsg = "no_keys";
+        } else if (typeof detail === "string") {
+          errorMsg = detail;
+        } else if (detail?.message) {
+          errorMsg = detail.message;
+        }
+      } catch { /* use default */ }
+      throw new Error(errorMsg);
     }
     set({ mode: "run", isRunning: false });
   },

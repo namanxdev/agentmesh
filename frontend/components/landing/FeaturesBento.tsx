@@ -188,9 +188,9 @@ function FeatureCard({ id, title, description, points, className, tone }: Featur
 
 export function FeaturesBento() {
   return (
-    <section id="features" className="border-b border-[color:var(--border-subtle)] py-24 sm:py-28">
+    <section id="features" className="border-b border-[color:var(--border-subtle)] py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-        <ScrollReveal className="mb-12 max-w-[780px]">
+        <ScrollReveal className="mb-10 max-w-[780px]">
           <p className="landing-kicker">01 / System overview</p>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <h2

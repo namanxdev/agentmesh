@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useUIStore } from "@/stores/uiStore";
 
@@ -46,15 +47,23 @@ export function PipelineHeader() {
     }
   };
 
+  const [noKeys, setNoKeys] = useState(false);
+
   const handleGo = async () => {
     if (!task.trim()) return;
     setError(null);
+    setNoKeys(false);
     try {
       await runPipeline(task.trim());
       setShowTaskInput(false);
       setTask("");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Run failed");
+      const msg = e instanceof Error ? e.message : "Run failed";
+      if (msg.toLowerCase().includes("no_keys") || msg.toLowerCase().includes("no api key")) {
+        setNoKeys(true);
+      } else {
+        setError(msg);
+      }
     }
   };
 
@@ -151,6 +160,27 @@ export function PipelineHeader() {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <Link
+          href="/settings"
+          title="Settings"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "1px solid var(--border-subtle)",
+            background: "rgba(255,255,255,0.03)",
+            color: "var(--text-muted)",
+            textDecoration: "none",
+            fontSize: 15,
+            transition: "border-color 0.2s, color 0.2s",
+          }}
+        >
+          ⚙
+        </Link>
+
         <span
           className="dashboard-chip text-[11px] uppercase tracking-[0.24em]"
           style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}
@@ -159,7 +189,23 @@ export function PipelineHeader() {
           {connectionStatus}
         </span>
 
-        {error ? (
+        {noKeys ? (
+          <Link
+            href="/settings"
+            className="dashboard-chip text-[11px] uppercase tracking-[0.22em]"
+            style={{
+              color: "var(--status-warning)",
+              fontFamily: "var(--font-mono)",
+              textDecoration: "none",
+              border: "1px solid var(--status-warning)44",
+              background: "var(--status-warning)0f",
+            }}
+          >
+            No API keys — Add in Settings →
+          </Link>
+        ) : null}
+
+        {error && !noKeys ? (
           <span
             className="dashboard-chip text-[11px] uppercase tracking-[0.22em]"
             style={{ color: "var(--status-error)", fontFamily: "var(--font-mono)" }}

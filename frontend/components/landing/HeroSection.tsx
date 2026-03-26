@@ -22,7 +22,7 @@ const TRACE_LINES = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-[color:var(--border-subtle)] pt-32 sm:pt-40">
+    <section className="relative overflow-hidden border-b border-[color:var(--border-subtle)] pt-28 sm:pt-36">
       <div
         aria-hidden="true"
         className="absolute inset-x-0 top-0 h-[620px]"
@@ -32,7 +32,7 @@ export function HeroSection() {
         }}
       />
 
-      <div className="mx-auto grid max-w-[1400px] gap-14 px-5 pb-16 md:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start lg:gap-10">
+      <div className="mx-auto grid max-w-[1400px] gap-12 px-5 pb-12 md:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start lg:gap-10">
         <motion.div
           variants={staggerContainer}
           initial="initial"
@@ -58,7 +58,7 @@ export function HeroSection() {
             ))}
           </motion.div>
 
-          <motion.div variants={staggerItem} className="mt-10 max-w-[760px]">
+          <motion.div variants={staggerItem} className="mt-8 max-w-[760px]">
             <p className="landing-kicker">Editorial orchestration layer</p>
             <h1
               className="mt-5 text-[clamp(4rem,11vw,8.2rem)] uppercase leading-[0.92] tracking-[-0.08em]"
@@ -70,7 +70,7 @@ export function HeroSection() {
               </span>
             </h1>
             <p
-              className="mt-7 max-w-[620px] text-lg leading-8 md:text-xl"
+              className="mt-6 max-w-[620px] text-lg leading-8 md:text-xl"
               style={{ color: "var(--text-secondary)" }}
             >
               AgentMesh turns agent workflows into something you can stage, inspect, and
@@ -79,7 +79,7 @@ export function HeroSection() {
             </p>
           </motion.div>
 
-          <motion.div variants={staggerItem} className="mt-10 flex flex-wrap gap-4">
+          <motion.div variants={staggerItem} className="mt-8 flex flex-wrap gap-4">
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
@@ -115,7 +115,7 @@ export function HeroSection() {
             </a>
           </motion.div>
 
-          <motion.div variants={staggerItem} className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <motion.div variants={staggerItem} className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {HERO_STATS.map(({ value, label }) => (
               <div key={label} className="landing-panel rounded-[24px] px-5 py-5">
                 <div
@@ -395,7 +395,7 @@ export function HeroSection() {
       </div>
 
       <div className="border-y border-[color:var(--border-subtle)] bg-[rgba(255,255,255,0.35)]">
-        <div className="landing-marquee py-4">
+        <div className="landing-marquee py-3">
           <div className="landing-marquee-track">
             {Array.from({ length: 2 }).flatMap((_, groupIndex) =>
               [

@@ -37,9 +37,9 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="border-b border-[color:var(--border-subtle)] py-24 sm:py-28">
+    <section id="how-it-works" className="border-b border-[color:var(--border-subtle)] py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-        <div className="grid gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
+        <div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
           <ScrollReveal className="lg:sticky lg:top-28 lg:self-start">
             <p className="landing-kicker">02 / Control logic</p>
             <h2

@@ -75,6 +75,8 @@ const MODELS = [
   "gemini-2.0-pro",
   "llama-3.3-70b-versatile",
   "llama-3.1-8b-instant",
+  "gpt-4o",
+  "gpt-4o-mini",
 ];
 
 function LLMAgentForm({ id, config }: { id: string; config: LLMAgentConfig }) {
