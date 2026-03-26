@@ -10,7 +10,6 @@ import { NodePalette } from "@/components/pipeline/NodePalette";
 import { NodeConfigInspector } from "@/components/pipeline/NodeConfigInspector";
 
 export function DashboardLayout() {
-  // Start WebSocket and pipe events into store
   useAgentMeshEvents(true);
 
   const mode = usePipelineStore((s) => s.mode);
@@ -23,37 +22,40 @@ export function DashboardLayout() {
 
   return (
     <div
+      className="dashboard-shell"
       style={{
         display: "grid",
-        gridTemplateColumns: "280px 1fr 340px",
-        gridTemplateRows: "64px 1fr 260px",
+        gridTemplateColumns: "296px minmax(0, 1fr) 360px",
+        gridTemplateRows: "84px minmax(0, 1fr) 280px",
         gridTemplateAreas:
           '"header  header    header"' +
           '"agents  graph     inspector"' +
           '"agents  timeline  inspector"',
-        gap: 10,
+        gap: 14,
         height: "100vh",
-        padding: 10,
-        background: "var(--bg-primary)",
+        padding: 14,
         overflow: "hidden",
         boxSizing: "border-box",
       }}
     >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(circle at 18% 16%, rgba(240,106,55,0.12), transparent 20%), radial-gradient(circle at 82% 10%, rgba(215,255,112,0.08), transparent 16%)",
+        }}
+      />
       <PipelineHeader />
 
-      {/* Left panel: palette in build mode, agent list in run mode */}
-      {mode === "build" ? (
-        <NodePalette />
-      ) : (
-        <AgentSidebar agentNames={agentNames} />
-      )}
+      {mode === "build" ? <NodePalette /> : <AgentSidebar agentNames={agentNames} />}
 
-      {/* Canvas: unified for both modes */}
       <div style={{ gridArea: "graph", minHeight: 0, minWidth: 0 }}>
         <PipelineCanvas mode={mode} />
       </div>
 
-      {/* Right panel: config forms in build mode, tool inspector in run mode */}
       {mode === "build" ? <NodeConfigInspector /> : <ToolCallInspector />}
 
       <MessageStream />

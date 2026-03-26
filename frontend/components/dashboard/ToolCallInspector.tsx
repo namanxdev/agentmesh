@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEventStore } from "@/stores/eventStore";
@@ -13,24 +14,35 @@ interface ToolCall {
   error?: ToolErrorEvent;
 }
 
-function buildToolCalls(
-  events: ReturnType<typeof useEventStore.getState>["events"]
-): ToolCall[] {
+function buildToolCalls(events: ReturnType<typeof useEventStore.getState>["events"]): ToolCall[] {
   const callMap = new Map<string, ToolCall>();
-  for (const evt of events) {
-    if (evt.type === "tool.called") {
-      callMap.set(evt.id, { call: evt });
-    } else if (evt.type === "tool.result" || evt.type === "tool.error") {
-      // Match result/error to call by agentName+tool order
-      for (const [key, tc] of callMap) {
-        if (tc.call.agentName === evt.agentName && tc.call.tool === evt.tool && !tc.result && !tc.error) {
-          if (evt.type === "tool.result") callMap.set(key, { ...tc, result: evt });
-          else callMap.set(key, { ...tc, error: evt });
+
+  for (const event of events) {
+    if (event.type === "tool.called") {
+      callMap.set(event.id, { call: event });
+      continue;
+    }
+
+    if (event.type === "tool.result" || event.type === "tool.error") {
+      for (const [key, toolCall] of callMap) {
+        if (
+          toolCall.call.agentName === event.agentName &&
+          toolCall.call.tool === event.tool &&
+          !toolCall.result &&
+          !toolCall.error
+        ) {
+          callMap.set(
+            key,
+            event.type === "tool.result"
+              ? { ...toolCall, result: event }
+              : { ...toolCall, error: event }
+          );
           break;
         }
       }
     }
   }
+
   return Array.from(callMap.values()).reverse();
 }
 
@@ -52,26 +64,58 @@ export function ToolCallInspector() {
 
   const allCalls = buildToolCalls(events);
   const calls = selectedAgent
-    ? allCalls.filter((tc) => tc.call.agentName === selectedAgent)
+    ? allCalls.filter((toolCall) => toolCall.call.agentName === selectedAgent)
     : allCalls;
 
   return (
     <div
+      className="dashboard-panel"
       style={{
         gridArea: "inspector",
-        background: "var(--bg-secondary)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: 12,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      {/* Tab bar */}
+      <div
+        style={{
+          padding: "16px 18px 14px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div>
+          <p className="dashboard-kicker" style={{ margin: 0 }}>
+            Inspector
+          </p>
+          <h2
+            style={{
+              color: "var(--text-primary)",
+              fontSize: 22,
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              margin: "8px 0 0",
+            }}
+          >
+            {selectedAgent ? selectedAgent : "Global view"}
+          </h2>
+        </div>
+        <span
+          className="dashboard-chip text-[11px] uppercase tracking-[0.22em]"
+          style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}
+        >
+          {inspectorTab}
+        </span>
+      </div>
+
       <div
         style={{
           display: "flex",
-          borderBottom: "1px solid var(--border-subtle)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
           flexShrink: 0,
         }}
       >
@@ -90,10 +134,7 @@ export function ToolCallInspector() {
               background: "transparent",
               cursor: "pointer",
               color: inspectorTab === key ? "var(--accent-primary)" : "var(--text-tertiary)",
-              borderBottom:
-                inspectorTab === key
-                  ? "2px solid var(--accent-primary)"
-                  : "2px solid transparent",
+              borderBottom: inspectorTab === key ? "2px solid var(--accent-primary)" : "2px solid transparent",
               transition: "color 0.2s, border-color 0.2s",
             }}
           >
@@ -102,17 +143,16 @@ export function ToolCallInspector() {
         ))}
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
-        {inspectorTab === "tools" && (
+      <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
+        {inspectorTab === "tools" ? (
           <ToolsPanel calls={calls} expandedId={expandedId} setExpandedId={setExpandedId} />
-        )}
-        {inspectorTab === "agent" && (
+        ) : null}
+        {inspectorTab === "agent" ? (
           <AgentPanel selectedAgent={selectedAgent} agentStates={agentStates} />
-        )}
-        {inspectorTab === "tokens" && (
+        ) : null}
+        {inspectorTab === "tokens" ? (
           <TokensPanel agentStates={agentStates} totalTokens={totalTokens} />
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -143,33 +183,39 @@ function ToolsPanel({
       </p>
     );
   }
+
   return (
     <div>
-      {calls.map((tc) => {
-        const isExpanded = expandedId === tc.call.id;
-        const statusLabel = tc.error ? "ERR" : tc.result ? `${tc.result.duration_ms}ms` : "…";
-        const statusColor = tc.error
+      {calls.map((toolCall) => {
+        const isExpanded = expandedId === toolCall.call.id;
+        const statusLabel = toolCall.error
+          ? "ERR"
+          : toolCall.result
+            ? `${toolCall.result.duration_ms}ms`
+            : "...";
+        const statusColor = toolCall.error
           ? "var(--status-error)"
-          : tc.result
-          ? "var(--accent-primary)"
-          : "var(--status-warning)";
+          : toolCall.result
+            ? "var(--accent-primary)"
+            : "var(--status-warning)";
 
         return (
           <div
-            key={tc.call.id}
+            key={toolCall.call.id}
             style={{
-              marginBottom: 6,
-              borderRadius: 8,
-              border: "1px solid var(--border-subtle)",
+              marginBottom: 8,
+              borderRadius: 18,
+              border: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(255,255,255,0.03)",
               overflow: "hidden",
             }}
           >
             <button
-              onClick={() => setExpandedId(isExpanded ? null : tc.call.id)}
+              onClick={() => setExpandedId(isExpanded ? null : toolCall.call.id)}
               style={{
                 width: "100%",
                 textAlign: "left",
-                padding: "8px 12px",
+                padding: "10px 14px",
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
@@ -189,14 +235,14 @@ function ToolsPanel({
                   whiteSpace: "nowrap",
                 }}
               >
-                <span style={{ color: "var(--text-tertiary)" }}>{tc.call.server}.</span>
-                {tc.call.tool}
+                <span style={{ color: "var(--text-tertiary)" }}>{toolCall.call.server}.</span>
+                {toolCall.call.tool}
               </span>
               <span
                 style={{
                   fontSize: 10,
-                  padding: "2px 6px",
-                  borderRadius: 4,
+                  padding: "3px 8px",
+                  borderRadius: 999,
                   background: `color-mix(in srgb, ${statusColor} 15%, transparent)`,
                   color: statusColor,
                   fontFamily: "var(--font-mono)",
@@ -208,7 +254,7 @@ function ToolsPanel({
             </button>
 
             <AnimatePresence>
-              {isExpanded && (
+              {isExpanded ? (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
@@ -216,12 +262,22 @@ function ToolsPanel({
                   transition={{ duration: 0.2 }}
                   style={{
                     overflow: "hidden",
-                    borderTop: "1px solid var(--border-subtle)",
-                    background: "var(--bg-primary)",
+                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                    background: "rgba(12,10,9,0.55)",
                   }}
                 >
-                  <div style={{ padding: "10px 12px" }}>
-                    <p style={{ color: "var(--text-tertiary)", fontSize: 10, fontFamily: "var(--font-mono)", margin: "0 0 4px", textTransform: "uppercase" }}>args</p>
+                  <div style={{ padding: "12px 14px" }}>
+                    <p
+                      style={{
+                        color: "var(--text-tertiary)",
+                        fontSize: 10,
+                        fontFamily: "var(--font-mono)",
+                        margin: "0 0 4px",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      args
+                    </p>
                     <pre
                       style={{
                         color: "var(--text-secondary)",
@@ -233,11 +289,22 @@ function ToolsPanel({
                         lineHeight: 1.5,
                       }}
                     >
-                      {JSON.stringify(tc.call.args, null, 2)}
+                      {JSON.stringify(toolCall.call.args, null, 2)}
                     </pre>
-                    {tc.result && (
+
+                    {toolCall.result ? (
                       <>
-                        <p style={{ color: "var(--text-tertiary)", fontSize: 10, fontFamily: "var(--font-mono)", margin: "10px 0 4px", textTransform: "uppercase" }}>result</p>
+                        <p
+                          style={{
+                            color: "var(--text-tertiary)",
+                            fontSize: 10,
+                            fontFamily: "var(--font-mono)",
+                            margin: "10px 0 4px",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          result
+                        </p>
                         <pre
                           style={{
                             color: "var(--accent-primary)",
@@ -249,18 +316,26 @@ function ToolsPanel({
                             lineHeight: 1.5,
                           }}
                         >
-                          {JSON.stringify(tc.result.result, null, 2)}
+                          {JSON.stringify(toolCall.result.result, null, 2)}
                         </pre>
                       </>
-                    )}
-                    {tc.error && (
-                      <p style={{ color: "var(--status-error)", fontSize: 11, fontFamily: "var(--font-mono)", marginTop: 8 }}>
-                        {tc.error.error}
+                    ) : null}
+
+                    {toolCall.error ? (
+                      <p
+                        style={{
+                          color: "var(--status-error)",
+                          fontSize: 11,
+                          fontFamily: "var(--font-mono)",
+                          marginTop: 8,
+                        }}
+                      >
+                        {toolCall.error.error}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 </motion.div>
-              )}
+              ) : null}
             </AnimatePresence>
           </div>
         );
@@ -278,36 +353,75 @@ function AgentPanel({
 }) {
   if (!selectedAgent) {
     return (
-      <p style={{ color: "var(--text-tertiary)", fontSize: 12, textAlign: "center", padding: "32px 16px", fontFamily: "var(--font-mono)", margin: 0 }}>
+      <p
+        style={{
+          color: "var(--text-tertiary)",
+          fontSize: 12,
+          textAlign: "center",
+          padding: "32px 16px",
+          fontFamily: "var(--font-mono)",
+          margin: 0,
+        }}
+      >
         Click an agent to inspect
       </p>
     );
   }
+
   const state = agentStates[selectedAgent];
+
   return (
     <div style={{ padding: 8 }}>
-      <h3 style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 16, margin: "0 0 16px" }}>
+      <div className="dashboard-chip" style={{ marginBottom: 14 }}>
+        <span className="dashboard-kicker" style={{ color: "var(--accent-secondary)" }}>
+          Agent view
+        </span>
+      </div>
+
+      <h3
+        style={{
+          color: "var(--text-primary)",
+          fontFamily: "var(--font-display)",
+          fontWeight: 800,
+          fontSize: 24,
+          letterSpacing: "-0.04em",
+          margin: "0 0 16px",
+        }}
+      >
         {selectedAgent}
       </h3>
+
       <dl style={{ margin: 0 }}>
         {[
           ["Status", state?.status ?? "idle"],
           ["Tokens In", state?.token_input.toLocaleString() ?? "0"],
           ["Tokens Out", state?.token_output.toLocaleString() ?? "0"],
         ].map(([label, value]) => (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+          <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <dt style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{label}</dt>
             <dd style={{ color: "var(--text-primary)", fontSize: 12, fontFamily: "var(--font-mono)", margin: 0 }}>{value}</dd>
           </div>
         ))}
-        {state?.current_task && (
+
+        {state?.current_task ? (
           <div>
-            <dt style={{ color: "var(--text-tertiary)", fontSize: 12, marginBottom: 4 }}>Current Task</dt>
-            <dd style={{ color: "var(--text-secondary)", fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+            <dt style={{ color: "var(--text-tertiary)", fontSize: 12, marginBottom: 6 }}>Current Task</dt>
+            <dd
+              style={{
+                color: "var(--text-secondary)",
+                fontSize: 12,
+                lineHeight: 1.6,
+                margin: 0,
+                padding: "12px 14px",
+                borderRadius: 16,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
               {state.current_task}
             </dd>
           </div>
-        )}
+        ) : null}
       </dl>
     </div>
   );
@@ -321,56 +435,78 @@ function TokensPanel({
   totalTokens: number;
 }) {
   const entries = Object.entries(agentStates);
+
   if (entries.length === 0) {
     return (
-      <p style={{ color: "var(--text-tertiary)", fontSize: 12, textAlign: "center", padding: "32px 16px", fontFamily: "var(--font-mono)", margin: 0 }}>
+      <p
+        style={{
+          color: "var(--text-tertiary)",
+          fontSize: 12,
+          textAlign: "center",
+          padding: "32px 16px",
+          fontFamily: "var(--font-mono)",
+          margin: 0,
+        }}
+      >
         No token data
       </p>
     );
   }
+
   return (
     <div style={{ padding: 8 }}>
       {entries.map(([name, state]) => {
         const total = state.token_input + state.token_output;
-        const pct = totalTokens > 0 ? (total / totalTokens) * 100 : 0;
+        const percent = totalTokens > 0 ? (total / totalTokens) * 100 : 0;
+
         return (
-          <div key={name} style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+          <div key={name} style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
               <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>{name}</span>
               <span style={{ color: "var(--accent-primary)", fontSize: 12, fontFamily: "var(--font-mono)" }}>
                 {total.toLocaleString()}
               </span>
             </div>
-            <div style={{ height: 3, background: "var(--border-default)", borderRadius: 2, overflow: "hidden" }}>
+            <div
+              style={{
+                height: 6,
+                background: "rgba(255,255,255,0.06)",
+                borderRadius: 999,
+                overflow: "hidden",
+              }}
+            >
               <div
                 style={{
                   height: "100%",
-                  width: `${pct}%`,
-                  background: "var(--accent-primary)",
+                  width: `${percent}%`,
+                  background: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))",
                   transition: "width 0.6s ease",
-                  borderRadius: 2,
+                  borderRadius: 999,
                 }}
               />
             </div>
           </div>
         );
       })}
+
       <div
         style={{
-          marginTop: 16,
-          paddingTop: 12,
-          borderTop: "1px solid var(--border-subtle)",
+          marginTop: 18,
+          paddingTop: 14,
+          borderTop: "1px solid rgba(255,255,255,0.08)",
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
         <span style={{ color: "var(--text-tertiary)", fontSize: 12 }}>Total</span>
         <span
           style={{
-            color: "var(--accent-primary)",
-            fontFamily: "var(--font-mono)",
-            fontSize: 15,
-            fontWeight: 700,
+            color: "var(--accent-secondary)",
+            fontFamily: "var(--font-display)",
+            fontSize: 22,
+            fontWeight: 800,
+            letterSpacing: "-0.04em",
           }}
           role="status"
           aria-live="polite"

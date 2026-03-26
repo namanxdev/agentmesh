@@ -21,40 +21,45 @@ export function NodePalette() {
 
   return (
     <div
+      className="dashboard-panel"
       style={{
         gridArea: "agents",
-        background: "var(--bg-secondary)",
-        borderRadius: 8,
-        border: "1px solid var(--border-subtle)",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      {/* Header */}
       <div
         style={{
-          padding: "12px 14px",
-          borderBottom: "1px solid var(--border-subtle)",
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "var(--text-muted)",
+          padding: "18px 20px 14px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        Node Palette
+        <p className="dashboard-kicker" style={{ margin: 0 }}>
+          Build surface
+        </p>
+        <h2
+          style={{
+            color: "var(--text-primary)",
+            fontSize: 22,
+            fontFamily: "var(--font-display)",
+            fontWeight: 800,
+            letterSpacing: "-0.04em",
+            margin: "8px 0 0",
+          }}
+        >
+          Node palette
+        </h2>
       </div>
 
-      {/* Items */}
       <div
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "8px",
+          padding: "10px",
           display: "flex",
           flexDirection: "column",
-          gap: 4,
+          gap: 8,
         }}
       >
         {PALETTE_ITEMS.map(({ kind, name, description }) => {
@@ -69,11 +74,11 @@ export function NodePalette() {
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                padding: "8px 10px",
-                borderRadius: 6,
-                border: "1px solid var(--border-subtle)",
+                padding: "12px 12px",
+                borderRadius: 18,
+                border: "1px solid rgba(255,255,255,0.06)",
                 borderLeft: `3px solid ${color}`,
-                background: "var(--bg-tertiary)",
+                background: "rgba(255,255,255,0.03)",
                 cursor: "grab",
                 transition: "background 0.12s, border-color 0.12s",
               }}
@@ -138,11 +143,14 @@ export function NodePalette() {
       {/* Footer hint */}
       <div
         style={{
-          padding: "8px 14px",
-          borderTop: "1px solid var(--border-subtle)",
+          padding: "12px 14px 16px",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
           fontSize: 10,
           color: "var(--text-muted)",
           textAlign: "center",
+          fontFamily: "var(--font-mono)",
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
         }}
       >
         Drag nodes onto the canvas

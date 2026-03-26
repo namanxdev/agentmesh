@@ -87,12 +87,13 @@ export function PipelineCanvas({ mode }: PipelineCanvasProps) {
 
   return (
     <div
+      className="dashboard-panel"
       style={{
         width: "100%",
         height: "100%",
-        borderRadius: 8,
+        borderRadius: 24,
         overflow: "hidden",
-        border: "1px solid var(--border-subtle)",
+        padding: 1,
       }}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
@@ -138,7 +139,8 @@ export function PipelineCanvas({ mode }: PipelineCanvasProps) {
           }}
           maskColor="var(--bg-primary)"
           nodeColor={(n) => {
-            const kind = (n.data as any)?.kind;
+            const data = n.data as PipelineNode["data"] | undefined;
+            const kind = data?.kind;
             return kind ? `var(--accent-primary)` : "#555";
           }}
         />

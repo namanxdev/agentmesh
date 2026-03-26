@@ -273,15 +273,17 @@ function TransformForm({ id, config }: { id: string; config: TransformNodeConfig
   );
 }
 
-const FORM_MAP: Record<NodeKind, React.ComponentType<{ id: string; config: any }>> = {
-  input:     InputForm,
-  output:    OutputForm,
-  llm_agent: LLMAgentForm,
-  tool:      ToolForm,
-  text:      TextForm,
-  router:    RouterForm,
-  memory:    MemoryForm,
-  transform: TransformForm,
+type InspectorFormProps = { id: string; config: unknown };
+
+const FORM_MAP: Record<NodeKind, React.ComponentType<InspectorFormProps>> = {
+  input: InputForm as React.ComponentType<InspectorFormProps>,
+  output: OutputForm as React.ComponentType<InspectorFormProps>,
+  llm_agent: LLMAgentForm as React.ComponentType<InspectorFormProps>,
+  tool: ToolForm as React.ComponentType<InspectorFormProps>,
+  text: TextForm as React.ComponentType<InspectorFormProps>,
+  router: RouterForm as React.ComponentType<InspectorFormProps>,
+  memory: MemoryForm as React.ComponentType<InspectorFormProps>,
+  transform: TransformForm as React.ComponentType<InspectorFormProps>,
 };
 
 export function NodeConfigInspector() {
@@ -291,11 +293,9 @@ export function NodeConfigInspector() {
   if (!selectedNode) {
     return (
       <div
+        className="dashboard-panel"
         style={{
           gridArea: "inspector",
-          background: "var(--bg-secondary)",
-          borderRadius: 8,
-          border: "1px solid var(--border-subtle)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -317,25 +317,22 @@ export function NodeConfigInspector() {
 
   return (
     <div
+      className="dashboard-panel"
       style={{
         gridArea: "inspector",
-        background: "var(--bg-secondary)",
-        borderRadius: 8,
-        border: "1px solid var(--border-subtle)",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      {/* Header */}
       <div
         style={{
-          padding: "12px 14px",
-          borderBottom: "1px solid var(--border-subtle)",
+          padding: "16px 18px 14px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
           display: "flex",
           alignItems: "center",
           gap: 8,
-          background: `${color}10`,
+          background: `color-mix(in srgb, ${color} 10%, transparent)`,
         }}
       >
         <div
@@ -375,8 +372,7 @@ export function NodeConfigInspector() {
         </span>
       </div>
 
-      {/* Form */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 14 }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
         <FormComponent id={id} config={config} />
       </div>
     </div>

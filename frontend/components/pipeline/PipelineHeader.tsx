@@ -1,7 +1,18 @@
 "use client";
+
 import { useState } from "react";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useUIStore } from "@/stores/uiStore";
+
+const buttonBase: React.CSSProperties = {
+  borderRadius: 999,
+  padding: "10px 16px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  fontFamily: "var(--font-display)",
+  transition: "transform 0.2s ease, opacity 0.2s ease",
+};
 
 export function PipelineHeader() {
   const {
@@ -30,7 +41,7 @@ export function PipelineHeader() {
         return;
       }
       setShowTaskInput(true);
-    } catch (e) {
+    } catch {
       setError("Validation failed");
     }
   };
@@ -42,8 +53,8 @@ export function PipelineHeader() {
       await runPipeline(task.trim());
       setShowTaskInput(false);
       setTask("");
-    } catch (e: any) {
-      setError(e?.message ?? "Run failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Run failed");
     }
   };
 
@@ -56,164 +67,217 @@ export function PipelineHeader() {
     }
   };
 
+  const connectionColor =
+    connectionStatus === "connected"
+      ? "var(--status-active)"
+      : connectionStatus === "connecting"
+        ? "var(--status-warning)"
+        : "var(--status-error)";
+
   return (
     <div
+      className="dashboard-panel"
       style={{
         gridArea: "header",
-        background: "var(--bg-secondary)",
-        borderRadius: 8,
-        border: "1px solid var(--border-subtle)",
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        padding: "0 16px",
+        justifyContent: "space-between",
+        gap: 18,
+        padding: "14px 18px",
       }}
     >
-      {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginRight: 8 }}>
-        <div
+      <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
+        <div className="dashboard-chip" style={{ padding: "0.85rem 0.95rem" }}>
+          <span className="grid grid-cols-2 gap-[3px]">
+            <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent-primary)]" />
+            <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent-secondary)]" />
+            <span className="h-[5px] w-[5px] rounded-full bg-[var(--text-primary)]" />
+            <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent-primary)]" />
+          </span>
+          <span>
+            <span className="dashboard-kicker" style={{ display: "block" }}>
+              Mission control
+            </span>
+            <span
+              style={{
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-display)",
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              AgentMesh
+            </span>
+          </span>
+        </div>
+
+        <div style={{ minWidth: 0 }}>
+          <p className="dashboard-kicker" style={{ margin: 0 }}>
+            Pipeline
+          </p>
+          <input
+            value={pipelineName}
+            onChange={(e) => setPipelineName(e.target.value)}
+            placeholder="Untitled pipeline"
+            style={{
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              color: "var(--text-primary)",
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              minWidth: 220,
+              maxWidth: 360,
+              padding: 0,
+              fontFamily: "var(--font-display)",
+            }}
+          />
+        </div>
+
+        <span
+          className="dashboard-chip text-[11px] uppercase tracking-[0.24em]"
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: 6,
-            background: "var(--accent-primary)22",
-            border: "1px solid var(--accent-primary)44",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 14,
+            color: mode === "build" ? "var(--accent-primary)" : "var(--accent-secondary)",
+            fontFamily: "var(--font-mono)",
           }}
         >
-          ⬡
-        </div>
-        <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-          AgentMesh
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ background: mode === "build" ? "var(--accent-primary)" : "var(--accent-secondary)" }}
+          />
+          {mode === "build" ? "Build mode" : "Run mode"}
         </span>
       </div>
 
-      {/* Divider */}
-      <div style={{ width: 1, height: 20, background: "var(--border-default)" }} />
-
-      {/* Pipeline name */}
-      <input
-        value={pipelineName}
-        onChange={(e) => setPipelineName(e.target.value)}
-        style={{
-          background: "transparent",
-          border: "none",
-          outline: "none",
-          color: "var(--text-primary)",
-          fontSize: 13,
-          fontWeight: 600,
-          minWidth: 140,
-          maxWidth: 220,
-        }}
-        onFocus={(e) => (e.target.style.borderBottom = "1px solid var(--accent-primary)")}
-        onBlur={(e) => (e.target.style.borderBottom = "none")}
-      />
-
-      {/* Mode badge */}
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.08em",
-          padding: "2px 8px",
-          borderRadius: 4,
-          background: mode === "build" ? "var(--accent-primary)22" : "hsl(142,71%,45%)22",
-          color: mode === "build" ? "var(--accent-primary)" : "hsl(142,71%,45%)",
-          border: `1px solid ${mode === "build" ? "var(--accent-primary)44" : "hsl(142,71%,45%)44"}`,
-          textTransform: "uppercase",
-        }}
-      >
-        {mode}
-      </span>
-
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Error badge */}
-      {error && (
-        <span style={{ fontSize: 11, color: "#ef4444", background: "#ef444422", border: "1px solid #ef444444", borderRadius: 4, padding: "3px 8px", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {error}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <span
+          className="dashboard-chip text-[11px] uppercase tracking-[0.24em]"
+          style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}
+        >
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: connectionColor }} />
+          {connectionStatus}
         </span>
-      )}
 
-      {/* Validation result badge */}
-      {validationResult && !error && (
-        <span style={{ fontSize: 11, color: validationResult.is_dag ? "hsl(142,71%,45%)" : "#ef4444", background: validationResult.is_dag ? "hsl(142,71%,45%)22" : "#ef444422", border: `1px solid ${validationResult.is_dag ? "hsl(142,71%,45%)44" : "#ef444444"}`, borderRadius: 4, padding: "3px 8px" }}>
-          {validationResult.is_dag ? `✓ Valid DAG · ${validationResult.num_nodes}N ${validationResult.num_edges}E` : `✗ ${validationResult.errors[0] ?? "Invalid"}`}
-        </span>
-      )}
-
-      {/* Task input (shown after validate passes) */}
-      {showTaskInput && (
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <input
-            autoFocus
-            value={task}
-            onChange={(e) => setTask(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleGo()}
-            placeholder="Enter initial task…"
-            style={{ background: "var(--bg-tertiary)", border: "1px solid var(--accent-primary)", borderRadius: 6, color: "var(--text-primary)", fontSize: 12, padding: "5px 10px", outline: "none", width: 200 }}
-          />
-          <button
-            onClick={handleGo}
-            disabled={!task.trim() || isRunning}
-            style={{ padding: "5px 14px", borderRadius: 6, background: "var(--accent-primary)", border: "none", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: isRunning ? 0.6 : 1 }}
+        {error ? (
+          <span
+            className="dashboard-chip text-[11px] uppercase tracking-[0.22em]"
+            style={{ color: "var(--status-error)", fontFamily: "var(--font-mono)" }}
           >
-            Go
-          </button>
-          <button onClick={() => setShowTaskInput(false)} style={{ padding: "5px 10px", borderRadius: 6, background: "var(--bg-tertiary)", border: "1px solid var(--border-default)", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>
-            Cancel
-          </button>
-        </div>
-      )}
+            {error}
+          </span>
+        ) : null}
 
-      {/* Mode toggle + action buttons */}
-      {!showTaskInput && (
-        <div style={{ display: "flex", gap: 6 }}>
-          {mode === "run" && (
-            <button
-              onClick={() => { setMode("build"); setError(null); }}
-              style={{ padding: "5px 14px", borderRadius: 6, background: "var(--bg-tertiary)", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-            >
-              ← Build
-            </button>
-          )}
-          {mode === "build" && (
-            <button
-              onClick={handleValidate}
-              disabled={isValidating}
-              style={{ padding: "5px 14px", borderRadius: 6, background: "var(--bg-tertiary)", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", opacity: isValidating ? 0.6 : 1 }}
-            >
-              {isValidating ? "Checking…" : "Validate"}
-            </button>
-          )}
-          {mode === "build" && (
-            <button
-              onClick={handleRunClick}
-              disabled={isValidating || isRunning}
-              style={{ padding: "5px 18px", borderRadius: 6, background: "var(--accent-primary)", border: "none", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: (isValidating || isRunning) ? 0.6 : 1 }}
-            >
-              {isRunning ? "Running…" : "▶ Run"}
-            </button>
-          )}
-        </div>
-      )}
+        {validationResult && !error ? (
+          <span
+            className="dashboard-chip text-[11px] uppercase tracking-[0.22em]"
+            style={{
+              color: validationResult.is_dag ? "var(--accent-secondary)" : "var(--status-error)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {validationResult.is_dag
+              ? `OK DAG | ${validationResult.num_nodes}N ${validationResult.num_edges}E`
+              : `Invalid | ${validationResult.errors[0] ?? "Check graph"}`}
+          </span>
+        ) : null}
 
-      {/* WebSocket status dot */}
-      <div
-        title={connectionStatus}
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
-          background: connectionStatus === "connected" ? "hsl(142,71%,45%)" : connectionStatus === "connecting" ? "hsl(38,92%,50%)" : "#666",
-          boxShadow: connectionStatus === "connected" ? "0 0 5px hsl(142,71%,45%)" : "none",
-          flexShrink: 0,
-        }}
-      />
+        {showTaskInput ? (
+          <div className="dashboard-chip" style={{ padding: "0.4rem 0.45rem 0.4rem 0.9rem" }}>
+            <input
+              autoFocus
+              value={task}
+              onChange={(e) => setTask(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleGo()}
+              placeholder="Enter initial task..."
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                color: "var(--text-primary)",
+                fontSize: 13,
+                minWidth: 220,
+                fontFamily: "var(--font-body)",
+              }}
+            />
+            <button
+              onClick={handleGo}
+              disabled={!task.trim() || isRunning}
+              style={{
+                ...buttonBase,
+                background: "var(--accent-primary)",
+                color: "#120f0d",
+                border: "none",
+                opacity: !task.trim() || isRunning ? 0.55 : 1,
+              }}
+            >
+              Go
+            </button>
+            <button
+              onClick={() => setShowTaskInput(false)}
+              style={{
+                ...buttonBase,
+                background: "rgba(255,255,255,0.05)",
+                color: "var(--text-secondary)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <>
+            {mode === "run" ? (
+              <button
+                onClick={() => {
+                  setMode("build");
+                  setError(null);
+                }}
+                style={{
+                  ...buttonBase,
+                  background: "rgba(255,255,255,0.05)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                Back to build
+              </button>
+            ) : null}
+
+            {mode === "build" ? (
+              <button
+                onClick={handleValidate}
+                disabled={isValidating}
+                style={{
+                  ...buttonBase,
+                  background: "rgba(255,255,255,0.05)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  opacity: isValidating ? 0.55 : 1,
+                }}
+              >
+                {isValidating ? "Checking..." : "Validate"}
+              </button>
+            ) : null}
+
+            {mode === "build" ? (
+              <button
+                onClick={handleRunClick}
+                disabled={isValidating || isRunning}
+                style={{
+                  ...buttonBase,
+                  background: "var(--accent-primary)",
+                  color: "#120f0d",
+                  border: "none",
+                  opacity: isValidating || isRunning ? 0.55 : 1,
+                }}
+              >
+                {isRunning ? "Running..." : "Run pipeline"}
+              </button>
+            ) : null}
+          </>
+        )}
+      </div>
     </div>
   );
 }
