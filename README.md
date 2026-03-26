@@ -34,16 +34,16 @@ AgentMesh is an open-source Python framework + visual dashboard that lets you:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  🛰️ MISSION CONTROL                                     │
+│  🛰️ MISSION CONTROL                                     
 │                                                         │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐          │
-│  │ Research  │───▶│ Analyst  │───▶│ Writer   │          │
-│  │ Agent    │    │ Agent    │    │ Agent    │          │
-│  └──────────┘    └──────────┘    └──────────┘          │
-│       │               │               │                │
-│  ┌─────────┐    ┌─────────┐    ┌─────────┐           │
-│  │ Web MCP │    │ GH MCP  │    │ FS MCP  │           │
-│  └─────────┘    └─────────┘    └─────────┘           │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐           │
+│  │ Research │───▶│ Analyst  │───▶│ Writer   │           │
+│  │ Agent    │    │ Agent    │    │ Agent    │           │
+│  └──────────┘    └──────────┘    └──────────┘           │
+│       │               │               │                 │
+│  ┌─────────┐    ┌─────────┐    ┌─────────┐              │
+│  │ Web MCP │    │ GH MCP  │    │ FS MCP  │              │
+│  └─────────┘    └─────────┘    └─────────┘              │
 │                                                         │
 │  📊 Live Token Usage  │  🔄 Active Tasks  │  📝 Logs   │
 └─────────────────────────────────────────────────────────┘
@@ -104,6 +104,56 @@ agentmesh serve --port 8000
 ```
 
 Open `http://localhost:8000` to see the live Mission Control dashboard.
+
+---
+
+## 🖥️ Running Locally
+
+### 1. Clone & configure environment
+
+```bash
+git clone https://github.com/yourusername/agentmesh.git
+cd agentmesh
+cp .env.example .env
+```
+
+Edit `.env` and fill in your keys:
+
+| Variable | Where to get it |
+|---|---|
+| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) → Get API key |
+| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) → API Keys |
+| `GITHUB_CLIENT_ID` | GitHub → Settings → Developer settings → OAuth Apps |
+| `GITHUB_TOKEN` | GitHub → Settings → Developer settings → Personal access tokens |
+
+### 2. Start the backend
+
+```bash
+# Install dependencies (Python 3.11+, uv required)
+uv sync
+
+# Start FastAPI server with hot-reload
+uv run uvicorn backend.api.routes:app --reload --port 8000
+```
+
+Backend runs at `http://localhost:8000` · WebSocket at `ws://localhost:8000/ws/events`
+
+### 3. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:3000`
+
+| Route | Description |
+|---|---|
+| `http://localhost:3000` | Landing page |
+| `http://localhost:3000/dashboard` | Mission Control (live agent monitoring) |
+
+> **Note**: Install `uv` with `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 ---
 

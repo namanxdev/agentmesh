@@ -52,7 +52,9 @@ export const BaseNode = memo(function BaseNode({
       onClick={() => selectNode(id)}
       style={{
         background: "var(--bg-secondary)",
-        border: `1.5px solid ${selected ? accentColor : "var(--border-default)"}`,
+        borderTop: `1.5px solid ${selected ? accentColor : "var(--border-default)"}`,
+        borderRight: `1.5px solid ${selected ? accentColor : "var(--border-default)"}`,
+        borderBottom: `1.5px solid ${selected ? accentColor : "var(--border-default)"}`,
         borderLeft: `3px solid ${accentColor}`,
         borderRadius: 8,
         minWidth: 180,

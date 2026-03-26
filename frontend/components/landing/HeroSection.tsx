@@ -1,237 +1,423 @@
 "use client";
+
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { staggerContainer, staggerItem } from "@/lib/motion";
-import { GradientText } from "@/components/ui/GradientText";
-import { Badge } from "@/components/ui/Badge";
+
+const HERO_TAGS = ["MCP native", "Inspectable workflows", "Live mission control"];
+
+const HERO_STATS = [
+  { value: "11", label: "event types mapped" },
+  { value: "03s", label: "handoff latency target" },
+  { value: "multi", label: "agent roles on a single run" },
+  { value: "zero", label: "black box steps" },
+];
+
+const TRACE_LINES = [
+  { label: "router -> research", accent: "var(--accent-primary)" },
+  { label: "research -> github.search", accent: "var(--landing-acid)" },
+  { label: "review -> human gate", accent: "#f6c36d" },
+  { label: "handoff -> final synthesis", accent: "var(--accent-primary)" },
+];
 
 export function HeroSection() {
   return (
-    <section
-      style={{
-        position: "relative",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        overflow: "hidden",
-        background: "var(--gradient-hero)",
-      }}
-    >
-      {/* Dot grid background */}
+    <section className="relative overflow-hidden border-b border-[color:var(--border-subtle)] pt-32 sm:pt-40">
       <div
         aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-[620px]"
         style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.25,
-          backgroundImage: "radial-gradient(circle, hsl(225, 15%, 30%) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
+          background:
+            "radial-gradient(circle at 15% 20%, rgba(232, 93, 42, 0.12), transparent 28%), radial-gradient(circle at 85% 12%, rgba(215, 255, 112, 0.15), transparent 16%)",
         }}
       />
 
-      {/* Glow orb */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 900,
-          height: 900,
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, hsl(185deg 100% 50% / 0.07) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        style={{
-          position: "relative",
-          zIndex: 10,
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "120px 32px 80px",
-          width: "100%",
-          textAlign: "center",
-        }}
-      >
+      <div className="mx-auto grid max-w-[1400px] gap-14 px-5 pb-16 md:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start lg:gap-10">
         <motion.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 32 }}
+          className="relative z-10"
         >
-          {/* Badge */}
-          <motion.div variants={staggerItem}>
-            <Badge>
+          <motion.div variants={staggerItem} className="flex flex-wrap gap-3">
+            {HERO_TAGS.map((tag) => (
               <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "var(--status-active)",
-                  display: "inline-block",
-                  animation: "pulse 2s infinite",
-                }}
-              />
-              MCP-Native · Multi-Agent · Real-Time
-            </Badge>
+                key={tag}
+                className="landing-chip text-[11px] uppercase tracking-[0.28em]"
+                style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{
+                    background:
+                      tag === "Live mission control" ? "var(--landing-acid)" : "var(--accent-primary)",
+                  }}
+                />
+                {tag}
+              </span>
+            ))}
           </motion.div>
 
-          {/* Headline */}
-          <motion.h1
-            variants={staggerItem}
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(48px, 8vw, 88px)",
-              fontWeight: 900,
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
-              maxWidth: 900,
-              margin: 0,
-            }}
-          >
-            <span style={{ color: "var(--text-primary)" }}>Orchestrate</span>{" "}
-            <GradientText>AI Agents</GradientText>
-            <br />
-            <span style={{ color: "var(--text-primary)" }}>Like Never Before</span>
-          </motion.h1>
+          <motion.div variants={staggerItem} className="mt-10 max-w-[760px]">
+            <p className="landing-kicker">Editorial orchestration layer</p>
+            <h1
+              className="mt-5 text-[clamp(4rem,11vw,8.2rem)] uppercase leading-[0.92] tracking-[-0.08em]"
+              style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
+            >
+              Build the mesh.
+              <span className="block">
+                Direct every <span className="landing-serif normal-case">handoff</span>.
+              </span>
+            </h1>
+            <p
+              className="mt-7 max-w-[620px] text-lg leading-8 md:text-xl"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              AgentMesh turns agent workflows into something you can stage, inspect, and
+              refine. Think Relay and Gumloop clarity, but with a sharper system for engineers
+              who need to see every decision, tool call, and branch.
+            </p>
+          </motion.div>
 
-          {/* Subtitle */}
-          <motion.p
-            variants={staggerItem}
-            style={{
-              maxWidth: 560,
-              fontSize: 18,
-              lineHeight: 1.7,
-              color: "var(--text-secondary)",
-              fontFamily: "var(--font-body)",
-              margin: 0,
-            }}
-          >
-            A Python framework for building multi-agent systems powered by MCP servers,
-            with real-time Mission Control for live workflow monitoring.
-          </motion.p>
-
-          {/* CTAs */}
-          <motion.div
-            variants={staggerItem}
-            style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}
-          >
+          <motion.div variants={staggerItem} className="mt-10 flex flex-wrap gap-4">
             <Link
               href="/dashboard"
+              className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "14px 32px",
-                borderRadius: "var(--radius-full)",
-                background: "var(--accent-primary)",
-                color: "var(--bg-primary)",
+                background: "var(--landing-ink)",
+                color: "var(--landing-paper)",
                 fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: 15,
-                textDecoration: "none",
-                transition: "all 0.3s ease",
-                boxShadow: "0 0 40px hsl(185deg 100% 50% / 0.25)",
+                fontWeight: 700,
+                boxShadow: "0 20px 45px rgba(23, 18, 15, 0.18)",
               }}
             >
               Open Mission Control
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path
+                  d="M3.5 8H12.5M8.5 4L12.5 8L8.5 12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Link>
             <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#how-it-works"
+              className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.45)] px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "14px 32px",
-                borderRadius: "var(--radius-full)",
-                background: "transparent",
-                color: "var(--text-secondary)",
+                color: "var(--text-primary)",
                 fontFamily: "var(--font-display)",
-                fontWeight: 500,
-                fontSize: 15,
-                textDecoration: "none",
-                border: "1px solid var(--border-default)",
-                transition: "all 0.3s ease",
+                fontWeight: 700,
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-              </svg>
-              View on GitHub
+              See the control logic
             </a>
           </motion.div>
 
-          {/* Stats row */}
-          <motion.div
-            variants={staggerItem}
-            style={{ display: "flex", gap: 48, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}
-          >
-            {[
-              { value: "∞", label: "MCP Servers" },
-              { value: "2+", label: "LLM Providers" },
-              { value: "11", label: "Event Types" },
-              { value: "0", label: "Config Files" },
-            ].map(({ value, label }) => (
-              <div key={label} style={{ textAlign: "center" }}>
+          <motion.div variants={staggerItem} className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {HERO_STATS.map(({ value, label }) => (
+              <div key={label} className="landing-panel rounded-[24px] px-5 py-5">
                 <div
-                  style={{
-                    fontSize: 28,
-                    fontWeight: 700,
-                    color: "var(--accent-primary)",
-                    fontFamily: "var(--font-display)",
-                  }}
+                  className="text-[2rem] leading-none tracking-[-0.06em]"
+                  style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
                 >
                   {value}
                 </div>
-                <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 4 }}>{label}</div>
+                <div
+                  className="mt-3 text-xs uppercase tracking-[0.24em]"
+                  style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}
+                >
+                  {label}
+                </div>
               </div>
             ))}
           </motion.div>
         </motion.div>
-      </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.5, duration: 0.6 }}
-        style={{
-          position: "absolute",
-          bottom: 32,
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <div
-          style={{
-            width: 24,
-            height: 40,
-            borderRadius: 12,
-            border: "1px solid var(--border-default)",
-            display: "flex",
-            justifyContent: "center",
-            paddingTop: 6,
-          }}
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+          className="relative z-10 lg:pl-6"
         >
           <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            style={{ width: 4, height: 8, borderRadius: 2, background: "var(--accent-primary)" }}
-          />
+            variants={staggerItem}
+            className="landing-floating absolute -left-2 top-12 hidden rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.88)] px-5 py-3 shadow-[0_18px_48px_rgba(23,18,15,0.12)] xl:flex"
+            style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}
+          >
+            Parallel when safe. Human when needed.
+          </motion.div>
+
+          <motion.div variants={staggerItem} className="landing-panel rounded-[36px] p-4 sm:p-6">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="landing-kicker">Mission control</p>
+                  <h2
+                    className="mt-3 max-w-[420px] text-3xl leading-tight tracking-[-0.05em] sm:text-4xl"
+                    style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
+                  >
+                    Watch the mesh think in public.
+                  </h2>
+                </div>
+                <div
+                  className="landing-chip text-[11px] uppercase tracking-[0.28em]"
+                  style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}
+                >
+                  <span
+                    className="landing-signal-dot h-2.5 w-2.5 rounded-full"
+                    style={{ background: "var(--landing-acid)" }}
+                  />
+                  Live graph state
+                </div>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
+                <div className="landing-panel-dark rounded-[30px] p-5 sm:p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span
+                      className="landing-chip-dark text-[11px] uppercase tracking-[0.24em]"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      Active run
+                    </span>
+                    <span
+                      className="text-xs uppercase tracking-[0.24em] text-[rgba(247,240,232,0.58)]"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      code review / live mesh
+                    </span>
+                  </div>
+
+                  <div
+                    className="relative mt-5 overflow-hidden rounded-[26px] border border-[rgba(255,255,255,0.08)] p-4 sm:p-5"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))",
+                    }}
+                  >
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 opacity-30"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
+                        backgroundSize: "36px 36px",
+                      }}
+                    />
+
+                    <div className="relative grid gap-4 md:grid-cols-[1fr_32px_1fr]">
+                      <div className="space-y-3">
+                        <div className="rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p
+                                className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                                style={{ fontFamily: "var(--font-mono)" }}
+                              >
+                                Router
+                              </p>
+                              <p className="mt-2 text-lg font-semibold tracking-[-0.03em]">
+                                Task triage
+                              </p>
+                            </div>
+                            <span
+                              className="rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.24em]"
+                              style={{
+                                background: "rgba(215,255,112,0.14)",
+                                color: "var(--landing-acid)",
+                                fontFamily: "var(--font-mono)",
+                              }}
+                            >
+                              live
+                            </span>
+                          </div>
+                        </div>
+                        <div className="rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-4">
+                          <p
+                            className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                            style={{ fontFamily: "var(--font-mono)" }}
+                          >
+                            Research
+                          </p>
+                          <p className="mt-2 text-lg font-semibold tracking-[-0.03em]">
+                            Repo context + tool selection
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="relative hidden items-center justify-center md:flex">
+                        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-[rgba(232,93,42,0.6)] via-[rgba(215,255,112,0.55)] to-transparent" />
+                        <span className="h-4 w-4 rounded-full border border-[rgba(255,255,255,0.12)] bg-[var(--accent-primary)] shadow-[0_0_24px_rgba(232,93,42,0.45)]" />
+                      </div>
+
+                      <div className="space-y-3 md:pt-8">
+                        <div className="rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-4">
+                          <p
+                            className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                            style={{ fontFamily: "var(--font-mono)" }}
+                          >
+                            Review
+                          </p>
+                          <p className="mt-2 text-lg font-semibold tracking-[-0.03em]">
+                            Risk scoring + human gate
+                          </p>
+                        </div>
+                        <div className="rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-4">
+                          <p
+                            className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                            style={{ fontFamily: "var(--font-mono)" }}
+                          >
+                            Synthesis
+                          </p>
+                          <p className="mt-2 text-lg font-semibold tracking-[-0.03em]">
+                            Actionable final brief
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative mt-5 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-3">
+                        <p
+                          className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                          style={{ fontFamily: "var(--font-mono)" }}
+                        >
+                          active step
+                        </p>
+                        <p className="mt-2 text-base font-semibold">handoff to reviewer</p>
+                      </div>
+                      <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-3">
+                        <p
+                          className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                          style={{ fontFamily: "var(--font-mono)" }}
+                        >
+                          tool call
+                        </p>
+                        <p className="mt-2 text-base font-semibold">github.read_file</p>
+                      </div>
+                      <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-3">
+                        <p
+                          className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                          style={{ fontFamily: "var(--font-mono)" }}
+                        >
+                          observability
+                        </p>
+                        <p className="mt-2 text-base font-semibold">timeline synced</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="landing-panel rounded-[28px] p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="landing-kicker">Trace tape</p>
+                        <p
+                          className="mt-2 text-xl tracking-[-0.04em]"
+                          style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
+                        >
+                          Every transition stays readable.
+                        </p>
+                      </div>
+                      <span
+                        className="rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.24em]"
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          background: "rgba(232, 93, 42, 0.1)",
+                          color: "var(--accent-primary)",
+                        }}
+                      >
+                        4 events/sec
+                      </span>
+                    </div>
+
+                    <div className="mt-5 space-y-3">
+                      {TRACE_LINES.map(({ label, accent }) => (
+                        <div
+                          key={label}
+                          className="flex items-center gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-[rgba(255,255,255,0.56)] px-4 py-3"
+                        >
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ background: accent }} />
+                          <span
+                            className="text-[11px] uppercase tracking-[0.24em]"
+                            style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
+                          >
+                            {label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="landing-floating-delayed rounded-[28px] border border-[color:rgba(23,18,15,0.12)] bg-[rgba(215,255,112,0.55)] p-5 shadow-[0_24px_60px_rgba(23,18,15,0.1)]">
+                    <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.58)" }}>
+                      Run quality
+                    </p>
+                    <div className="mt-4 flex items-end justify-between gap-4">
+                      <div>
+                        <p
+                          className="text-4xl leading-none tracking-[-0.06em]"
+                          style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
+                        >
+                          97%
+                        </p>
+                        <p
+                          className="mt-2 max-w-[180px] text-sm leading-6"
+                          style={{ color: "rgba(23,18,15,0.76)" }}
+                        >
+                          workflows still keep a clear audit trail after branching.
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <div
+                          className="rounded-full bg-[rgba(23,18,15,0.08)] px-3 py-2 text-[11px] uppercase tracking-[0.24em]"
+                          style={{ fontFamily: "var(--font-mono)" }}
+                        >
+                          approvals inline
+                        </div>
+                        <div
+                          className="rounded-full bg-[rgba(23,18,15,0.08)] px-3 py-2 text-[11px] uppercase tracking-[0.24em]"
+                          style={{ fontFamily: "var(--font-mono)" }}
+                        >
+                          tools namespaced
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      <div className="border-y border-[color:var(--border-subtle)] bg-[rgba(255,255,255,0.35)]">
+        <div className="landing-marquee py-4">
+          <div className="landing-marquee-track">
+            {Array.from({ length: 2 }).flatMap((_, groupIndex) =>
+              [
+                "Prompt -> Route -> Tool -> Handoff -> Review",
+                "MCP servers",
+                "Human checkpoints",
+                "Live graph state",
+                "Event bus telemetry",
+                "Productive, inspectable runs",
+              ].map((item, index) => (
+                <span
+                  key={`${groupIndex}-${index}-${item}`}
+                  className="landing-chip text-[11px] uppercase tracking-[0.3em]"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
+                >
+                  {item}
+                </span>
+              ))
+            )}
+          </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

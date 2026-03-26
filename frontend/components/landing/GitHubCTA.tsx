@@ -1,120 +1,149 @@
 "use client";
-import { motion } from "framer-motion";
+
+import { useState } from "react";
+import Link from "next/link";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { GradientText } from "@/components/ui/GradientText";
 
 export function GitHubCTA() {
+  const [copied, setCopied] = useState(false);
+  const startCommand = "cd frontend && npm run dev";
+
+  const copyCommand = async () => {
+    await navigator.clipboard.writeText(startCommand);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
   return (
-    <section
-      style={{
-        background: "var(--bg-secondary)",
-        padding: "120px 0",
-        borderTop: "1px solid var(--border-subtle)",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 800,
-          margin: "0 auto",
-          padding: "0 32px",
-          textAlign: "center",
-        }}
-      >
-        <ScrollReveal>
-          <h2
-            style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "clamp(32px, 5vw, 56px)",
-              lineHeight: 1.15,
-              margin: "0 0 20px",
-            }}
-          >
-            <span style={{ color: "var(--text-primary)" }}>Open Source &amp;</span>
-            <br />
-            <GradientText>Ready to Use</GradientText>
-          </h2>
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 17,
-              lineHeight: 1.7,
-              marginBottom: 48,
-            }}
-          >
-            Clone the repo, install dependencies, and start orchestrating agents in minutes.
-            No API keys required for the framework itself.
-          </p>
+    <section id="launch" className="py-24 sm:py-28">
+      <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+        <ScrollReveal className="landing-panel-dark overflow-hidden rounded-[38px] p-6 sm:p-8 lg:p-10">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+            <div>
+              <p className="landing-kicker text-[rgba(247,240,232,0.52)]">04 / Launch</p>
+              <h2
+                className="mt-4 max-w-[520px] text-[clamp(2.8rem,5.4vw,4.8rem)] leading-[0.95] tracking-[-0.07em]"
+                style={{ fontFamily: "var(--font-display)", fontWeight: 900, color: "#f7f0e8" }}
+              >
+                Put the better front end in front of the product.
+              </h2>
+              <p
+                className="mt-5 max-w-[430px] text-base leading-7"
+                style={{ color: "rgba(247,240,232,0.7)" }}
+              >
+                No fake repo URL, no placeholder clone line. This close is about the next real
+                step in your local environment: run the front end, open Mission Control, and see
+                the new visual system with the actual product surface.
+              </p>
 
-          {/* Clone command */}
-          <div
-            style={{
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-default)",
-              borderRadius: "var(--radius-md)",
-              padding: "16px 24px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              marginBottom: 32,
-              fontFamily: "var(--font-mono)",
-              fontSize: 14,
-              textAlign: "left",
-            }}
-          >
-            <span style={{ color: "var(--text-secondary)" }}>
-              <span style={{ color: "var(--accent-primary)" }}>$</span> git clone
-              https://github.com/your-org/agentmesh && cd agentmesh
-            </span>
-            <button
-              onClick={() =>
-                navigator.clipboard.writeText(
-                  "git clone https://github.com/your-org/agentmesh && cd agentmesh"
-                )
-              }
-              style={{
-                background: "var(--bg-tertiary)",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-sm)",
-                padding: "6px 12px",
-                color: "var(--text-tertiary)",
-                fontFamily: "var(--font-mono)",
-                fontSize: 12,
-                cursor: "pointer",
-                transition: "color 0.2s",
-                flexShrink: 0,
-              }}
-            >
-              Copy
-            </button>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                  style={{
+                    background: "var(--landing-acid)",
+                    color: "var(--landing-ink)",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 800,
+                  }}
+                >
+                  Open Mission Control
+                </Link>
+                <a
+                  href="#features"
+                  className="inline-flex items-center gap-3 rounded-full border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                  style={{
+                    color: "#f7f0e8",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 700,
+                  }}
+                >
+                  Revisit the system
+                </a>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="landing-kicker text-[rgba(247,240,232,0.52)]">Start locally</p>
+                    <p
+                      className="mt-3 text-[1.5rem] leading-tight tracking-[-0.04em]"
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        fontWeight: 800,
+                        color: "#f7f0e8",
+                      }}
+                    >
+                      Front end entry point
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyCommand}
+                    className="rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
+                    style={{
+                      background: copied ? "var(--landing-acid)" : "rgba(255,255,255,0.06)",
+                      color: copied ? "var(--landing-ink)" : "#f7f0e8",
+                      fontFamily: "var(--font-mono)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+
+                <div
+                  className="mt-5 rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,9,8,0.4)] p-4"
+                  style={{ fontFamily: "var(--font-mono)", color: "#f7f0e8" }}
+                >
+                  <span style={{ color: "var(--landing-acid)" }}>$</span> {startCommand}
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {[
+                    "The landing palette is scoped so the dashboard stays intact.",
+                    "Mission Control remains one click away for actual workflow use.",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm leading-6"
+                      style={{ color: "rgba(247,240,232,0.76)" }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  { label: "Aesthetic", value: "editorial" },
+                  { label: "Tone", value: "product-first" },
+                  { label: "Motion", value: "purposeful" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-4"
+                  >
+                    <p className="landing-kicker text-[rgba(247,240,232,0.52)]">{item.label}</p>
+                    <p
+                      className="mt-3 text-2xl tracking-[-0.05em]"
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        fontWeight: 800,
+                        color: "#f7f0e8",
+                      }}
+                    >
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-
-          <motion.a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={{ y: -2 }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "14px 32px",
-              borderRadius: "var(--radius-full)",
-              background: "var(--text-primary)",
-              color: "var(--bg-primary)",
-              fontFamily: "var(--font-display)",
-              fontWeight: 600,
-              fontSize: 15,
-              textDecoration: "none",
-              transition: "all 0.3s ease",
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            Star on GitHub
-          </motion.a>
         </ScrollReveal>
       </div>
     </section>

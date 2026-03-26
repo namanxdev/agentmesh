@@ -1,46 +1,38 @@
 @import "tailwindcss";
 
-/* ── Design Tokens ── */
 :root {
-  /* Background layers */
-  --bg-primary:         hsl(225, 25%, 6%);
-  --bg-secondary:       hsl(225, 20%, 10%);
-  --bg-tertiary:        hsl(225, 18%, 14%);
-  --bg-hover:           hsl(225, 15%, 18%);
+  --bg-primary: hsl(225, 25%, 6%);
+  --bg-secondary: hsl(225, 20%, 10%);
+  --bg-tertiary: hsl(225, 18%, 14%);
+  --bg-hover: hsl(225, 15%, 18%);
 
-  /* Accent — Electric Cyan */
-  --accent-primary:     hsl(185, 100%, 50%);
-  --accent-glow:        hsl(185deg 100% 50% / 0.15);
-  --accent-muted:       hsl(185, 60%, 35%);
+  --accent-primary: hsl(185, 100%, 50%);
+  --accent-glow: hsl(185deg 100% 50% / 0.15);
+  --accent-muted: hsl(185, 60%, 35%);
 
-  /* Secondary Accent — Violet */
-  --accent-secondary:   hsl(270, 85%, 65%);
+  --accent-secondary: hsl(270, 85%, 65%);
   --accent-secondary-glow: hsl(270deg 85% 65% / 0.15);
 
-  /* Status Colors */
-  --status-active:      hsl(142, 71%, 45%);
-  --status-idle:        hsl(220, 15%, 45%);
-  --status-error:       hsl(0, 84%, 60%);
-  --status-warning:     hsl(38, 92%, 50%);
-  --status-thinking:    hsl(45, 100%, 60%);
+  --status-active: hsl(142, 71%, 45%);
+  --status-idle: hsl(220, 15%, 45%);
+  --status-error: hsl(0, 84%, 60%);
+  --status-warning: hsl(38, 92%, 50%);
+  --status-thinking: hsl(45, 100%, 60%);
 
-  /* Text */
-  --text-primary:       hsl(0, 0%, 95%);
-  --text-secondary:     hsl(220, 15%, 65%);
-  --text-tertiary:      hsl(220, 10%, 45%);
-  --text-accent:        var(--accent-primary);
+  --text-primary: hsl(0, 0%, 95%);
+  --text-secondary: hsl(220, 15%, 65%);
+  --text-tertiary: hsl(220, 10%, 45%);
+  --text-accent: var(--accent-primary);
+  --text-muted: var(--text-tertiary);
 
-  /* Borders */
-  --border-subtle:      hsl(225, 15%, 18%);
-  --border-default:     hsl(225, 12%, 25%);
-  --border-accent:      var(--accent-primary);
+  --border-subtle: hsl(225, 15%, 18%);
+  --border-default: hsl(225, 12%, 25%);
+  --border-accent: var(--accent-primary);
 
-  /* Gradients */
-  --gradient-hero:      linear-gradient(135deg, hsl(225, 25%, 6%) 0%, hsl(250, 30%, 12%) 50%, hsl(225, 25%, 6%) 100%);
-  --gradient-card:      linear-gradient(180deg, hsl(225, 20%, 12%) 0%, hsl(225, 20%, 8%) 100%);
-  --gradient-accent:    linear-gradient(135deg, hsl(185, 100%, 50%) 0%, hsl(270, 85%, 65%) 100%);
+  --gradient-hero: linear-gradient(135deg, hsl(225, 25%, 6%) 0%, hsl(250, 30%, 12%) 50%, hsl(225, 25%, 6%) 100%);
+  --gradient-card: linear-gradient(180deg, hsl(225, 20%, 12%) 0%, hsl(225, 20%, 8%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(185, 100%, 50%) 0%, hsl(270, 85%, 65%) 100%);
 
-  /* Agent Identity Colors */
   --agent-color-1: hsl(185, 100%, 50%);
   --agent-color-2: hsl(270, 85%, 65%);
   --agent-color-3: hsl(142, 71%, 45%);
@@ -50,20 +42,17 @@
   --agent-color-7: hsl(15, 85%, 55%);
   --agent-color-8: hsl(160, 60%, 45%);
 
-  /* Typography — set after Next.js font variables are injected */
-  --font-display: var(--font-outfit, 'Outfit', -apple-system, sans-serif);
-  --font-body:    var(--font-inter, 'Inter', -apple-system, sans-serif);
-  --font-mono:    var(--font-jetbrains-mono, 'JetBrains Mono', monospace);
+  --font-display: var(--font-outfit, "Outfit", -apple-system, sans-serif);
+  --font-body: var(--font-inter, "Inter", -apple-system, sans-serif);
+  --font-mono: var(--font-jetbrains-mono, "JetBrains Mono", monospace);
 
-  /* Border Radius */
-  --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   16px;
-  --radius-xl:   24px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* Easing */
-  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -81,8 +70,167 @@ body {
   font-family: var(--font-body);
 }
 
+.landing-shell {
+  --bg-primary: #f7f0e6;
+  --bg-secondary: rgba(255, 250, 244, 0.76);
+  --bg-tertiary: #ecdfcf;
+  --bg-hover: #e8d7c4;
+  --accent-primary: #e85d2a;
+  --accent-glow: rgba(232, 93, 42, 0.18);
+  --accent-muted: #98563b;
+  --accent-secondary: #17120f;
+  --accent-secondary-glow: rgba(23, 18, 15, 0.1);
+  --status-active: #d7ff70;
+  --status-idle: #8f8173;
+  --status-error: #d24e42;
+  --status-warning: #d89a2a;
+  --status-thinking: #17120f;
+  --text-primary: #17120f;
+  --text-secondary: #564b43;
+  --text-tertiary: #86786b;
+  --text-muted: #86786b;
+  --border-subtle: rgba(23, 18, 15, 0.08);
+  --border-default: rgba(23, 18, 15, 0.16);
+  --border-accent: var(--accent-primary);
+  --landing-paper: #fffaf4;
+  --landing-paper-strong: #f0e2d2;
+  --landing-ink: #17120f;
+  --landing-ink-soft: #231d19;
+  --landing-acid: #d7ff70;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(232, 93, 42, 0.14), transparent 24%),
+    radial-gradient(circle at 84% 10%, rgba(215, 255, 112, 0.2), transparent 16%),
+    linear-gradient(180deg, #fbf5ee 0%, #f2e6d7 47%, #f8f1e8 100%);
+}
+
+.landing-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(23, 18, 15, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 18, 15, 0.04) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black 56%, transparent 100%);
+  opacity: 0.6;
+}
+
+.landing-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35), transparent 44%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: 0.35;
+}
+
+.landing-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.landing-panel {
+  border: 1px solid var(--border-default);
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.9), rgba(255, 247, 239, 0.7));
+  box-shadow:
+    0 28px 90px rgba(23, 18, 15, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(18px);
+}
+
+.landing-panel-dark {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(232, 93, 42, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(22, 17, 14, 0.98), rgba(14, 11, 10, 0.98));
+  box-shadow:
+    0 28px 90px rgba(23, 18, 15, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: #f7f0e8;
+}
+
+.landing-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  background: rgba(255, 255, 255, 0.55);
+  padding: 0.55rem 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px);
+}
+
+.landing-chip-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.55rem 0.95rem;
+  color: #f7f0e8;
+}
+
+.landing-serif {
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.06em;
+}
+
+.landing-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.landing-marquee-track {
+  display: inline-flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 0.9rem;
+  animation: landing-marquee 26s linear infinite;
+}
+
+.landing-marquee-track.reverse {
+  animation-direction: reverse;
+}
+
+.landing-floating {
+  animation: landing-float 7s ease-in-out infinite;
+}
+
+.landing-floating-delayed {
+  animation: landing-float 8.5s ease-in-out infinite;
+  animation-delay: -2.5s;
+}
+
+.landing-signal-dot {
+  animation: landing-signal 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -90,17 +238,65 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
-  50%       { box-shadow: 0 0 0 6px transparent; opacity: 0.8; }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+    opacity: 0.8;
+  }
 }
 
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-/* Pipeline node: show delete button on hover */
+@keyframes landing-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes landing-signal {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(215, 255, 112, 0.35);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(215, 255, 112, 0);
+    opacity: 0.75;
+  }
+}
+
 .react-flow__node:hover .node-delete-btn {
   opacity: 1 !important;
   color: #ef4444 !important;
+}
+
+@media (max-width: 768px) {
+  .landing-shell::before {
+    opacity: 0.35;
+    background-size: 48px 48px;
+  }
 }

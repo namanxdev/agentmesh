@@ -1,136 +1,211 @@
 "use client";
+
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionNumber } from "@/components/ui/SectionNumber";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 
 const FEATURES = [
   {
-    icon: "🧠",
-    title: "Agent Definition Layer",
+    id: "01",
+    title: "Direct specialist agents with a shared grammar.",
     description:
-      "Define specialized AI agents as first-class Python objects. Assign roles, system prompts, MCP servers, and declarative handoff rules.",
-    wide: false,
-    tall: true,
+      "Define roles, prompts, servers, and handoff rules without turning the workflow into a mystery box.",
+    points: ["router", "research", "review", "final synthesis"],
+    className: "lg:col-span-5 lg:row-span-2",
+    tone: "dark",
   },
   {
-    icon: "🔌",
-    title: "MCP Integration",
+    id: "02",
+    title: "Mount any MCP surface.",
     description:
-      "Connect agents to any Model Context Protocol server — GitHub, filesystem, web search, databases, and custom tools.",
-    wide: true,
-    tall: false,
+      "GitHub, filesystem, web, databases, and internal tools all land in one consistent namespace for agents to use.",
+    points: ["github.read_file", "filesystem.write", "postgres.query"],
+    className: "lg:col-span-4",
+    tone: "light",
   },
   {
-    icon: "⚡",
-    title: "Orchestration Engine",
-    description: "Sequential workflow execution with intelligent agent handoffs, error recovery, and timeout guards.",
-    wide: false,
-    tall: false,
-  },
-  {
-    icon: "🛰️",
-    title: "Mission Control Dashboard",
+    id: "03",
+    title: "Branch when it helps. Pause when it matters.",
     description:
-      "Real-time interactive visualization of your agent workflows with animated node graphs and live event streaming.",
-    wide: true,
-    tall: false,
+      "Parallel paths, guardrails, retries, and human approvals stay explicit instead of being bolted on later.",
+    points: ["parallel branches", "approval gate", "retry path"],
+    className: "lg:col-span-3",
+    tone: "accent",
   },
   {
-    icon: "📡",
-    title: "Real-Time Event System",
-    description: "WebSocket-powered event bus broadcasting 11 typed event types — agent activations, tool calls, token usage.",
-    wide: false,
-    tall: false,
+    id: "04",
+    title: "Mission Control makes the run legible.",
+    description:
+      "Track activations, tool calls, timing, and handoffs in one surface that feels like a control room, not a log dump.",
+    points: ["live graph", "event tape", "token telemetry", "tool inspector"],
+    className: "lg:col-span-7",
+    tone: "light",
   },
-];
+  {
+    id: "05",
+    title: "Local-first, production-minded.",
+    description:
+      "Prototype quickly, then keep the same orchestration language when the workflow earns real traffic and real review policies.",
+    points: ["Python core", "Next front end", "typed events"],
+    className: "lg:col-span-5",
+    tone: "light",
+  },
+] as const;
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-  wide,
-  tall,
-}: (typeof FEATURES)[0]) {
+type Feature = (typeof FEATURES)[number];
+
+function FeatureCard({ id, title, description, points, className, tone }: Feature) {
+  const isDark = tone === "dark";
+  const isAccent = tone === "accent";
+
   return (
-    <motion.div
+    <motion.article
       variants={staggerItem}
-      whileHover={{ borderColor: "var(--accent-primary)", y: -3 }}
-      style={{
-        background: "var(--bg-secondary)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: "var(--radius-lg)",
-        padding: "28px",
-        cursor: "default",
-        transition: "border-color 0.3s ease, transform 0.3s ease",
-        gridColumn: wide ? "span 2" : "span 1",
-        gridRow: tall ? "span 2" : "span 1",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        boxSizing: "border-box",
-        position: "relative",
-        overflow: "hidden",
-      }}
+      whileHover={{ y: -6 }}
+      className={`group relative overflow-hidden rounded-[30px] p-6 sm:p-7 ${className}`}
+      style={
+        isDark
+          ? undefined
+          : isAccent
+            ? {
+                background:
+                  "linear-gradient(180deg, rgba(215,255,112,0.65), rgba(215,255,112,0.46))",
+                border: "1px solid rgba(23, 18, 15, 0.12)",
+                boxShadow: "0 26px 70px rgba(23, 18, 15, 0.08)",
+              }
+            : undefined
+      }
     >
-      {/* Subtle inner glow on hover — CSS only */}
+      {!isDark && !isAccent ? <div className="landing-panel absolute inset-0" /> : null}
+      {isDark ? <div className="landing-panel-dark absolute inset-0" /> : null}
       <div
         aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "radial-gradient(ellipse at 30% 30%, hsl(185deg 100% 50% / 0.04), transparent 60%)",
-          pointerEvents: "none",
-        }}
+        className="absolute right-0 top-0 h-32 w-32 rounded-full opacity-70 blur-3xl"
+        style={{ background: isDark ? "rgba(232, 93, 42, 0.2)" : "rgba(232, 93, 42, 0.12)" }}
       />
-      <span style={{ fontSize: 32 }}>{icon}</span>
-      <h3
-        style={{
-          color: "var(--text-primary)",
-          fontFamily: "var(--font-display)",
-          fontWeight: 600,
-          fontSize: 18,
-          margin: 0,
-          lineHeight: 1.3,
-        }}
-      >
-        {title}
-      </h3>
-      <p
-        style={{
-          color: "var(--text-secondary)",
-          fontSize: 14,
-          lineHeight: 1.65,
-          margin: 0,
-        }}
-      >
-        {description}
-      </p>
-    </motion.div>
+
+      <div className="relative flex h-full flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between gap-3">
+            <span
+              className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.28em] ${
+                isDark ? "landing-chip-dark" : "landing-chip"
+              }`}
+              style={{
+                color: isDark ? "#f7f0e8" : "var(--text-primary)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {id}
+            </span>
+            <span
+              className="text-[11px] uppercase tracking-[0.28em]"
+              style={{
+                color: isDark ? "rgba(247,240,232,0.48)" : "var(--text-tertiary)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              System layer
+            </span>
+          </div>
+
+          <h3
+            className="mt-6 max-w-[420px] text-[1.7rem] leading-tight tracking-[-0.05em] sm:text-[2rem]"
+            style={{
+              color: isDark ? "#f7f0e8" : "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+            }}
+          >
+            {title}
+          </h3>
+
+          <p
+            className="mt-4 max-w-[420px] text-[15px] leading-7"
+            style={{ color: isDark ? "rgba(247,240,232,0.7)" : "var(--text-secondary)" }}
+          >
+            {description}
+          </p>
+        </div>
+
+        <div className="mt-8 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {points.map((point) => (
+              <span
+                key={point}
+                className="rounded-full px-3 py-2 text-[11px] uppercase tracking-[0.22em]"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  background: isDark
+                    ? "rgba(255,255,255,0.06)"
+                    : isAccent
+                      ? "rgba(23,18,15,0.08)"
+                      : "rgba(255,255,255,0.58)",
+                  border: isDark
+                    ? "1px solid rgba(255,255,255,0.08)"
+                    : "1px solid rgba(23,18,15,0.08)",
+                  color: isDark ? "#f7f0e8" : "var(--text-primary)",
+                }}
+              >
+                {point}
+              </span>
+            ))}
+          </div>
+
+          <div
+            className="grid gap-2 rounded-[22px] border p-4"
+            style={{
+              borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(23,18,15,0.08)",
+              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.44)",
+            }}
+          >
+            {points.map((point, index) => (
+              <div key={`${point}-${index}`} className="flex items-center gap-3">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{
+                    background:
+                      index === points.length - 1 ? "var(--landing-acid)" : "var(--accent-primary)",
+                  }}
+                />
+                <span
+                  className="text-[11px] uppercase tracking-[0.24em]"
+                  style={{
+                    color: isDark ? "rgba(247,240,232,0.62)" : "var(--text-tertiary)",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  {point}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.article>
   );
 }
 
 export function FeaturesBento() {
   return (
-    <section id="features" style={{ background: "var(--bg-primary)", padding: "120px 0" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}>
-        <ScrollReveal style={{ display: "flex", alignItems: "flex-end", gap: 24, marginBottom: 64 }}>
-          <SectionNumber num="01" />
-          <div>
+    <section id="features" className="border-b border-[color:var(--border-subtle)] py-24 sm:py-28">
+      <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+        <ScrollReveal className="mb-12 max-w-[780px]">
+          <p className="landing-kicker">01 / System overview</p>
+          <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <h2
-              style={{
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                fontSize: "clamp(28px, 4vw, 40px)",
-                lineHeight: 1.2,
-                margin: 0,
-              }}
+              className="max-w-[580px] text-[clamp(2.8rem,6vw,5rem)] leading-[0.95] tracking-[-0.07em]"
+              style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
             >
-              Everything You Need
+              The workflow surface should look as deliberate as the automation.
             </h2>
-            <p style={{ color: "var(--text-secondary)", marginTop: 10, fontSize: 16, lineHeight: 1.6 }}>
-              A complete platform for building and monitoring multi-agent AI systems.
+            <p
+              className="max-w-[420px] text-base leading-7"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              The references you gave all share one thing: they make structure visible.
+              This section does the same for AgentMesh instead of hiding it behind safe,
+              interchangeable SaaS cards.
             </p>
           </div>
         </ScrollReveal>
@@ -140,15 +215,10 @@ export function FeaturesBento() {
           initial="initial"
           whileInView="animate"
           viewport={{ once: true, margin: "-80px" }}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gridTemplateRows: "auto auto",
-            gap: 16,
-          }}
+          className="grid gap-4 lg:grid-cols-12 lg:auto-rows-[minmax(240px,_auto)]"
         >
-          {FEATURES.map((f) => (
-            <FeatureCard key={f.title} {...f} />
+          {FEATURES.map((feature) => (
+            <FeatureCard key={feature.title} {...feature} />
           ))}
         </motion.div>
       </div>

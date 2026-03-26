@@ -1,144 +1,149 @@
 "use client";
+
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionNumber } from "@/components/ui/SectionNumber";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 
 const STEPS = [
   {
     num: "01",
-    title: "Define Your Agents",
+    title: "Compose specialist roles",
     description:
-      "Create specialized agents with Python. Give each one a role, a system prompt, the MCP servers it needs, and handoff rules for passing work.",
-    code: `agent = Agent(\n  name="Reviewer",\n  role="Code Reviewer",\n  mcp_servers=["github"],\n  handoff_rules={"on_complete": "Summarizer"}\n)`,
+      "Model the workflow in terms of roles, not monoliths. Every agent gets a clear job, a clear tool surface, and a clear next hop.",
+    code: `agent = Agent(\n  name="reviewer",\n  role="PR reviewer",\n  mcp_servers=["github"],\n  handoff_rules={"on_complete": "summarizer"}\n)`,
   },
   {
     num: "02",
-    title: "Connect MCP Servers",
+    title: "Attach the tool fabric",
     description:
-      "Register any MCP-compatible server. AgentMesh discovers tools automatically and namespaces them per server (server__tool).",
+      "Mount the MCP servers each workflow needs. Tools stay namespaced and traceable, which matters once runs span multiple services.",
     code: `registry.register("github",\n  transport="stdio",\n  command="mcp-server-github"\n)`,
   },
   {
     num: "03",
-    title: "Run Your Workflow",
+    title: "Launch and branch with intent",
     description:
-      "Start a workflow with a task description. The orchestrator chains agents sequentially, passing context and results between them.",
+      "Start from a real task, let the orchestrator route work, and branch only when the run actually benefits from parallelism.",
     code: `result = await orchestrator.run(\n  workflow_name="code-review",\n  task="Review PR #42"\n)`,
   },
   {
     num: "04",
-    title: "Monitor in Real-Time",
+    title: "Review the run in Mission Control",
     description:
-      "Open Mission Control to watch every agent activation, tool call, and handoff happen live. WebSocket events update the graph instantly.",
-    code: `ws://localhost:8000/ws/events\n→ agent.activated: Reviewer\n→ tool.called: github__read_file\n→ agent.handoff: Reviewer → Summarizer`,
+      "Watch activations, tool calls, approvals, and final output in one place. The graph and event stream stay in sync throughout the run.",
+    code: `ws://localhost:8000/ws/events\n-> agent.activated: reviewer\n-> tool.called: github.read_file\n-> agent.handoff: reviewer -> summarizer`,
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section
-      id="how-it-works"
-      style={{
-        background: "var(--bg-secondary)",
-        padding: "120px 0",
-        borderTop: "1px solid var(--border-subtle)",
-        borderBottom: "1px solid var(--border-subtle)",
-      }}
-    >
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px" }}>
-        <ScrollReveal style={{ display: "flex", alignItems: "flex-end", gap: 24, marginBottom: 80 }}>
-          <SectionNumber num="02" />
-          <div>
+    <section id="how-it-works" className="border-b border-[color:var(--border-subtle)] py-24 sm:py-28">
+      <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+        <div className="grid gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
+          <ScrollReveal className="lg:sticky lg:top-28 lg:self-start">
+            <p className="landing-kicker">02 / Control logic</p>
             <h2
-              style={{
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                fontSize: "clamp(28px, 4vw, 40px)",
-                lineHeight: 1.2,
-                margin: 0,
-              }}
+              className="mt-4 max-w-[520px] text-[clamp(2.8rem,6vw,5rem)] leading-[0.95] tracking-[-0.07em]"
+              style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
             >
-              How It Works
+              From prompt to observable run.
             </h2>
-            <p style={{ color: "var(--text-secondary)", marginTop: 10, fontSize: 16 }}>
-              From agent definition to live monitoring in four steps.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        <motion.div
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true, margin: "-80px" }}
-          style={{ display: "flex", flexDirection: "column", gap: 48 }}
-        >
-          {STEPS.map((step, i) => (
-            <motion.div
-              key={step.num}
-              variants={staggerItem}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "80px 1fr 1fr",
-                gap: 40,
-                alignItems: "start",
-              }}
+            <p
+              className="mt-5 max-w-[430px] text-base leading-7"
+              style={{ color: "var(--text-secondary)" }}
             >
-              {/* Step number */}
-              <div
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 48,
-                  fontWeight: 900,
-                  color: "var(--accent-primary)",
-                  lineHeight: 1,
-                  opacity: 0.7,
-                }}
-              >
-                {step.num}
-              </div>
+              This is where the page shifts from mood to mechanism. The steps stay concise,
+              but every one of them points back to the real thing you care about: a run you
+              can inspect, steer, and trust.
+            </p>
 
-              {/* Text */}
-              <div>
-                <h3
+            <div className="mt-8 space-y-3">
+              {["Roles stay explicit", "Tools stay namespaced", "Events stay typed"].map((item) => (
+                <div
+                  key={item}
+                  className="landing-chip text-[11px] uppercase tracking-[0.28em]"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, margin: "-80px" }}
+            className="space-y-5"
+          >
+            {STEPS.map((step, index) => (
+              <motion.article
+                key={step.num}
+                variants={staggerItem}
+                whileHover={{ y: -4 }}
+                className={`landing-panel grid gap-5 rounded-[32px] p-5 sm:p-6 xl:grid-cols-[110px_1fr_310px] ${
+                  index % 2 === 1 ? "xl:translate-x-5" : ""
+                }`}
+              >
+                <div
+                  className="text-[3rem] leading-none tracking-[-0.08em]"
                   style={{
-                    color: "var(--text-primary)",
                     fontFamily: "var(--font-display)",
-                    fontWeight: 600,
-                    fontSize: 22,
-                    marginBottom: 12,
-                    marginTop: 0,
+                    fontWeight: 900,
+                    color: "var(--accent-primary)",
                   }}
                 >
-                  {step.title}
-                </h3>
-                <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.7, margin: 0 }}>
-                  {step.description}
-                </p>
-              </div>
+                  {step.num}
+                </div>
 
-              {/* Code block */}
-              <div
-                style={{
-                  background: "var(--bg-primary)",
-                  border: "1px solid var(--border-default)",
-                  borderRadius: "var(--radius-md)",
-                  padding: "16px 20px",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 13,
-                  color: "var(--text-secondary)",
-                  lineHeight: 1.6,
-                  whiteSpace: "pre",
-                  overflow: "auto",
-                }}
-              >
-                {step.code}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+                <div>
+                  <p className="landing-kicker">Step {step.num}</p>
+                  <h3
+                    className="mt-3 text-[1.7rem] leading-tight tracking-[-0.05em]"
+                    style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
+                  >
+                    {step.title}
+                  </h3>
+                  <p
+                    className="mt-4 max-w-[520px] text-[15px] leading-7"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {step.description}
+                  </p>
+                </div>
+
+                <div
+                  className="rounded-[24px] border border-[color:var(--border-subtle)] p-4"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0.56), rgba(255,250,244,0.84))",
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="landing-kicker">Runtime excerpt</span>
+                    <span
+                      className="rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.24em]"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        background: "rgba(23,18,15,0.06)",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      typed
+                    </span>
+                  </div>
+                  <pre
+                    className="mt-4 overflow-x-auto whitespace-pre-wrap text-[12px] leading-6"
+                    style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}
+                  >
+                    {step.code}
+                  </pre>
+                </div>
+              </motion.article>
+            ))}
+          </motion.div>
+        </div>
       </div>
     </section>
   );
