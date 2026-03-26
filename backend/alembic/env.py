@@ -18,11 +18,21 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-def _get_url() -> str:
-    url = os.environ["DATABASE_CONN"]
-    url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-    return url
+def _prepare_url(raw: str) -> tuple[str, dict]:
+    from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+    raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
+    raw = raw.replace("postgres://", "postgresql+asyncpg://", 1)
+    parsed = urlparse(raw)
+    params = parse_qs(parsed.query)
+    needs_ssl = "sslmode" in params
+    for key in ("sslmode", "channel_binding"):
+        params.pop(key, None)
+    clean_query = urlencode({k: v[0] for k, v in params.items()})
+    clean_url = urlunparse(parsed._replace(query=clean_query))
+    connect_args: dict = {}
+    if needs_ssl:
+        connect_args["ssl"] = True
+    return clean_url, connect_args
 
 
 def do_run_migrations(connection):
@@ -32,7 +42,8 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations():
-    engine = create_async_engine(_get_url())
+    url, connect_args = _prepare_url(os.environ["DATABASE_CONN"])
+    engine = create_async_engine(url, connect_args=connect_args)
     async with engine.begin() as conn:
         await conn.run_sync(do_run_migrations)
     await engine.dispose()
