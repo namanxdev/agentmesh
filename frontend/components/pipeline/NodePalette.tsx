@@ -1,6 +1,8 @@
 "use client";
+import { useState, useEffect } from "react";
 import { NODE_COLORS, NODE_ICONS } from "./nodes/BaseNode";
-import type { NodeKind } from "@/types/pipeline";
+import type { NodeKind, PipelineNode, PipelineEdge } from "@/types/pipeline";
+import { usePipelineStore } from "@/stores/pipelineStore";
 
 const PALETTE_ITEMS: Array<{ kind: NodeKind; name: string; description: string }> = [
   { kind: "input",     name: "Input",     description: "Pipeline entry point" },
@@ -14,6 +16,16 @@ const PALETTE_ITEMS: Array<{ kind: NodeKind; name: string; description: string }
 ];
 
 export function NodePalette() {
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string; description: string; definition: { name: string; nodes: PipelineNode[]; edges: PipelineEdge[] } }>>([]);
+  const loadTemplate = usePipelineStore((s) => s.loadTemplate);
+
+  useEffect(() => {
+    fetch("/api/pipelines/templates")
+      .then((r) => r.json())
+      .then((d) => setTemplates(d.templates ?? []))
+      .catch(() => {});
+  }, []);
+
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, kind: NodeKind) => {
     e.dataTransfer.setData("application/pipeline-node-kind", kind);
     e.dataTransfer.effectAllowed = "copy";
@@ -62,6 +74,37 @@ export function NodePalette() {
           gap: 8,
         }}
       >
+        {templates.length > 0 && (
+          <>
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", padding: "6px 4px 4px", fontFamily: "var(--font-mono)" }}>
+              Templates
+            </div>
+            {templates.map((t) => (
+              <div
+                key={t.id}
+                onClick={() => loadTemplate(t.definition)}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(240,106,55,0.06)",
+                  cursor: "pointer",
+                  marginBottom: 4,
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(240,106,55,0.12)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(240,106,55,0.06)"; }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 }}>{t.name}</div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1.4 }}>{t.description}</div>
+              </div>
+            ))}
+            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "8px 0" }} />
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", padding: "2px 4px 4px", fontFamily: "var(--font-mono)" }}>
+              Nodes
+            </div>
+          </>
+        )}
+
         {PALETTE_ITEMS.map(({ kind, name, description }) => {
           const color = NODE_COLORS[kind];
           const icon = NODE_ICONS[kind];

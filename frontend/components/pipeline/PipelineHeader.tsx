@@ -28,6 +28,12 @@ export function PipelineHeader() {
     runPipeline,
   } = usePipelineStore();
 
+  const savePipeline = usePipelineStore((s) => s.savePipeline);
+  const isSaving = usePipelineStore((s) => s.isSaving);
+  const togglePipelinesDrawer = usePipelineStore((s) => s.togglePipelinesDrawer);
+  const currentPipelineId = usePipelineStore((s) => s.currentPipelineId);
+  const listPipelines = usePipelineStore((s) => s.listPipelines);
+
   const connectionStatus = useUIStore((s) => s.connectionStatus);
   const [showTaskInput, setShowTaskInput] = useState(false);
   const [task, setTask] = useState("");
@@ -289,6 +295,32 @@ export function PipelineHeader() {
                 Back to build
               </button>
             ) : null}
+
+            <button
+              onClick={savePipeline}
+              disabled={isSaving || mode === "run"}
+              style={{
+                ...buttonBase,
+                background: "rgba(255,255,255,0.05)",
+                color: "var(--text-secondary)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                opacity: isSaving || mode === "run" ? 0.55 : 1,
+              }}
+            >
+              {isSaving ? "Saving\u2026" : currentPipelineId ? "Saved \u2713" : "Save"}
+            </button>
+
+            <button
+              onClick={() => { listPipelines(); togglePipelinesDrawer(); }}
+              style={{
+                ...buttonBase,
+                background: "rgba(255,255,255,0.05)",
+                color: "var(--text-secondary)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              My Pipelines
+            </button>
 
             {mode === "build" ? (
               <button

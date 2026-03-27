@@ -51,6 +51,10 @@ interface PipelineStore {
   isValidating: boolean;
   validationResult: ValidateResponse | null;
   isRunning: boolean;
+  currentPipelineId: string | null;
+  savedPipelines: Array<{ id: string; name: string; updated_at: string }>;
+  isSaving: boolean;
+  showPipelinesDrawer: boolean;
 
   setMode: (mode: DashboardMode) => void;
   setPipelineName: (name: string) => void;
@@ -66,6 +70,12 @@ interface PipelineStore {
   validatePipeline: () => Promise<ValidateResponse>;
   runPipeline: (task: string) => Promise<void>;
   reset: () => void;
+  savePipeline: () => Promise<void>;
+  loadPipeline: (id: string) => Promise<void>;
+  listPipelines: () => Promise<void>;
+  deleteSavedPipeline: (id: string) => Promise<void>;
+  loadTemplate: (def: { name: string; nodes: PipelineNode[]; edges: PipelineEdge[] }) => void;
+  togglePipelinesDrawer: () => void;
 }
 
 export const usePipelineStore = create<PipelineStore>((set, get) => ({
@@ -77,6 +87,10 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
   isValidating: false,
   validationResult: null,
   isRunning: false,
+  currentPipelineId: null,
+  savedPipelines: [],
+  isSaving: false,
+  showPipelinesDrawer: false,
 
   setMode: (mode) => set({ mode }),
   setPipelineName: (name) => set({ pipelineName: name }),
@@ -214,4 +228,71 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       validationResult: null,
       isRunning: false,
     }),
+
+  togglePipelinesDrawer: () => set((s) => ({ showPipelinesDrawer: !s.showPipelinesDrawer })),
+
+  loadTemplate: (def) =>
+    set({
+      nodes: def.nodes,
+      edges: def.edges,
+      pipelineName: def.name,
+      currentPipelineId: null,
+      mode: "build",
+    }),
+
+  savePipeline: async () => {
+    const state = get();
+    set({ isSaving: true });
+    try {
+      const pipeline = state.serializePipeline();
+      const body = {
+        pipeline_id: state.currentPipelineId,
+        name: state.pipelineName,
+        definition: pipeline,
+      };
+      const res = await fetch("/api/pipelines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      const data = await res.json();
+      set({ currentPipelineId: data.id, isSaving: false });
+    } catch {
+      set({ isSaving: false });
+    }
+  },
+
+  listPipelines: async () => {
+    try {
+      const res = await fetch("/api/pipelines");
+      if (!res.ok) return;
+      const data = await res.json();
+      set({ savedPipelines: data.pipelines ?? [] });
+    } catch {}
+  },
+
+  loadPipeline: async (id: string) => {
+    try {
+      const res = await fetch(`/api/pipelines/${id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const def = data.definition;
+      set({
+        nodes: def.nodes ?? [],
+        edges: def.edges ?? [],
+        pipelineName: data.name ?? def.name ?? "Pipeline",
+        currentPipelineId: id,
+        showPipelinesDrawer: false,
+        mode: "build",
+      });
+    } catch {}
+  },
+
+  deleteSavedPipeline: async (id: string) => {
+    try {
+      await fetch(`/api/pipelines/${id}`, { method: "DELETE" });
+      set((s) => ({ savedPipelines: s.savedPipelines.filter((p) => p.id !== id) }));
+    } catch {}
+  },
 }));
