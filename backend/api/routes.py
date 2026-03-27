@@ -56,6 +56,12 @@ class PipelineRunRequest(BaseModel):
     initial_state: dict = {}
 
 
+class SavePipelineRequest(BaseModel):
+    pipeline_id: Optional[str] = None
+    name: str
+    definition: PipelineDefinitionModel
+
+
 # -- App factory --------------------------------------------------------------
 
 def create_app(
@@ -67,7 +73,14 @@ def create_app(
 ) -> FastAPI:
     """Create and configure the FastAPI application."""
 
-    app = FastAPI(title="AgentMesh API", version="1.0.0")
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        await mcp_registry.connect_all()
+        yield
+
+    app = FastAPI(title="AgentMesh API", version="1.0.0", lifespan=lifespan)
     add_middleware(app)
 
     from backend.api.keys import router as keys_router
@@ -95,7 +108,7 @@ def create_app(
     async def run_workflow(request: WorkflowRunRequest):
         defn = workflow_definitions.get(request.workflow_name)
         if defn is None:
-            raise KeyError(f"Workflow '{request.workflow_name}' not found.")
+            raise HTTPException(status_code=404, detail=f"Workflow '{request.workflow_name}' not found.")
 
         workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
         agents = {
@@ -148,7 +161,7 @@ def create_app(
     async def get_workflow_status(workflow_id: str):
         run = _runs.get(workflow_id)
         if run is None:
-            raise KeyError(f"Workflow '{workflow_id}' not found.")
+            raise HTTPException(status_code=404, detail=f"Workflow '{workflow_id}' not found.")
         return run
 
     # -- Agent endpoints -------------------------------------------------------
@@ -260,7 +273,7 @@ def create_app(
             "edges": edges,
         }
 
-        config = pipeline_to_workflow_config(defn_dict, user_llm, event_bus)
+        config = pipeline_to_workflow_config(defn_dict, user_llm, event_bus, mcp_registry)
         agent_reg = config["agent_registry"]
         graph_cfg = config["graph_config"]
         task = request.task or config["task"]
@@ -282,6 +295,25 @@ def create_app(
             "status": "running",
             "started_at": time.time(),
         }
+
+        import datetime as _datetime
+        try:
+            await db.execute(
+                text(
+                    "INSERT INTO pipeline_runs"
+                    " (id, user_id, pipeline_id, workflow_id, status, created_at, updated_at)"
+                    " VALUES (:id, :uid, NULL, :wid, 'running', :now, :now)"
+                ),
+                {
+                    "id": str(uuid.uuid4()),
+                    "uid": user_id,
+                    "wid": workflow_id,
+                    "now": _datetime.datetime.utcnow(),
+                },
+            )
+            await db.commit()
+        except Exception:
+            pass  # non-critical, don't fail the run
 
         async def _run():
             result = await orchestrator.run(
@@ -305,6 +337,153 @@ def create_app(
             "started_at": _runs[workflow_id]["started_at"],
             "websocket_url": f"/ws/events?workflow_id={workflow_id}",
         }
+
+    # -- Pipeline save / load / list / delete / run-history -------------------
+
+    @app.get("/api/pipelines/templates")
+    async def list_templates():
+        from backend.pipelines.templates import PIPELINE_TEMPLATES
+        return {"templates": PIPELINE_TEMPLATES}
+
+    @app.post("/api/pipelines")
+    async def save_pipeline(
+        request: SavePipelineRequest,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        import json as _json
+        import uuid as _uuid
+        import datetime as _datetime
+        now = _datetime.datetime.utcnow()
+        defn = {
+            "name": request.definition.name,
+            "nodes": [
+                {"id": n.id, "kind": n.kind, "config": n.config, "position": n.position}
+                for n in request.definition.nodes
+            ],
+            "edges": [
+                {"id": e.id, "source": e.source, "target": e.target}
+                for e in request.definition.edges
+            ],
+        }
+        if request.pipeline_id:
+            await db.execute(
+                text(
+                    "UPDATE pipelines SET name=:name, definition=:defn, updated_at=:now"
+                    " WHERE id=:id AND user_id=:uid"
+                ),
+                {
+                    "name": request.name,
+                    "defn": _json.dumps(defn),
+                    "now": now,
+                    "id": request.pipeline_id,
+                    "uid": user_id,
+                },
+            )
+            await db.commit()
+            return {"id": request.pipeline_id, "name": request.name, "updated_at": now.isoformat()}
+        else:
+            new_id = str(_uuid.uuid4())
+            await db.execute(
+                text(
+                    "INSERT INTO pipelines (id, user_id, name, definition, created_at, updated_at)"
+                    " VALUES (:id, :uid, :name, :defn, :now, :now)"
+                ),
+                {
+                    "id": new_id,
+                    "uid": user_id,
+                    "name": request.name,
+                    "defn": _json.dumps(defn),
+                    "now": now,
+                },
+            )
+            await db.commit()
+            return {"id": new_id, "name": request.name, "updated_at": now.isoformat()}
+
+    @app.get("/api/pipelines")
+    async def list_pipelines(
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        result = await db.execute(
+            text(
+                "SELECT id, name, updated_at FROM pipelines"
+                " WHERE user_id=:uid ORDER BY updated_at DESC"
+            ),
+            {"uid": user_id},
+        )
+        rows = result.fetchall()
+        return {
+            "pipelines": [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+                }
+                for r in rows
+            ]
+        }
+
+    @app.get("/api/pipelines/{pipeline_id}/runs")
+    async def get_pipeline_runs(
+        pipeline_id: str,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        result = await db.execute(
+            text(
+                "SELECT id, workflow_id, status, total_tokens, duration_seconds, created_at"
+                " FROM pipeline_runs WHERE pipeline_id=:pid ORDER BY created_at DESC LIMIT 20"
+            ),
+            {"pid": pipeline_id},
+        )
+        rows = result.fetchall()
+        return {
+            "runs": [
+                {
+                    "id": r.id,
+                    "workflow_id": r.workflow_id,
+                    "status": r.status,
+                    "total_tokens": r.total_tokens,
+                    "duration_seconds": r.duration_seconds,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+        }
+
+    @app.get("/api/pipelines/{pipeline_id}")
+    async def get_pipeline(
+        pipeline_id: str,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        import json as _json
+        result = await db.execute(
+            text(
+                "SELECT id, name, definition FROM pipelines"
+                " WHERE id=:id AND user_id=:uid"
+            ),
+            {"id": pipeline_id, "uid": user_id},
+        )
+        row = result.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Pipeline not found")
+        defn = _json.loads(row.definition) if isinstance(row.definition, str) else row.definition
+        return {"id": row.id, "name": row.name, "definition": defn}
+
+    @app.delete("/api/pipelines/{pipeline_id}")
+    async def delete_pipeline(
+        pipeline_id: str,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        await db.execute(
+            text("DELETE FROM pipelines WHERE id=:id AND user_id=:uid"),
+            {"id": pipeline_id, "uid": user_id},
+        )
+        await db.commit()
+        return {"deleted": pipeline_id}
 
     # -- Auth endpoint ---------------------------------------------------------
 
@@ -341,6 +520,32 @@ def create_default_app() -> FastAPI:
 
     agent_registry = AgentRegistry(llm_provider=llm, event_bus=event_bus)
     mcp_registry = MCPRegistry(event_bus=event_bus)
+
+    # Register MCP servers from environment
+    if os.getenv("GITHUB_TOKEN"):
+        mcp_registry.register(
+            "github",
+            transport_config={
+                "transport": "stdio",
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-github"],
+                "env": {"GITHUB_TOKEN": os.getenv("GITHUB_TOKEN", "")},
+            }
+        )
+
+    github_ws_url = os.getenv("FILESYSTEM_MCP_URL")
+    if github_ws_url:
+        mcp_registry.register(
+            "filesystem",
+            transport_config={"transport": "http", "url": github_ws_url}
+        )
+
+    web_search_url = os.getenv("WEB_SEARCH_MCP_URL")
+    if web_search_url:
+        mcp_registry.register(
+            "web-search",
+            transport_config={"transport": "http", "url": web_search_url}
+        )
 
     # Load demo workflow definitions
     from backend.workflows import DEMO_WORKFLOWS
