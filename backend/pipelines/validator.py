@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from backend.events.bus import EventBus
     from backend.llm.base import BaseLLMProvider
+    from backend.mcp.registry import MCPRegistry
 
 
 def validate_pipeline(nodes: list[dict], edges: list[dict]) -> dict:
@@ -86,6 +87,7 @@ def pipeline_to_workflow_config(
     definition: dict,
     llm_provider: "BaseLLMProvider",
     event_bus: "EventBus",
+    mcp_registry: "MCPRegistry | None" = None,
 ) -> dict:
     """
     Convert a frontend pipeline definition to WorkflowOrchestrator-compatible config.
@@ -205,6 +207,16 @@ def pipeline_to_workflow_config(
             handoff_rules={},
         )
         agent_registry.register(agent_config)
+
+        # Inject MCP clients into agent
+        if mcp_registry:
+            agent = agent_registry.get(agent_config.name)
+            for server_name in agent_config.mcp_servers:
+                try:
+                    client = mcp_registry.get_client(server_name)
+                    agent.register_mcp_client(server_name, client)
+                except (KeyError, Exception):
+                    pass  # server not configured — tools will gracefully fail
 
     # Build graph_config
     graph_config: dict = {}

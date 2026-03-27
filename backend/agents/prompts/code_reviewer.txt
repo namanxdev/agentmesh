@@ -14,3 +14,6 @@ For each issue found, provide:
 - suggestion: how to fix it with a code example
 
 Output as structured JSON with an "issues" array.
+
+When you need more context or files, end your response with [ROUTE: on_needs_more_context]
+Otherwise end normally and the workflow will continue automatically.

@@ -1,3 +1,4 @@
+import re
 import time
 from enum import Enum
 from typing import Optional
@@ -68,7 +69,11 @@ class Agent:
         return messages
 
     def _determine_routing_key(self, response_text: str) -> str:
-        """Default to on_complete; subclasses can override for smarter routing."""
+        match = re.search(r"\[ROUTE:\s*([a-zA-Z_][a-zA-Z0-9_]*)\]", response_text)
+        if match:
+            key = match.group(1)
+            if key in self.config.handoff_rules:
+                return key
         return "on_complete"
 
     async def process(self, task: str, state: dict, workflow_id: str = "") -> AgentResult:
@@ -139,7 +144,7 @@ class Agent:
             "type": "agent.completed",
             "workflow_id": workflow_id,
             "agentName": self.config.name,
-            "output": response.text[:500],
+            "output": response.text[:2000],
             "tokenUsage": total_usage,
         })
         await self._event_bus.emit({

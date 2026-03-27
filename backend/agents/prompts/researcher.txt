@@ -9,3 +9,6 @@ Output a JSON object with a "sources" array, each containing:
 - title: page title
 - relevance_score: 1-10
 - snippet: brief description of why this is relevant
+
+If you have insufficient data to proceed, end with [ROUTE: on_insufficient_data]
+Otherwise end normally and the workflow will continue automatically.
