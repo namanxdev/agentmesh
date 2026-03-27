@@ -156,3 +156,54 @@ def test_agent_registry_status_map():
     status_map = registry.get_status_map()
     assert status_map["A"] == AgentStatus.IDLE
     assert status_map["B"] == AgentStatus.IDLE
+
+
+# ---------------------------------------------------------------------------
+# _determine_routing_key unit tests
+# ---------------------------------------------------------------------------
+
+def _make_agent_with_rules(handoff_rules: dict) -> "Agent":
+    """Helper: create an Agent with given handoff_rules, using mock LLM and bus."""
+    config = AgentConfig(
+        name="TestAgent",
+        role="tester",
+        system_prompt="test",
+        handoff_rules=handoff_rules,
+    )
+    mock_llm = MagicMock()
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+    return Agent(config=config, llm_provider=mock_llm, event_bus=mock_bus)
+
+
+def test_determine_routing_key_parses_route_directive():
+    """[ROUTE: on_needs_more_context] in response text returns that key when it exists in rules."""
+    agent = _make_agent_with_rules(
+        {"on_complete": "Reviewer", "on_needs_more_context": "Fetcher"}
+    )
+    result = agent._determine_routing_key(
+        "analysis done [ROUTE: on_needs_more_context]"
+    )
+    assert result == "on_needs_more_context"
+
+
+def test_determine_routing_key_unknown_key_falls_back():
+    """[ROUTE: unknown_key] not present in handoff_rules falls back to on_complete."""
+    agent = _make_agent_with_rules({"on_complete": "Reviewer"})
+    result = agent._determine_routing_key("something [ROUTE: unknown_key]")
+    assert result == "on_complete"
+
+
+def test_determine_routing_key_no_directive_returns_on_complete():
+    """Plain response text with no [ROUTE: ...] directive returns on_complete."""
+    agent = _make_agent_with_rules({"on_complete": "Reviewer", "on_error": "end"})
+    result = agent._determine_routing_key("The code looks fine.")
+    assert result == "on_complete"
+
+
+def test_agent_result_defaults():
+    """AgentResult has correct default values for optional fields."""
+    result = AgentResult(output="some output")
+    assert result.routing_key == "on_complete"
+    assert result.token_usage == {"input": 0, "output": 0}
+    assert result.state_updates is None

@@ -207,6 +207,59 @@ class TestValidatePipelineReturnShape:
 # pipeline_to_workflow_config
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Additional validator edge-case tests
+# ---------------------------------------------------------------------------
+
+class TestValidatePipelineAdditional:
+    def test_validate_pipeline_missing_edges_for_non_terminal_llm_node(self):
+        """A non-output llm_agent with no outgoing edges → is_dag False with error."""
+        nodes = [
+            _make_node("n1", "input"),
+            _make_node("n2", "llm_agent", {"name": "A", "system_prompt": ""}),
+            _make_node("n3", "output"),
+        ]
+        # n2 has incoming edge but no outgoing edge
+        edges = [_make_edge("e1", "n1", "n2")]
+        result = validate_pipeline(nodes, edges)
+        assert result["is_dag"] is False
+        assert any("n2" in e and "no outgoing" in e for e in result["errors"])
+
+    def test_validate_pipeline_router_needs_two_outgoing(self):
+        """A router node with exactly 1 outgoing edge triggers the Router validation error."""
+        nodes = [
+            _make_node("n1", "input"),
+            _make_node("n2", "llm_agent", {"name": "A", "system_prompt": ""}),
+            _make_node("n3", "router", {"conditions": []}),
+            _make_node("n4", "output"),
+        ]
+        edges = [
+            _make_edge("e1", "n1", "n2"),
+            _make_edge("e2", "n2", "n3"),
+            _make_edge("e3", "n3", "n4"),  # only 1 outgoing from router
+        ]
+        result = validate_pipeline(nodes, edges)
+        assert result["is_dag"] is False
+        assert any("Router" in e and "n3" in e for e in result["errors"])
+
+    def test_validate_pipeline_accepts_valid_three_node_chain(self):
+        """input → llm_agent → output is a valid DAG with no errors."""
+        nodes = [
+            _make_node("n1", "input", {"description": "test task"}),
+            _make_node("n2", "llm_agent", {"name": "agent", "system_prompt": "help"}),
+            _make_node("n3", "output"),
+        ]
+        edges = [
+            _make_edge("e1", "n1", "n2"),
+            _make_edge("e2", "n2", "n3"),
+        ]
+        result = validate_pipeline(nodes, edges)
+        assert result["is_dag"] is True
+        assert result["errors"] == []
+        assert result["num_nodes"] == 3
+        assert result["num_edges"] == 2
+
+
 class TestPipelineToWorkflowConfig:
     """Unit tests for pipeline_to_workflow_config."""
 

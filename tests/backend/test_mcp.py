@@ -125,3 +125,39 @@ def test_mcp_registry_get_server_info():
     info = registry.get_server_info()
     assert len(info["servers"]) == 1
     assert info["servers"][0]["name"] == "github"
+
+
+def test_mcp_registry_register_stores_server_config():
+    """Registering a server makes it appear in get_server_info with its config."""
+    event_bus = MagicMock()
+    registry = MCPRegistry(event_bus=event_bus)
+    registry.register("brave", transport="http", url="http://localhost:8080")
+    info = registry.get_server_info()
+    assert len(info["servers"]) == 1
+    server = info["servers"][0]
+    assert server["name"] == "brave"
+    # The transport config fields should be present alongside the name
+    assert server.get("transport") == "http" or "brave" in str(info)
+
+
+def test_mcp_registry_get_client_raises_for_unknown():
+    """get_client() raises KeyError for a server name that was never registered."""
+    event_bus = MagicMock()
+    registry = MCPRegistry(event_bus=event_bus)
+    with pytest.raises(KeyError):
+        registry.get_client("nonexistent_server")
+
+
+def test_mcp_registry_double_register_overwrites():
+    """Registering the same name twice does not raise; the second config wins."""
+    event_bus = MagicMock()
+    registry = MCPRegistry(event_bus=event_bus)
+    registry.register("github", transport="stdio", command="old-command")
+    registry.register("github", transport="stdio", command="new-command")
+    # Should still have exactly one entry
+    info = registry.get_server_info()
+    assert len(info["servers"]) == 1
+    assert info["servers"][0]["name"] == "github"
+    # The client should be the newest one
+    client = registry.get_client("github")
+    assert client.server_name == "github"

@@ -144,3 +144,182 @@ async def test_orchestrator_two_agent_chain():
     assert result.success is True
     agent_names = [m["agent"] for m in result.state.messages]
     assert agent_names == ["A", "B"]
+
+
+# ---------------------------------------------------------------------------
+# Additional orchestrator tests
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_orchestrator_timeout_raises_error():
+    """Workflow timeout is detected between iterations and returns a failed result."""
+    # Use a two-agent chain. Patch time.time so that after the first agent
+    # completes the elapsed time exceeds the timeout.
+    from unittest.mock import patch as _patch
+
+    # time sequence: start_time=100, first loop check=100 (ok), after agent: irrelevant,
+    # second loop top check=200 → elapsed 100s > timeout 1s → triggers TimeoutError
+    time_values = iter([100.0, 100.0, 100.0, 200.0, 200.0])
+
+    def make_agent(name):
+        a = MagicMock()
+        a.config = AgentConfig(name=name, role="R", system_prompt="S")
+        a.process = AsyncMock(return_value=AgentResult(output=f"{name} done", routing_key="on_complete"))
+        return a
+
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    orch = WorkflowOrchestrator(
+        agents={"A": make_agent("A"), "B": make_agent("B")},
+        graph_config={"start": "A", "A": {"on_complete": "B"}, "B": {"on_complete": "end"}},
+        event_bus=mock_bus,
+        workflow_id="wf_timeout",
+        timeout_seconds=1.0,
+    )
+
+    with _patch("backend.orchestrator.graph.time.time", side_effect=time_values):
+        result = await orch.run(task="too slow")
+
+    assert result.success is False
+    assert result.error is not None
+    assert "timeout" in result.error.lower() or "Timeout" in result.error
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_max_iterations_exceeded():
+    """Workflow that loops forever (A->B->A) is stopped at max_iterations."""
+    def make_agent(name):
+        a = MagicMock()
+        a.config = AgentConfig(name=name, role=name, system_prompt=name)
+        a.process = AsyncMock(return_value=AgentResult(output=f"{name} done", routing_key="on_complete"))
+        return a
+
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    # A -> B -> A creates an infinite loop in the router, but max_iterations stops it
+    orch = WorkflowOrchestrator(
+        agents={"A": make_agent("A"), "B": make_agent("B")},
+        graph_config={
+            "start": "A",
+            "A": {"on_complete": "B"},
+            "B": {"on_complete": "A"},  # loops back
+        },
+        event_bus=mock_bus,
+        workflow_id="wf_loop",
+        max_iterations=3,
+    )
+
+    result = await orch.run(task="loop forever")
+    assert result.success is False
+    assert result.error is not None
+    assert "Max iterations" in result.error or "iterations" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_emits_agent_handoff_event():
+    """Two-agent chain emits an agent.handoff event between A and B."""
+    def make_agent(name):
+        a = MagicMock()
+        a.config = AgentConfig(name=name, role=name, system_prompt=name)
+        a.process = AsyncMock(return_value=AgentResult(output=f"{name} done", routing_key="on_complete"))
+        return a
+
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    orch = WorkflowOrchestrator(
+        agents={"A": make_agent("A"), "B": make_agent("B")},
+        graph_config={"start": "A", "A": {"on_complete": "B"}, "B": {"on_complete": "end"}},
+        event_bus=mock_bus,
+        workflow_id="wf_handoff",
+    )
+
+    await orch.run(task="handoff test")
+
+    event_types = [c[0][0]["type"] for c in mock_bus.emit.call_args_list]
+    assert "agent.handoff" in event_types
+
+    handoff_calls = [c[0][0] for c in mock_bus.emit.call_args_list if c[0][0]["type"] == "agent.handoff"]
+    assert handoff_calls[0]["fromAgent"] == "A"
+    assert handoff_calls[0]["toAgent"] == "B"
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_unknown_agent_raises_error():
+    """Graph config references an agent name not in the agents dict — returns failed result."""
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    orch = WorkflowOrchestrator(
+        agents={},  # no agents registered
+        graph_config={"start": "MissingAgent", "MissingAgent": {"on_complete": "end"}},
+        event_bus=mock_bus,
+        workflow_id="wf_missing",
+    )
+
+    result = await orch.run(task="will fail")
+    assert result.success is False
+    assert result.error is not None
+    assert "MissingAgent" in result.error
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_state_updates_propagated():
+    """Agent A returns state_updates; agent B receives those updates in its state parameter."""
+    received_state = {}
+
+    async def agent_b_process(task, state, workflow_id=""):
+        received_state.update(state)
+        return AgentResult(output="B done", routing_key="on_complete")
+
+    agent_a = MagicMock()
+    agent_a.config = AgentConfig(name="A", role="R", system_prompt="S")
+    agent_a.process = AsyncMock(return_value=AgentResult(
+        output="A done",
+        routing_key="on_complete",
+        state_updates={"key": "value_from_A"},
+    ))
+
+    agent_b = MagicMock()
+    agent_b.config = AgentConfig(name="B", role="R", system_prompt="S")
+    agent_b.process = agent_b_process
+
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    orch = WorkflowOrchestrator(
+        agents={"A": agent_a, "B": agent_b},
+        graph_config={"start": "A", "A": {"on_complete": "B"}, "B": {"on_complete": "end"}},
+        event_bus=mock_bus,
+        workflow_id="wf_state",
+    )
+
+    result = await orch.run(task="state propagation")
+    assert result.success is True
+    assert received_state.get("key") == "value_from_A"
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_error_emits_workflow_error_event():
+    """When an agent raises an exception, the orchestrator emits a workflow.error event."""
+    mock_agent = MagicMock()
+    mock_agent.config = AgentConfig(name="BadAgent", role="R", system_prompt="S")
+    mock_agent.process = AsyncMock(side_effect=RuntimeError("Something went wrong"))
+
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    orch = WorkflowOrchestrator(
+        agents={"BadAgent": mock_agent},
+        graph_config={"start": "BadAgent", "BadAgent": {"on_complete": "end"}},
+        event_bus=mock_bus,
+        workflow_id="wf_error",
+    )
+
+    result = await orch.run(task="will error")
+    assert result.success is False
+
+    event_types = [c[0][0]["type"] for c in mock_bus.emit.call_args_list]
+    assert "workflow.error" in event_types
