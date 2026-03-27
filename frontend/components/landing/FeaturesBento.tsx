@@ -11,7 +11,7 @@ const FEATURES = [
     description:
       "Define roles, prompts, servers, and handoff rules without turning the workflow into a mystery box.",
     points: ["router", "research", "review", "final synthesis"],
-    className: "lg:col-span-5 lg:row-span-2",
+    className: "lg:col-span-5",
     tone: "dark",
   },
   {
@@ -20,7 +20,7 @@ const FEATURES = [
     description:
       "GitHub, filesystem, web, databases, and internal tools all land in one consistent namespace for agents to use.",
     points: ["github.read_file", "filesystem.write", "postgres.query"],
-    className: "lg:col-span-4",
+    className: "lg:col-start-8 lg:col-span-4 lg:mt-32",
     tone: "light",
   },
   {
@@ -29,7 +29,7 @@ const FEATURES = [
     description:
       "Parallel paths, guardrails, retries, and human approvals stay explicit instead of being bolted on later.",
     points: ["parallel branches", "approval gate", "retry path"],
-    className: "lg:col-span-3",
+    className: "lg:col-start-2 lg:col-span-4 lg:mt-12",
     tone: "accent",
   },
   {
@@ -38,7 +38,7 @@ const FEATURES = [
     description:
       "Track activations, tool calls, timing, and handoffs in one surface that feels like a control room, not a log dump.",
     points: ["live graph", "event tape", "token telemetry", "tool inspector"],
-    className: "lg:col-span-7",
+    className: "lg:col-start-7 lg:col-span-6 lg:mt-32",
     tone: "light",
   },
   {
@@ -47,7 +47,7 @@ const FEATURES = [
     description:
       "Prototype quickly, then keep the same orchestration language when the workflow earns real traffic and real review policies.",
     points: ["Python core", "Next front end", "typed events"],
-    className: "lg:col-span-5",
+    className: "lg:col-start-1 lg:col-span-5 lg:mt-16",
     tone: "light",
   },
 ] as const;
@@ -215,8 +215,24 @@ export function FeaturesBento() {
           initial="initial"
           whileInView="animate"
           viewport={{ once: true, margin: "-80px" }}
-          className="grid gap-4 lg:grid-cols-12 lg:auto-rows-[minmax(240px,_auto)]"
+          className="grid gap-x-6 gap-y-16 lg:grid-cols-12 lg:auto-rows-auto relative"
         >
+          {/* Aesthetic Awwwards structural voids decorators */}
+          <div className="hidden lg:flex absolute left-[45%] top-32 flex-col items-center pointer-events-none opacity-40">
+             <div className="w-px h-16 border-l border-dashed border-[color:var(--border-default)]" />
+             <div className="w-8 h-8 rounded-full border border-[color:var(--text-tertiary)] flex items-center justify-center my-4 animate-[spin_10s_linear_infinite]">
+               <div className="w-1 h-1 rounded-full bg-[color:var(--text-primary)] -translate-y-4" />
+             </div>
+             <div className="w-px h-32 border-l border-dashed border-[color:var(--border-default)]" />
+          </div>
+
+          <div className="hidden lg:flex absolute right-[25%] bottom-64 flex-col items-start pointer-events-none opacity-50">
+             <div className="text-[10px] font-mono tracking-widest text-[color:var(--text-tertiary)]">
+                [GRID_Y: 204]
+             </div>
+             <div className="w-16 h-px border-t border-[color:var(--border-default)] mt-2" />
+          </div>
+
           {FEATURES.map((feature) => (
             <FeatureCard key={feature.title} {...feature} />
           ))}

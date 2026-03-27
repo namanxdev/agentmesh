@@ -47,6 +47,7 @@ function buildToolCalls(events: ReturnType<typeof useEventStore.getState>["event
 }
 
 const TABS: Array<{ key: InspectorTab; label: string }> = [
+  { key: "output", label: "Output" },
   { key: "tools", label: "Tool Calls" },
   { key: "agent", label: "Agent" },
   { key: "tokens", label: "Tokens" },
@@ -56,6 +57,7 @@ export function ToolCallInspector() {
   const events = useEventStore((s) => s.events);
   const agentStates = useEventStore((s) => s.agentStates);
   const totalTokens = useEventStore((s) => s.totalTokens);
+  const lastOutput = useEventStore((s) => s.lastOutput);
   const selectedAgent = useUIStore((s) => s.selectedAgent);
   const inspectorTab = useUIStore((s) => s.inspectorTab);
   const setInspectorTab = useUIStore((s) => s.setInspectorTab);
@@ -144,6 +146,9 @@ export function ToolCallInspector() {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
+        {inspectorTab === "output" ? (
+          <OutputPanel lastOutput={lastOutput} />
+        ) : null}
         {inspectorTab === "tools" ? (
           <ToolsPanel calls={calls} expandedId={expandedId} setExpandedId={setExpandedId} />
         ) : null}
@@ -154,6 +159,47 @@ export function ToolCallInspector() {
           <TokensPanel agentStates={agentStates} totalTokens={totalTokens} />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
+  if (!lastOutput) {
+    return (
+      <p
+        style={{
+          color: "var(--text-tertiary)",
+          fontSize: 12,
+          textAlign: "center",
+          padding: "32px 16px",
+          fontFamily: "var(--font-mono)",
+          margin: 0,
+        }}
+      >
+        No output yet — run a pipeline to see results here
+      </p>
+    );
+  }
+
+  return (
+    <div style={{ padding: 8 }}>
+      <pre
+        style={{
+          color: "var(--text-primary)",
+          fontSize: 12,
+          fontFamily: "var(--font-mono)",
+          lineHeight: 1.7,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          margin: 0,
+          padding: "14px 16px",
+          borderRadius: 16,
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        {lastOutput}
+      </pre>
     </div>
   );
 }

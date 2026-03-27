@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type InspectorTab = "tools" | "agent" | "tokens";
+export type InspectorTab = "tools" | "agent" | "tokens" | "output";
 export type ConnectionStatus =
   | "idle"
   | "connecting"
@@ -24,7 +24,7 @@ interface UIStore {
 
 export const useUIStore = create<UIStore>((set) => ({
   selectedAgent: null,
-  inspectorTab: "tools",
+  inspectorTab: "output",
   connectionStatus: "idle",
   isConnected: false,
   activeWorkflowName: null,

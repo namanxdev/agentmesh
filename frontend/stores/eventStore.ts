@@ -15,18 +15,20 @@ interface EventStore {
   workflowId: string | null;
   workflowStatus: "idle" | "running" | "completed" | "error";
   totalTokens: number;
+  lastOutput: string | null;
 
   addEvent: (event: AgentMeshEvent) => void;
   setWorkflowId: (id: string | null) => void;
   reset: () => void;
 }
 
-const INITIAL: Pick<EventStore, "events" | "agentStates" | "workflowId" | "workflowStatus" | "totalTokens"> = {
+const INITIAL: Pick<EventStore, "events" | "agentStates" | "workflowId" | "workflowStatus" | "totalTokens" | "lastOutput"> = {
   events: [],
   agentStates: {},
   workflowId: null,
   workflowStatus: "idle",
   totalTokens: 0,
+  lastOutput: null,
 };
 
 export const useEventStore = create<EventStore>((set) => ({
@@ -34,6 +36,7 @@ export const useEventStore = create<EventStore>((set) => ({
 
   addEvent: (event) =>
     set((state) => {
+      if (state.events.some((e) => e.id === event.id)) return state;
       const next: Partial<EventStore> = {
         events: [...state.events, event],
       };
@@ -78,6 +81,7 @@ export const useEventStore = create<EventStore>((set) => ({
             },
           };
         }
+        if (event.output) next.lastOutput = event.output;
       } else if (event.type === "token.usage") {
         const existing = state.agentStates[event.agentName] ?? {
           status: "idle" as AgentStatus,

@@ -103,8 +103,25 @@ export function TechStack() {
           initial="initial"
           whileInView="animate"
           viewport={{ once: true, margin: "-80px" }}
-          className="mt-8 grid gap-4 lg:grid-cols-3"
+          className="mt-16 grid gap-x-6 gap-y-16 lg:grid-cols-12 relative"
         >
+          {/* Awwwards Technical Crosshairs & Gauges in the grid voids */}
+          <div className="hidden lg:flex absolute left-[38%] top-0 bottom-0 pointer-events-none opacity-40 flex-col items-center">
+             <div className="text-[10px] font-mono text-[color:var(--text-tertiary)] -rotate-90 origin-top mt-12 whitespace-nowrap">
+                [GRID_ALIGN: FALSE]
+             </div>
+             <div className="w-px flex-1 border-l border-[rgba(23,18,15,0.1)] my-16" />
+             <div className="text-[10px] font-mono text-[color:var(--text-tertiary)]">
+                [+]
+             </div>
+          </div>
+
+          <div className="hidden lg:flex absolute right-[23%] top-1/3 pointer-events-none opacity-40">
+             <div className="text-[9px] font-mono tracking-widest text-[color:var(--text-tertiary)] bg-[rgba(23,18,15,0.05)] px-2 py-1 rounded">
+                14.8M TOKENS / SEC
+             </div>
+          </div>
+
           {COMPATIBILITY_CARDS.map((card, index) => (
             <motion.article
               key={card.title}
@@ -112,6 +129,10 @@ export function TechStack() {
               whileHover={{ y: -5 }}
               className={`rounded-[30px] p-6 sm:p-7 ${
                 index === 1 ? "landing-panel-dark" : "landing-panel"
+              } ${
+                index === 0 ? "lg:col-span-4" :
+                index === 1 ? "lg:col-start-6 lg:col-span-4 lg:mt-24" :
+                "lg:col-start-10 lg:col-span-3 lg:mt-8"
               }`}
             >
               <p

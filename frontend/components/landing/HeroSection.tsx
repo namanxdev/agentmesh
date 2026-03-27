@@ -139,8 +139,19 @@ export function HeroSection() {
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="relative z-10 lg:pl-6"
+          className="relative z-10 lg:pl-6 lg:col-start-8 lg:col-span-5 lg:mt-32"
         >
+          {/* Awwwards Extra Aesthetic: Vertical Data Tape & Orbital Ping in the structural Void */}
+          <div className="hidden lg:flex absolute -left-20 top-0 h-full flex-col items-center opacity-60 pointer-events-none">
+            <div className="w-px h-24 border-l border-[rgba(23,18,15,0.15)] bg-gradient-to-b from-transparent to-[rgba(23,18,15,0.05)]" />
+            <div className="my-8 w-2 h-2 rounded-full border border-[rgba(23,18,15,0.3)] flex items-center justify-center p-[6px]">
+              <div className="w-1 h-1 rounded-full bg-[var(--landing-acid)] animate-pulse shadow-[0_0_8px_var(--landing-acid)]" />
+            </div>
+            <div className="origin-center -rotate-90 whitespace-nowrap text-[9px] uppercase tracking-[0.3em] font-mono text-[rgba(23,18,15,0.4)] my-20">
+              SYS.GRAPH // ACTIVE REVISION
+            </div>
+            <div className="w-px flex-1 border-l border-dashed border-[rgba(23,18,15,0.15)]" />
+          </div>
           <motion.div
             variants={staggerItem}
             className="landing-floating absolute -left-2 top-12 hidden rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.88)] px-5 py-3 shadow-[0_18px_48px_rgba(23,18,15,0.12)] xl:flex"

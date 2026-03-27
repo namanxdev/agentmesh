@@ -23,7 +23,7 @@ export function ScrollReveal({ children, className, style, delay = 0, direction 
       ref={ref}
       className={cn(className)}
       style={style}
-      initial={{ opacity: 0.55, y: initialY, x: initialX }}
+      initial={{ opacity: 0.82, y: initialY, x: initialX }}
       animate={isInView ? { opacity: 1, y: 0, x: 0 } : {}}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
     >

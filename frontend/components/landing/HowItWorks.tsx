@@ -39,8 +39,8 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="border-b border-[color:var(--border-subtle)] py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-        <div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10">
-          <ScrollReveal className="lg:sticky lg:top-28 lg:self-start">
+        <div className="grid gap-x-6 gap-y-16 lg:grid-cols-12 lg:items-start relative">
+          <ScrollReveal className="lg:col-span-4 lg:sticky lg:top-32">
             <p className="landing-kicker">02 / Control logic</p>
             <h2
               className="mt-4 max-w-[520px] text-[clamp(2.8rem,6vw,5rem)] leading-[0.95] tracking-[-0.07em]"
@@ -70,12 +70,22 @@ export function HowItWorks() {
             </div>
           </ScrollReveal>
 
+          {/* Awwwards Vertical Line Tracker inside Col 5 Void */}
+          <div className="hidden lg:flex flex-col items-center absolute left-[37.5%] top-16 bottom-0 w-px opacity-40 pointer-events-none">
+            <div className="w-px h-32 border-l border-dashed border-[color:var(--border-default)]" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] my-6 animate-pulse shadow-[0_0_12px_var(--accent-primary)]" />
+            <div className="origin-center -rotate-90 whitespace-nowrap text-[9px] uppercase tracking-[0.3em] font-mono text-[color:var(--text-tertiary)] my-16">
+              SYS_ROUTER // ACTIVE
+            </div>
+            <div className="w-px flex-1 border-l border-dashed border-[color:var(--border-default)]" />
+          </div>
+
           <motion.div
             variants={staggerContainer}
             initial="initial"
             whileInView="animate"
             viewport={{ once: true, margin: "-80px" }}
-            className="space-y-5"
+            className="lg:col-start-6 lg:col-span-7 space-y-8"
           >
             {STEPS.map((step, index) => (
               <motion.article
