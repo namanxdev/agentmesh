@@ -1,6 +1,7 @@
 "use client";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { NODE_COLORS } from "./nodes/BaseNode";
+import { useEffect, useState } from "react";
 import type {
   NodeKind,
   InputNodeConfig,
@@ -155,12 +156,41 @@ function OutputForm({ id, config }: { id: string; config: OutputNodeConfig }) {
   );
 }
 
+type MCPServerOption = { id: string; name: string };
+
 function ToolForm({ id, config }: { id: string; config: ToolNodeConfig }) {
   const update = usePipelineStore((s) => s.updateNodeConfig);
+  const [mcpServers, setMcpServers] = useState<MCPServerOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/mcp/user-servers")
+      .then((r) => r.ok ? r.json() : { servers: [] })
+      .then((data) => setMcpServers(data.servers ?? []))
+      .catch(() => {});
+  }, []);
+
   return (
     <>
       <Field label="Server">
-        <input style={fieldStyle} value={config.server} onChange={(e) => update(id, { server: e.target.value })} placeholder="mcp-server-name" />
+        {mcpServers.length > 0 ? (
+          <select
+            style={fieldStyle}
+            value={config.server}
+            onChange={(e) => update(id, { server: e.target.value })}
+          >
+            <option value="">-- select server --</option>
+            {mcpServers.map((s) => (
+              <option key={s.id} value={s.name}>{s.name}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            style={fieldStyle}
+            value={config.server}
+            onChange={(e) => update(id, { server: e.target.value })}
+            placeholder="mcp-server-name"
+          />
+        )}
       </Field>
       <Field label="Tool Name">
         <input style={fieldStyle} value={config.tool_name} onChange={(e) => update(id, { tool_name: e.target.value })} placeholder="tool_function_name" />

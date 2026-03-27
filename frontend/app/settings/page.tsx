@@ -25,9 +25,28 @@ const PROVIDERS = [
   },
 ];
 
+type MCPServerRow = {
+  id: string;
+  name: string;
+  server_type: string;
+  command_or_url: string;
+  created_at: string | null;
+};
+
+const SERVER_TYPES = ["stdio", "sse", "http"] as const;
+
 export default function SettingsPage() {
   const [savedKeys, setSavedKeys] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+
+  // MCP servers state
+  const [mcpServers, setMcpServers] = useState<MCPServerRow[]>([]);
+  const [mcpLoading, setMcpLoading] = useState(true);
+  const [mcpName, setMcpName] = useState("");
+  const [mcpType, setMcpType] = useState<typeof SERVER_TYPES[number]>("stdio");
+  const [mcpUrl, setMcpUrl] = useState("");
+  const [mcpAdding, setMcpAdding] = useState(false);
+  const [mcpError, setMcpError] = useState("");
 
   const fetchKeys = useCallback(async () => {
     try {
@@ -46,9 +65,84 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const fetchMcpServers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/mcp/user-servers");
+      if (!res.ok) return;
+      const data = await res.json();
+      setMcpServers(data.servers ?? []);
+    } catch {
+      // silent
+    } finally {
+      setMcpLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchKeys();
-  }, [fetchKeys]);
+    fetchMcpServers();
+  }, [fetchKeys, fetchMcpServers]);
+
+  const handleAddMcpServer = async () => {
+    setMcpError("");
+    if (!mcpName.trim() || !mcpUrl.trim()) {
+      setMcpError("Name and command/URL are required.");
+      return;
+    }
+    setMcpAdding(true);
+    try {
+      const res = await fetch("/api/mcp/user-servers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: mcpName.trim(),
+          server_type: mcpType,
+          command_or_url: mcpUrl.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setMcpError(err.detail ?? "Failed to add server.");
+        return;
+      }
+      setMcpName("");
+      setMcpType("stdio");
+      setMcpUrl("");
+      await fetchMcpServers();
+    } catch {
+      setMcpError("Network error.");
+    } finally {
+      setMcpAdding(false);
+    }
+  };
+
+  const handleDeleteMcpServer = async (id: string) => {
+    try {
+      await fetch(`/api/mcp/user-servers/${id}`, { method: "DELETE" });
+      setMcpServers((prev) => prev.filter((s) => s.id !== id));
+    } catch {
+      // silent
+    }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: 0,
+    background: "var(--bg-tertiary)",
+    border: "1px solid var(--border-subtle)",
+    borderRadius: 6,
+    color: "var(--text-primary)",
+    fontSize: 12,
+    padding: "7px 10px",
+    outline: "none",
+    fontFamily: "inherit",
+  };
+
+  const selectStyle: React.CSSProperties = {
+    ...inputStyle,
+    flex: "0 0 90px",
+    cursor: "pointer",
+  };
 
   return (
     <div
@@ -107,6 +201,7 @@ export default function SettingsPage() {
           padding: "48px 28px",
         }}
       >
+        {/* API Keys section */}
         <div style={{ marginBottom: 36 }}>
           <p
             style={{
@@ -188,6 +283,195 @@ export default function SettingsPage() {
         >
           Keys are never logged or exposed in responses. You can remove them at any time.
         </p>
+
+        {/* MCP Servers section */}
+        <div style={{ marginTop: 56, marginBottom: 24 }}>
+          <p
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              color: "var(--accent-secondary)",
+              fontFamily: "var(--font-mono)",
+              margin: "0 0 8px",
+            }}
+          >
+            MCP Servers
+          </p>
+          <h2
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+              margin: "0 0 10px",
+            }}
+          >
+            Your MCP servers
+          </h2>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+            Register Model Context Protocol servers to use as tools inside pipeline nodes.
+          </p>
+        </div>
+
+        {/* Existing servers list */}
+        {!mcpLoading && mcpServers.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+            {mcpServers.map((srv) => (
+              <div
+                key={srv.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  background: "var(--bg-secondary)",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    color: "var(--accent-secondary)",
+                    background: "var(--accent-secondary)18",
+                    border: "1px solid var(--accent-secondary)33",
+                    borderRadius: 4,
+                    padding: "1px 6px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {srv.server_type}
+                </span>
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {srv.name}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    fontFamily: "var(--font-mono)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    flex: 1,
+                  }}
+                >
+                  {srv.command_or_url}
+                </span>
+                <button
+                  onClick={() => handleDeleteMcpServer(srv.id)}
+                  style={{
+                    background: "none",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: 5,
+                    color: "var(--text-muted)",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    padding: "3px 8px",
+                    flexShrink: 0,
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!mcpLoading && mcpServers.length === 0 && (
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+              marginBottom: 16,
+            }}
+          >
+            No servers configured yet.
+          </p>
+        )}
+
+        {/* Add server form */}
+        <div
+          style={{
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 10,
+            padding: "16px 16px 14px",
+          }}
+        >
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: "var(--text-secondary)",
+              margin: "0 0 12px",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            Add server
+          </p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input
+              style={{ ...inputStyle, flex: "0 0 160px" }}
+              placeholder="Name (e.g. github)"
+              value={mcpName}
+              onChange={(e) => setMcpName(e.target.value)}
+            />
+            <select
+              style={selectStyle}
+              value={mcpType}
+              onChange={(e) => setMcpType(e.target.value as typeof SERVER_TYPES[number])}
+            >
+              {SERVER_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <input
+              style={inputStyle}
+              placeholder="Command or URL"
+              value={mcpUrl}
+              onChange={(e) => setMcpUrl(e.target.value)}
+            />
+          </div>
+          {mcpError && (
+            <p style={{ fontSize: 11, color: "var(--status-error, #ef4444)", margin: "0 0 8px" }}>
+              {mcpError}
+            </p>
+          )}
+          <button
+            onClick={handleAddMcpServer}
+            disabled={mcpAdding}
+            style={{
+              background: "var(--accent-secondary)18",
+              border: "1px solid var(--accent-secondary)44",
+              borderRadius: 6,
+              color: "var(--accent-secondary)",
+              cursor: mcpAdding ? "default" : "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              padding: "6px 14px",
+              opacity: mcpAdding ? 0.6 : 1,
+            }}
+          >
+            {mcpAdding ? "Adding…" : "Add Server"}
+          </button>
+        </div>
       </div>
     </div>
   );

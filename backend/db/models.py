@@ -19,6 +19,7 @@ class User(Base):
     mcp_servers: Mapped[list[MCPServer]] = relationship(back_populates="user", cascade="all, delete-orphan")
     pipelines: Mapped[list[Pipeline]] = relationship(back_populates="user", cascade="all, delete-orphan")
     pipeline_runs: Mapped[list[PipelineRun]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    triggers: Mapped[list["Trigger"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class ApiKey(Base):
@@ -57,6 +58,7 @@ class Pipeline(Base):
 
     user: Mapped[User] = relationship(back_populates="pipelines")
     runs: Mapped[list[PipelineRun]] = relationship(back_populates="pipeline", cascade="all, delete-orphan")
+    triggers: Mapped[list["Trigger"]] = relationship(back_populates="pipeline", cascade="all, delete-orphan")
 
 
 class PipelineRun(Base):
@@ -73,3 +75,18 @@ class PipelineRun(Base):
 
     user: Mapped[User] = relationship(back_populates="pipeline_runs")
     pipeline: Mapped[Pipeline | None] = relationship(back_populates="runs")
+
+
+class Trigger(Base):
+    __tablename__ = "triggers"
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    pipeline_id: Mapped[str] = mapped_column(String, ForeignKey("pipelines.id", ondelete="CASCADE"), nullable=False)
+    trigger_type: Mapped[str] = mapped_column(String, nullable=False)  # "webhook" | "cron"
+    secret: Mapped[str] = mapped_column(String, nullable=False)  # HMAC secret for webhook
+    cron_schedule: Mapped[str | None] = mapped_column(String, nullable=True)  # cron expression
+    is_active: Mapped[bool] = mapped_column(server_default="true")
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="triggers")
+    pipeline: Mapped["Pipeline"] = relationship(back_populates="triggers")

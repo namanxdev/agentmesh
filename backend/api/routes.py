@@ -1,9 +1,12 @@
 import os
 import uuid
 import time
+import hmac
+import hashlib
+import secrets
 from typing import Optional
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, WebSocket, Depends, HTTPException
+from fastapi import FastAPI, WebSocket, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
@@ -60,6 +63,18 @@ class SavePipelineRequest(BaseModel):
     pipeline_id: Optional[str] = None
     name: str
     definition: PipelineDefinitionModel
+
+
+class CreateMCPServerRequest(BaseModel):
+    name: str
+    server_type: str  # "stdio" | "sse" | "http"
+    command_or_url: str
+    env_vars: dict = {}
+
+
+class CreateTriggerRequest(BaseModel):
+    trigger_type: str  # "webhook" | "cron"
+    cron_schedule: Optional[str] = None
 
 
 # -- App factory --------------------------------------------------------------
@@ -204,6 +219,79 @@ def create_app(
     @app.get("/api/mcp/servers")
     async def list_mcp_servers():
         return mcp_registry.get_server_info()
+
+    @app.post("/api/mcp/user-servers")
+    async def create_user_mcp_server(
+        request: CreateMCPServerRequest,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        import datetime as _datetime
+        import json as _json
+        new_id = str(uuid.uuid4())
+        now = _datetime.datetime.utcnow()
+        await db.execute(
+            text(
+                "INSERT INTO mcp_servers (id, user_id, name, server_type, command_or_url, env_vars, created_at)"
+                " VALUES (:id, :uid, :name, :server_type, :command_or_url, :env_vars, :now)"
+            ),
+            {
+                "id": new_id,
+                "uid": user_id,
+                "name": request.name,
+                "server_type": request.server_type,
+                "command_or_url": request.command_or_url,
+                "env_vars": _json.dumps(request.env_vars),
+                "now": now,
+            },
+        )
+        await db.commit()
+        return {
+            "id": new_id,
+            "name": request.name,
+            "server_type": request.server_type,
+            "command_or_url": request.command_or_url,
+            "created_at": now.isoformat(),
+        }
+
+    @app.get("/api/mcp/user-servers")
+    async def list_user_mcp_servers(
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        result = await db.execute(
+            text(
+                "SELECT id, name, server_type, command_or_url, created_at"
+                " FROM mcp_servers WHERE user_id=:uid ORDER BY created_at DESC"
+            ),
+            {"uid": user_id},
+        )
+        rows = result.fetchall()
+        return {
+            "servers": [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "server_type": r.server_type,
+                    "command_or_url": r.command_or_url,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+        }
+
+    @app.delete("/api/mcp/user-servers/{server_id}")
+    async def delete_user_mcp_server(
+        server_id: str,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        await db.execute(
+            text("DELETE FROM mcp_servers WHERE id=:id AND user_id=:uid"),
+            {"id": server_id, "uid": user_id},
+        )
+        await db.commit()
+        return {"deleted": server_id}
 
     # -- Pipeline endpoints ----------------------------------------------------
 
@@ -484,6 +572,214 @@ def create_app(
         )
         await db.commit()
         return {"deleted": pipeline_id}
+
+    # -- Trigger endpoints -----------------------------------------------------
+
+    @app.post("/api/pipelines/{pipeline_id}/triggers")
+    async def create_trigger(
+        pipeline_id: str,
+        request: CreateTriggerRequest,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        import datetime as _datetime
+        # Verify pipeline belongs to user
+        row = await db.execute(
+            text("SELECT id FROM pipelines WHERE id=:pid AND user_id=:uid"),
+            {"pid": pipeline_id, "uid": user_id},
+        )
+        if not row.fetchone():
+            raise HTTPException(status_code=404, detail="Pipeline not found")
+
+        trigger_id = str(uuid.uuid4())
+        secret = secrets.token_hex(32)
+        now = _datetime.datetime.utcnow()
+        await db.execute(
+            text(
+                "INSERT INTO triggers (id, user_id, pipeline_id, trigger_type, secret, cron_schedule, is_active, created_at)"
+                " VALUES (:id, :uid, :pid, :ttype, :secret, :cron, true, :now)"
+            ),
+            {
+                "id": trigger_id,
+                "uid": user_id,
+                "pid": pipeline_id,
+                "ttype": request.trigger_type,
+                "secret": secret,
+                "cron": request.cron_schedule,
+                "now": now,
+            },
+        )
+        await db.commit()
+        return {
+            "id": trigger_id,
+            "trigger_type": request.trigger_type,
+            "secret": secret,
+            "webhook_url": f"/api/webhooks/{trigger_id}",
+        }
+
+    @app.get("/api/pipelines/{pipeline_id}/triggers")
+    async def list_triggers(
+        pipeline_id: str,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        result = await db.execute(
+            text(
+                "SELECT id, trigger_type, cron_schedule, is_active, created_at"
+                " FROM triggers WHERE pipeline_id=:pid AND user_id=:uid ORDER BY created_at DESC"
+            ),
+            {"pid": pipeline_id, "uid": user_id},
+        )
+        rows = result.fetchall()
+        return {
+            "triggers": [
+                {
+                    "id": r.id,
+                    "trigger_type": r.trigger_type,
+                    "cron_schedule": r.cron_schedule,
+                    "is_active": r.is_active,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                    "webhook_url": f"/api/webhooks/{r.id}",
+                }
+                for r in rows
+            ]
+        }
+
+    @app.delete("/api/pipelines/{pipeline_id}/triggers/{trigger_id}")
+    async def delete_trigger(
+        pipeline_id: str,
+        trigger_id: str,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        await db.execute(
+            text("DELETE FROM triggers WHERE id=:id AND pipeline_id=:pid AND user_id=:uid"),
+            {"id": trigger_id, "pid": pipeline_id, "uid": user_id},
+        )
+        await db.commit()
+        return {"deleted": trigger_id}
+
+    @app.post("/api/webhooks/{trigger_id}")
+    async def fire_webhook(
+        trigger_id: str,
+        raw_request: Request,
+        db: AsyncSession = Depends(get_db),
+    ):
+        """Public endpoint — no auth required. Secured via HMAC-SHA256 signature."""
+        import asyncio
+        import datetime as _datetime
+
+        body_bytes = await raw_request.body()
+
+        # Fetch trigger and its secret
+        result = await db.execute(
+            text("SELECT id, user_id, pipeline_id, secret, is_active FROM triggers WHERE id=:id"),
+            {"id": trigger_id},
+        )
+        trigger_row = result.fetchone()
+        if not trigger_row:
+            raise HTTPException(status_code=404, detail="Trigger not found")
+        if not trigger_row.is_active:
+            raise HTTPException(status_code=403, detail="Trigger is inactive")
+
+        # Validate HMAC-SHA256 signature
+        sig_header = raw_request.headers.get("x-hub-signature-256", "")
+        expected = "sha256=" + hmac.new(
+            trigger_row.secret.encode(), body_bytes, hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(sig_header, expected):
+            raise HTTPException(status_code=403, detail="Invalid signature")
+
+        # Fetch pipeline definition
+        pipeline_result = await db.execute(
+            text("SELECT id, definition FROM pipelines WHERE id=:pid"),
+            {"pid": trigger_row.pipeline_id},
+        )
+        pipeline_row = pipeline_result.fetchone()
+        if not pipeline_row:
+            raise HTTPException(status_code=404, detail="Pipeline not found")
+
+        # Parse request body for optional task
+        import json as _json
+        try:
+            body_data = _json.loads(body_bytes) if body_bytes else {}
+        except Exception:
+            body_data = {}
+        task = body_data.get("task", "Triggered via webhook")
+
+        # Fetch user's API keys to build LLM provider
+        keys_result = await db.execute(
+            text("SELECT provider, encrypted_key FROM api_keys WHERE user_id=:uid"),
+            {"uid": trigger_row.user_id},
+        )
+        key_rows = keys_result.fetchall()
+
+        from backend.crypto import decrypt
+        from backend.llm.multi import MultiProvider
+        from backend.pipelines.validator import validate_pipeline, pipeline_to_workflow_config
+
+        providers: dict = {}
+        for krow in key_rows:
+            try:
+                api_key = decrypt(krow.encrypted_key)
+            except Exception:
+                continue
+            if krow.provider == "gemini":
+                from backend.llm.gemini import GeminiProvider
+                providers["gemini"] = GeminiProvider(api_key=api_key)
+            elif krow.provider == "groq":
+                from backend.llm.groq import GroqProvider
+                providers["groq"] = GroqProvider(api_key=api_key)
+            elif krow.provider == "openai":
+                from backend.llm.openai_provider import OpenAIProvider
+                providers["openai"] = OpenAIProvider(api_key=api_key)
+
+        user_llm = MultiProvider(providers)
+
+        defn = pipeline_row.definition if isinstance(pipeline_row.definition, dict) else _json.loads(pipeline_row.definition)
+        nodes = defn.get("nodes", [])
+        edges = defn.get("edges", [])
+
+        config = pipeline_to_workflow_config(
+            {"name": defn.get("name", "webhook"), "nodes": nodes, "edges": edges},
+            user_llm,
+            event_bus,
+            mcp_registry,
+        )
+        agent_reg = config["agent_registry"]
+        graph_cfg = config["graph_config"]
+
+        workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
+        agents = {a.config.name: agent_reg.get(a.config.name) for a in agent_reg.list_all()}
+
+        orchestrator = WorkflowOrchestrator(
+            agents=agents,
+            graph_config=graph_cfg,
+            event_bus=event_bus,
+            workflow_id=workflow_id,
+            max_iterations=20,
+            timeout_seconds=120,
+        )
+
+        _runs[workflow_id] = {
+            "workflow_id": workflow_id,
+            "status": "running",
+            "started_at": time.time(),
+        }
+
+        async def _run():
+            result = await orchestrator.run(task=task, initial_state={})
+            _runs[workflow_id].update({
+                "status": "completed" if result.success else "error",
+                "result": result.state.messages[-1] if result.state.messages else {},
+                "token_usage": result.state.token_usage,
+                "duration_seconds": result.total_duration,
+                "error": result.error,
+            })
+
+        asyncio.create_task(_run())
+
+        return {"workflow_id": workflow_id, "status": "started"}
 
     # -- Auth endpoint ---------------------------------------------------------
 
