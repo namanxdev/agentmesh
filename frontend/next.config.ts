@@ -8,6 +8,8 @@ import { loadEnvConfig } from "@next/env";
 // are available to the dev server and edge runtime.
 loadEnvConfig(path.resolve(process.cwd(), ".."));
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  output: "standalone",
+};
 
 export default nextConfig;
