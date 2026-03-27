@@ -13,6 +13,7 @@ const PALETTE_ITEMS: Array<{ kind: NodeKind; name: string; description: string }
   { kind: "router",    name: "Router",    description: "Conditional branch" },
   { kind: "memory",    name: "Memory",    description: "Context / vector store" },
   { kind: "transform", name: "Transform", description: "JSON parse, extract, format" },
+  { kind: "parallel",  name: "Parallel",  description: "Fan-out to multiple agents" },
 ];
 
 export function NodePalette() {

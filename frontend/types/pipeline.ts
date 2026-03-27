@@ -9,7 +9,8 @@ export type NodeKind =
   | "text"
   | "router"
   | "memory"
-  | "transform";
+  | "transform"
+  | "parallel";
 
 export type DashboardMode = "build" | "run";
 

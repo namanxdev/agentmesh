@@ -14,6 +14,7 @@ export const NODE_COLORS: Record<NodeKind, string> = {
   router: "#ff8f6b",
   memory: "#6fd3b2",
   transform: "#ff9b71",
+  parallel: "#A855F7",
 };
 
 export const NODE_ICONS: Record<NodeKind, string> = {
@@ -25,6 +26,7 @@ export const NODE_ICONS: Record<NodeKind, string> = {
   router: "IF",
   memory: "MEM",
   transform: "FX",
+  parallel: "⇶",
 };
 
 export const NODE_META: Record<
@@ -62,6 +64,10 @@ export const NODE_META: Record<
   transform: {
     kicker: "Transform",
     description: "Shape and normalize data before the next step.",
+  },
+  parallel: {
+    kicker: "Fan-out",
+    description: "Run multiple agents simultaneously then merge results.",
   },
 };
 

@@ -74,6 +74,8 @@ def validate_pipeline(nodes: list[dict], edges: list[dict]) -> dict:
                 errors.append(f"Node '{nid}' ({kind}) has no outgoing edges")
             if kind == "router" and outgoing_count[nid] < 2:
                 errors.append(f"Router node '{nid}' must have at least 2 outgoing edges")
+            if kind == "parallel" and outgoing_count[nid] < 2:
+                errors.append(f"Parallel node '{nid}' must have at least 2 outgoing edges")
 
     return {
         "num_nodes": len(nodes),
@@ -233,6 +235,9 @@ def pipeline_to_workflow_config(
 
         # Check if next is a router
         router_nodes = [node_map[d] for d in downstream if node_map[d]["kind"] == "router"]
+        # Check if next is a parallel fan-out node
+        parallel_nodes = [node_map[d] for d in downstream if node_map[d]["kind"] == "parallel"]
+
         if router_nodes:
             router = router_nodes[0]
             transitions: dict[str, str] = {}
@@ -248,6 +253,27 @@ def pipeline_to_workflow_config(
                 else:
                     transitions[cond["key"]] = "end"
             graph_config[agent_name] = transitions
+        elif parallel_nodes:
+            # Fan-out: collect all llm_agents reachable directly from the parallel node.
+            parallel_node = parallel_nodes[0]
+            branch_agent_names: list[str] = []
+            for branch_target in adj[parallel_node["id"]]:
+                branch_node = node_map[branch_target]
+                if branch_node["kind"] == "llm_agent":
+                    branch_agent_names.append(branch_node["config"].get("name", branch_target))
+                else:
+                    # Traverse through structural nodes to find the first llm_agent.
+                    further = find_nearest_llm_agent_downstream(branch_target)
+                    if further:
+                        branch_agent_names.append(node_map[further]["config"].get("name", further))
+
+            if len(branch_agent_names) >= 2:
+                graph_config[agent_name] = {"on_complete": branch_agent_names}
+            elif len(branch_agent_names) == 1:
+                # Degenerate parallel with one branch — treat as sequential.
+                graph_config[agent_name] = {"on_complete": branch_agent_names[0]}
+            else:
+                graph_config[agent_name] = {"on_complete": "end"}
         else:
             # Find next llm_agent downstream
             next_llm_id = None

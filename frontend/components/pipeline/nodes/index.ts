@@ -6,6 +6,7 @@ import { TextNode } from "./TextNode";
 import { RouterNode } from "./RouterNode";
 import { MemoryNode } from "./MemoryNode";
 import { TransformNode } from "./TransformNode";
+import { ParallelNode } from "./ParallelNode";
 
 // IMPORTANT: Declared outside any React component for stable reference (React Flow requirement)
 export const pipelineNodeTypes = {
@@ -17,6 +18,7 @@ export const pipelineNodeTypes = {
   router: RouterNode,
   memory: MemoryNode,
   transform: TransformNode,
+  parallel: ParallelNode,
 } as const;
 
 export {
@@ -28,5 +30,6 @@ export {
   RouterNode,
   MemoryNode,
   TransformNode,
+  ParallelNode,
 };
 export { BaseNode, NODE_COLORS, NODE_ICONS } from "./BaseNode";
