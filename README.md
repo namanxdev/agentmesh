@@ -1,115 +1,57 @@
-# 🕸️ AgentMesh
+# AgentMesh
 
-<div align="center">
-
-**MCP-Native Multi-Agent Orchestrator with Live Mission Control**
-
-*Define specialized AI agents, connect them to any MCP server, and orchestrate collaborative workflows — with a real-time WebSocket "mission control" UI.*
+**Self-hosted visual multi-agent AI pipelines — MCP-native, bring your own keys, monitor everything in real-time.**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-[Live Demo](https://agentmesh.vercel.app) · [Documentation](./docs) · [Get Started](#quick-start) · [Contributing](#contributing)
+---
 
-</div>
+## What is AgentMesh?
+
+AgentMesh is a self-hosted platform for building and running multi-agent AI pipelines with a visual drag-and-drop canvas. Define agents, connect them to any MCP server, and orchestrate collaborative workflows — while monitoring every step in real-time.
+
+Built for developer teams who want full control over their AI infrastructure. Your LLM keys never leave your server.
+
+![AgentMesh Dashboard](landing-desktop-full-updated.png)
 
 ---
 
-## ✨ What is AgentMesh?
+## Features
 
-AgentMesh is an open-source Python framework + visual dashboard that lets you:
+### What works today
+- **Visual pipeline builder** — drag-and-drop canvas with 8 node types: Input, Output, LLM Agent, Tool, Text, Router, Memory, Transform
+- **Sequential multi-agent orchestration** — agents hand off to each other via configurable routing rules
+- **MCP-native** — connect any MCP server (GitHub, filesystem, web search, custom) to your agents via FastMCP
+- **Multi-LLM support** — Gemini, Groq (Llama), and OpenAI behind a unified provider interface
+- **BYOK (bring your own keys)** — per-user AES-256 encrypted key storage; your keys, your spend
+- **Real-time monitoring** — WebSocket event streaming: agent status, tool calls, token usage, output — all live
+- **Pipeline save / load** — save pipelines to your account and reload them anytime
+- **Pipeline templates** — pre-built Research Synthesis and GitHub Code Review workflows to get started immediately
+- **Run history** — every pipeline run is logged with status, duration, and token count
+- **Google OAuth** — authentication via NextAuth v5
 
-- **Define specialized AI agents** with roles, system prompts, MCP server connections, and handoff rules
-- **Connect to any MCP server** — filesystem, GitHub, web search, databases, and more
-- **Orchestrate multi-agent workflows** using LangGraph's state machine architecture
-- **Monitor everything in real-time** through a stunning WebSocket-powered Mission Control dashboard
-
-> Think of it as **Kubernetes for AI agents** — but with a beautiful control plane.
-
----
-
-## 🎬 Preview
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  🛰️ MISSION CONTROL                                     
-│                                                         │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐           │
-│  │ Research │───▶│ Analyst  │───▶│ Writer   │           │
-│  │ Agent    │    │ Agent    │    │ Agent    │           │
-│  └──────────┘    └──────────┘    └──────────┘           │
-│       │               │               │                 │
-│  ┌─────────┐    ┌─────────┐    ┌─────────┐              │
-│  │ Web MCP │    │ GH MCP  │    │ FS MCP  │              │
-│  └─────────┘    └─────────┘    └─────────┘              │
-│                                                         │
-│  📊 Live Token Usage  │  🔄 Active Tasks  │  📝 Logs   │
-└─────────────────────────────────────────────────────────┘
-```
+### Roadmap
+- 🔜 Docker Compose one-command setup
+- 🔜 Parallel agent execution (true mesh topology)
+- 🔜 User-managed MCP server configuration UI
+- 🔜 Webhook / cron pipeline triggers
+- 🔜 Pipeline sharing and marketplace
+- 🔜 PyPI package (`pip install agentmesh`)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### Installation
+### Prerequisites
+- Python 3.11+
+- Node.js 20+
+- PostgreSQL database ([Neon](https://neon.tech) free tier works)
+- [`uv`](https://github.com/astral-sh/uv) package manager: `pip install uv`
 
-```bash
-pip install agentmesh
-```
-
-### Define Your First Workflow
-
-```python
-from agentmesh import Agent, Workflow, MCPConnection
-
-# Define agents with MCP connections
-researcher = Agent(
-    name="Researcher",
-    role="Research specialist",
-    system_prompt="You are a thorough researcher...",
-    mcp_servers=[
-        MCPConnection("web-search"),
-        MCPConnection("filesystem")
-    ]
-)
-
-analyst = Agent(
-    name="Analyst",
-    role="Data analyst",
-    system_prompt="You analyze research data...",
-    mcp_servers=[MCPConnection("github")]
-)
-
-# Create workflow with handoff rules
-workflow = Workflow(
-    agents=[researcher, analyst],
-    handoff_rules={
-        "researcher": ["analyst"],
-        "analyst": ["researcher"]
-    }
-)
-
-# Execute with real-time monitoring
-result = await workflow.run(
-    task="Analyze the latest trends in AI agent frameworks"
-)
-```
-
-### Launch Mission Control
-
-```bash
-agentmesh serve --port 8000
-```
-
-Open `http://localhost:8000` to see the live Mission Control dashboard.
-
----
-
-## 🖥️ Running Locally
-
-### 1. Clone & configure environment
+### 1. Clone and configure
 
 ```bash
 git clone https://github.com/yourusername/agentmesh.git
@@ -117,22 +59,24 @@ cd agentmesh
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your keys:
+Edit `.env` — minimum required:
 
 | Variable | Where to get it |
-|---|---|
+|----------|----------------|
 | `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) → Get API key |
-| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) → API Keys |
-| `GITHUB_CLIENT_ID` | GitHub → Settings → Developer settings → OAuth Apps |
-| `GITHUB_TOKEN` | GitHub → Settings → Developer settings → Personal access tokens |
+| `DATABASE_CONN` | Your PostgreSQL connection string |
+| `ENCRYPTION_KEY` | `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
+| `GOOGLE_CLIENT_ID` | Google Cloud Console → OAuth 2.0 Client |
+| `GOOGLE_CLIENT_SECRET` | Same as above |
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+
+Copy the frontend block from `.env.example` into `frontend/.env.local`.
 
 ### 2. Start the backend
 
 ```bash
-# Install dependencies (Python 3.11+, uv required)
 uv sync
-
-# Start FastAPI server with hot-reload
+uv run alembic upgrade head
 uv run uvicorn backend.api.routes:app --reload --port 8000
 ```
 
@@ -146,142 +90,99 @@ npm install
 npm run dev
 ```
 
-Frontend runs at `http://localhost:3000`
-
-| Route | Description |
-|---|---|
+| URL | Description |
+|-----|-------------|
 | `http://localhost:3000` | Landing page |
-| `http://localhost:3000/dashboard` | Mission Control (live agent monitoring) |
-
-> **Note**: Install `uv` with `pip install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`
+| `http://localhost:3000/dashboard` | Pipeline builder + Mission Control |
+| `http://localhost:3000/settings` | API key management |
 
 ---
 
-## 🏗️ Architecture
+## How It Works
+
+1. **Build** — drag nodes onto the canvas, connect them, configure each node in the inspector panel
+2. **Validate** — click Validate to check for DAG errors before running
+3. **Run** — enter a task, hit Run; the pipeline definition is sent to the FastAPI backend
+4. **Execute** — the `WorkflowOrchestrator` runs agents sequentially; each agent calls the LLM and any connected MCP tools
+5. **Monitor** — events stream back via WebSocket in real-time: agent status, tool calls, token usage, final output
+
+---
+
+## Architecture
 
 ```
 agentmesh/
-├── backend/                    # FastAPI + LangGraph + FastMCP
-│   ├── agents/                 # Agent definition layer
-│   │   ├── base.py            # Base agent class
-│   │   ├── registry.py        # Agent registry & discovery
-│   │   └── prompts/           # System prompt templates
-│   ├── orchestrator/          # LangGraph workflow engine
-│   │   ├── graph.py           # State machine definitions
-│   │   ├── state.py           # Shared state management
-│   │   └── handoff.py         # Agent handoff logic
-│   ├── mcp/                   # MCP client integration
-│   │   ├── client.py          # FastMCP client wrapper
-│   │   ├── registry.py        # MCP server registry
-│   │   └── tools.py           # Tool call abstraction
-│   ├── events/                # Real-time event system
-│   │   ├── bus.py             # WebSocket event bus
-│   │   ├── models.py          # Event type definitions
-│   │   └── stream.py          # SSE/WebSocket streaming
-│   ├── llm/                   # LLM provider abstraction
-│   │   ├── gemini.py          # Gemini API integration
-│   │   ├── groq.py            # Groq API integration
-│   │   └── base.py            # Base LLM interface
-│   └── api/                   # FastAPI routes
-│       ├── routes.py          # REST endpoints
-│       └── websocket.py       # WebSocket handlers
-│
-├── frontend/                   # Next.js Mission Control UI
-│   ├── app/                   # App router pages
-│   ├── components/            # React components
-│   │   ├── dashboard/         # Mission control views
-│   │   ├── agents/            # Agent visualization
-│   │   ├── graph/             # Workflow graph renderer
-│   │   └── ui/                # Shared UI primitives
-│   ├── hooks/                 # Custom React hooks
-│   ├── lib/                   # Utilities & WebSocket client
-│   └── styles/                # Global styles & theme
-│
-├── examples/                   # Demo workflows
-│   ├── github_review.py       # GitHub code review pipeline
-│   └── research_synthesis.py  # Research synthesis workflow
-│
-└── docs/                       # Documentation
+├── backend/
+│   ├── agents/          # Agent class, registry, system prompts
+│   ├── api/             # FastAPI routes, WebSocket handler, auth middleware
+│   ├── crypto.py        # Fernet AES-256 key encryption
+│   ├── db/              # SQLAlchemy async models + Alembic migrations
+│   ├── events/          # WebSocket EventBus (100-event circular buffer)
+│   ├── llm/             # Gemini, Groq, OpenAI providers + MultiProvider router
+│   ├── mcp/             # FastMCP client wrapper + server registry
+│   ├── orchestrator/    # WorkflowOrchestrator sequential state machine
+│   ├── pipelines/       # DAG validator, pipeline→workflow converter, templates
+│   └── workflows/       # Demo workflow agent definitions
+├── frontend/
+│   ├── app/             # Next.js pages: landing, dashboard, settings, auth
+│   ├── components/      # Pipeline canvas, dashboard panels, UI primitives
+│   ├── hooks/           # useAgentMeshEvents, useWebSocket (auto-reconnect)
+│   ├── stores/          # Zustand: pipeline state, event stream, UI state
+│   └── types/           # TypeScript types for nodes, edges, events
+├── docs/                # Architecture and design documentation
+├── docker-compose.yml   # One-command setup (coming soon)
+└── .env.example         # All environment variables with descriptions
 ```
 
 ---
 
-## 📦 Tech Stack
+## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Backend** | FastAPI | REST API + WebSocket server |
-| **Orchestration** | LangGraph | Agent workflow state machines |
-| **MCP Client** | FastMCP | Connect agents to MCP servers |
-| **LLM** | Gemini API + Groq | AI inference (free tiers) |
-| **Frontend** | Next.js 15 | Mission Control dashboard |
-| **UI Components** | shadcn/ui + Aceternity UI + Magic UI | Premium component library |
-| **Animations** | Framer Motion | Smooth micro-interactions |
-| **Real-time** | WebSocket | Live event streaming |
-| **Deploy** | Vercel + Render | Free-tier hosting |
-
----
-
-## 📚 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [**FEATURES.md**](./docs/FEATURES.md) | Complete feature breakdown & capabilities |
-| [**DESIGN.md**](./docs/DESIGN.md) | UI/UX design system, themes, and visual language |
-| [**IMPLEMENTATION.md**](./docs/IMPLEMENTATION.md) | Technical implementation guide & architecture deep-dive |
-| [**COMPONENTS.md**](./docs/COMPONENTS.md) | Frontend component library documentation |
-| [**API.md**](./docs/API.md) | Backend API reference & WebSocket protocol |
-| [**WORKFLOWS.md**](./docs/WORKFLOWS.md) | Demo workflow documentation & examples |
+| Layer | Technology |
+|-------|-----------|
+| Backend | FastAPI + uvicorn |
+| Orchestration | Custom `WorkflowOrchestrator` (sequential state machine) |
+| MCP | FastMCP |
+| LLM | Gemini API, Groq, OpenAI via unified `MultiProvider` |
+| Frontend | Next.js 16, React 19 |
+| State management | Zustand 5 |
+| Visual canvas | React Flow (`@xyflow/react` 12) |
+| Animations | Framer Motion |
+| Auth | NextAuth v5 + Google OAuth |
+| Database | PostgreSQL via SQLAlchemy async + Alembic |
+| Encryption | Fernet (AES-256) |
+| Real-time | WebSocket (custom `EventBus` with 100-event buffer) |
 
 ---
 
-## 🎯 Demo Workflows
+## Environment Variables
 
-### 1. GitHub Code Review Pipeline
-```
-User Request → Research Agent (web search) → Code Agent (GitHub MCP)
-→ Review Agent (analysis) → Summary Agent (report generation)
-```
-
-### 2. Research Synthesis
-```
-User Query → Search Agent (web MCP) → Data Agent (filesystem MCP)
-→ Analyst Agent (synthesis) → Writer Agent (formatted output)
-```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
-
-```bash
-# Clone the repo
-git clone https://github.com/yourusername/agentmesh.git
-cd agentmesh
-
-# Install backend dependencies
-pip install -e ".[dev]"
-
-# Install frontend dependencies
-cd frontend && npm install
-
-# Run development servers
-agentmesh dev  # Starts both backend + frontend
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | One of these | Gemini 2.0 Flash / Pro |
+| `GROQ_API_KEY` | One of these | Llama 3.3 70B via Groq |
+| `OPENAI_API_KEY` | One of these | GPT-4o / GPT-4o-mini |
+| `DATABASE_CONN` | Yes | PostgreSQL connection string |
+| `ENCRYPTION_KEY` | Yes | Fernet key for per-user API key encryption |
+| `GITHUB_TOKEN` | Optional | Enables GitHub MCP server for code review pipeline |
+| `GITHUB_CLIENT_ID` | Optional | GitHub OAuth (demo workflows) |
+| `AUTH_SECRET` | Yes (frontend) | NextAuth secret |
+| `GOOGLE_CLIENT_ID` | Yes (frontend) | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Yes (frontend) | Google OAuth client secret |
+| `NEXTAUTH_URL` | Yes (frontend) | Your app URL, e.g. `http://localhost:3000` |
+| `FASTAPI_URL` | Yes (frontend) | Backend URL, e.g. `http://localhost:8000` |
 
 ---
 
-## 📄 License
+## Contributing
 
-MIT License — see [LICENSE](LICENSE) for details.
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Make your changes and test them
+4. Open a pull request
 
 ---
 
-<div align="center">
+## License
 
-**Built with ❤️ for the AI agent community**
-
-[⭐ Star on GitHub](https://github.com/yourusername/agentmesh) · [🐛 Report Bug](https://github.com/yourusername/agentmesh/issues) · [💡 Request Feature](https://github.com/yourusername/agentmesh/issues)
-
-</div>
+MIT
