@@ -22,8 +22,8 @@ export function DashboardLayout() {
 
   // Derive agent names from LLM agent nodes for sidebar in run mode
   const agentNames = nodes
-    .filter((n) => n.data.kind === "llm_agent")
-    .map((n) => (n.data.config as { name?: string }).name ?? n.data.label);
+    .filter((n) => n.data?.kind === "llm_agent")
+    .map((n) => (n.data?.config as { name?: string } | undefined)?.name ?? n.data?.label ?? n.id);
 
   return (
     <div

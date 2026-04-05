@@ -32,13 +32,17 @@ export function HeroSection() {
         }}
       />
 
-      <div className="mx-auto grid max-w-[1400px] gap-12 px-5 pb-12 md:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start lg:gap-10">
+      <div className="mx-auto grid max-w-[1400px] gap-x-12 gap-y-24 px-5 pb-12 md:px-8 lg:grid-cols-12 lg:items-start lg:gap-x-10">
         <motion.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="relative z-10"
+          className="relative z-10 lg:col-span-5"
         >
+          {/* Aesthetic Crosshair Top-Right of Text Block */}
+          <div className="hidden lg:block absolute -right-12 -top-12 text-[rgba(23,18,15,0.2)] font-mono text-[10px]">
+            [+]
+          </div>
           <motion.div variants={staggerItem} className="flex flex-wrap gap-3">
             {HERO_TAGS.map((tag) => (
               <span

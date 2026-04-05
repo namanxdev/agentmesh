@@ -16,6 +16,7 @@ import {
   NodeConfig,
   ValidateResponse,
   PipelineDefinition,
+  PipelineNodeDefinition,
 } from "@/types/pipeline";
 import { type AgentStatus } from "@/types/agents";
 
@@ -29,6 +30,7 @@ const DEFAULT_CONFIGS: Record<NodeKind, NodeConfig> = {
   router: { routing_key: "route", conditions: [] },
   memory: { memory_type: "context", key: "memory" },
   transform: { transform_type: "json_parse", expression: "" },
+  parallel: {},
 };
 
 const DEFAULT_LABELS: Record<NodeKind, string> = {
@@ -40,7 +42,96 @@ const DEFAULT_LABELS: Record<NodeKind, string> = {
   router: "Router",
   memory: "Memory",
   transform: "Transform",
+  parallel: "Parallel",
 };
+
+type LoadablePipelineNode =
+  | PipelineNode
+  | PipelineNodeDefinition
+  | ({ id: string; type?: string; data?: Partial<PipelineNode["data"]>; position?: XYPosition });
+
+type LoadablePipelineEdge =
+  | PipelineEdge
+  | PipelineDefinition["edges"][number]
+  | {
+      id: string;
+      source: string;
+      target: string;
+      source_handle?: string;
+      target_handle?: string;
+    };
+
+const FALLBACK_POSITION: XYPosition = { x: 0, y: 0 };
+
+function isNodeKind(kind: unknown): kind is NodeKind {
+  return typeof kind === "string" && kind in DEFAULT_LABELS;
+}
+
+function getNodeLabel(kind: NodeKind, config: Partial<NodeConfig> | undefined, fallback?: unknown) {
+  if (typeof fallback === "string" && fallback.trim()) {
+    return fallback;
+  }
+
+  const name = config && "name" in config ? config.name : undefined;
+  return typeof name === "string" && name.trim() ? name : DEFAULT_LABELS[kind];
+}
+
+function normalizePipelineNode(node: LoadablePipelineNode): PipelineNode | null {
+  const reactFlowData = "data" in node ? node.data : undefined;
+  const reactFlowKind = reactFlowData?.kind;
+  const definitionKind = "kind" in node ? node.kind : undefined;
+  const fallbackKind = "type" in node && isNodeKind(node.type) ? node.type : undefined;
+  const kind = [reactFlowKind, definitionKind, fallbackKind].find(isNodeKind);
+
+  if (!kind) {
+    return null;
+  }
+
+  const configSource =
+    reactFlowData?.config ??
+    ("config" in node ? node.config : undefined) ??
+    {};
+  const config = { ...DEFAULT_CONFIGS[kind], ...configSource } as NodeConfig;
+
+  return {
+    id: node.id,
+    type: kind,
+    position: node.position ?? FALLBACK_POSITION,
+    data: {
+      ...reactFlowData,
+      kind,
+      config,
+      label: getNodeLabel(kind, config, reactFlowData?.label),
+    },
+  };
+}
+
+function normalizePipelineNodes(nodes: LoadablePipelineNode[]): PipelineNode[] {
+  return nodes
+    .map(normalizePipelineNode)
+    .filter((node): node is PipelineNode => node !== null);
+}
+
+function normalizePipelineEdges(edges: LoadablePipelineEdge[]): PipelineEdge[] {
+  return edges.map((edge) => {
+    const sourceHandle = "sourceHandle" in edge
+      ? edge.sourceHandle
+      : "source_handle" in edge
+        ? edge.source_handle
+        : undefined;
+    const targetHandle = "targetHandle" in edge
+      ? edge.targetHandle
+      : "target_handle" in edge
+        ? edge.target_handle
+        : undefined;
+
+    return {
+      ...edge,
+      sourceHandle,
+      targetHandle,
+    };
+  });
+}
 
 interface PipelineStore {
   nodes: PipelineNode[];
@@ -74,7 +165,7 @@ interface PipelineStore {
   loadPipeline: (id: string) => Promise<void>;
   listPipelines: () => Promise<void>;
   deleteSavedPipeline: (id: string) => Promise<void>;
-  loadTemplate: (def: { name: string; nodes: PipelineNode[]; edges: PipelineEdge[] }) => void;
+  loadTemplate: (def: PipelineDefinition) => void;
   togglePipelinesDrawer: () => void;
 }
 
@@ -128,7 +219,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
     set((state) => ({
       nodes: state.nodes.map((n) =>
         n.id === nodeId
-          ? { ...n, data: { ...n.data, config: { ...n.data.config, ...patch } } }
+          ? { ...n, data: { ...n.data, config: { ...n.data.config, ...patch } as NodeConfig } }
           : n
       ),
     }));
@@ -154,15 +245,18 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
 
   serializePipeline: () => {
     const { nodes, edges, pipelineName } = get();
+    const normalizedNodes = normalizePipelineNodes(nodes);
+    const normalizedEdges = normalizePipelineEdges(edges);
+
     return {
       name: pipelineName,
-      nodes: nodes.map((n) => ({
+      nodes: normalizedNodes.map((n) => ({
         id: n.id,
         kind: n.data.kind,
         config: n.data.config,
         position: n.position,
       })),
-      edges: edges.map((e) => ({
+      edges: normalizedEdges.map((e) => ({
         id: e.id,
         source: e.source,
         target: e.target,
@@ -233,8 +327,8 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
 
   loadTemplate: (def) =>
     set({
-      nodes: def.nodes,
-      edges: def.edges,
+      nodes: normalizePipelineNodes(def.nodes ?? []),
+      edges: normalizePipelineEdges(def.edges ?? []),
       pipelineName: def.name,
       currentPipelineId: null,
       mode: "build",
@@ -279,8 +373,8 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       const data = await res.json();
       const def = data.definition;
       set({
-        nodes: def.nodes ?? [],
-        edges: def.edges ?? [],
+        nodes: normalizePipelineNodes(def.nodes ?? []),
+        edges: normalizePipelineEdges(def.edges ?? []),
         pipelineName: data.name ?? def.name ?? "Pipeline",
         currentPipelineId: id,
         showPipelinesDrawer: false,

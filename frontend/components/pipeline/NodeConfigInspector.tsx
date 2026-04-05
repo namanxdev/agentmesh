@@ -12,6 +12,7 @@ import type {
   RouterNodeConfig,
   MemoryNodeConfig,
   TransformNodeConfig,
+  ParallelNodeConfig,
 } from "@/types/pipeline";
 
 // Shared field styles
@@ -305,6 +306,28 @@ function TransformForm({ id, config }: { id: string; config: TransformNodeConfig
   );
 }
 
+function ParallelForm({ config }: { id: string; config: ParallelNodeConfig }) {
+  void config;
+
+  return (
+    <Field label="Execution">
+      <div
+        style={{
+          ...fieldStyle,
+          minHeight: 72,
+          display: "flex",
+          alignItems: "center",
+          padding: "10px 12px",
+          color: "var(--text-secondary)",
+          lineHeight: 1.5,
+        }}
+      >
+        Parallel nodes fan out to multiple downstream branches. Configure branching by wiring each output handle to the agents you want to run concurrently.
+      </div>
+    </Field>
+  );
+}
+
 type InspectorFormProps = { id: string; config: unknown };
 
 const FORM_MAP: Record<NodeKind, React.ComponentType<InspectorFormProps>> = {
@@ -316,13 +339,14 @@ const FORM_MAP: Record<NodeKind, React.ComponentType<InspectorFormProps>> = {
   router: RouterForm as React.ComponentType<InspectorFormProps>,
   memory: MemoryForm as React.ComponentType<InspectorFormProps>,
   transform: TransformForm as React.ComponentType<InspectorFormProps>,
+  parallel: ParallelForm as React.ComponentType<InspectorFormProps>,
 };
 
 export function NodeConfigInspector() {
   const { nodes, selectedNodeId } = usePipelineStore();
   const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) : null;
 
-  if (!selectedNode) {
+  if (!selectedNode?.data) {
     return (
       <div
         className="dashboard-panel"

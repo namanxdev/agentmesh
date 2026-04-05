@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { NODE_COLORS, NODE_ICONS } from "./nodes/BaseNode";
-import type { NodeKind, PipelineNode, PipelineEdge } from "@/types/pipeline";
+import type { NodeKind, PipelineDefinition } from "@/types/pipeline";
 import { usePipelineStore } from "@/stores/pipelineStore";
 
 const PALETTE_ITEMS: Array<{ kind: NodeKind; name: string; description: string }> = [
@@ -17,7 +17,7 @@ const PALETTE_ITEMS: Array<{ kind: NodeKind; name: string; description: string }
 ];
 
 export function NodePalette() {
-  const [templates, setTemplates] = useState<Array<{ id: string; name: string; description: string; definition: { name: string; nodes: PipelineNode[]; edges: PipelineEdge[] } }>>([]);
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string; description: string; definition: PipelineDefinition }>>([]);
   const loadTemplate = usePipelineStore((s) => s.loadTemplate);
 
   useEffect(() => {

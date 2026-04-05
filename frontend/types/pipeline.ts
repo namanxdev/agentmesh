@@ -34,6 +34,7 @@ export type TransformNodeConfig = {
   transform_type: "json_parse" | "extract" | "format";
   expression: string;
 };
+export type ParallelNodeConfig = Record<string, never>;
 
 export type NodeConfig =
   | InputNodeConfig
@@ -43,7 +44,8 @@ export type NodeConfig =
   | TextNodeConfig
   | RouterNodeConfig
   | MemoryNodeConfig
-  | TransformNodeConfig;
+  | TransformNodeConfig
+  | ParallelNodeConfig;
 
 export interface PipelineNodeData extends Record<string, unknown> {
   kind: NodeKind;
@@ -55,14 +57,16 @@ export interface PipelineNodeData extends Record<string, unknown> {
 export type PipelineNode = Node<PipelineNodeData>;
 export type PipelineEdge = Edge;
 
+export interface PipelineNodeDefinition {
+  id: string;
+  kind: NodeKind;
+  config: NodeConfig;
+  position: { x: number; y: number };
+}
+
 export interface PipelineDefinition {
   name: string;
-  nodes: Array<{
-    id: string;
-    kind: NodeKind;
-    config: NodeConfig;
-    position: { x: number; y: number };
-  }>;
+  nodes: PipelineNodeDefinition[];
   edges: Array<{
     id: string;
     source: string;

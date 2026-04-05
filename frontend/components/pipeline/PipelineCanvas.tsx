@@ -49,9 +49,9 @@ export function PipelineCanvas({ mode }: PipelineCanvasProps) {
 
   const displayNodes: PipelineNode[] = nodes.map((node): PipelineNode => {
     const normalizedNode =
-      mode === "run" && node.data.kind === "llm_agent"
+      mode === "run" && node.data?.kind === "llm_agent"
         ? (() => {
-            const agentState = agentStates[node.data.label];
+            const agentState = node.data?.label ? agentStates[node.data.label] : undefined;
             if (!agentState) {
               return node;
             }
@@ -76,7 +76,7 @@ export function PipelineCanvas({ mode }: PipelineCanvasProps) {
     mode === "run"
       ? edges.map((e) => {
           const sourceNode = nodes.find((n) => n.id === e.source);
-          if (!sourceNode) return e;
+          if (!sourceNode?.data?.label) return e;
           const agentState = agentStates[sourceNode.data.label];
           const isActive =
             agentState?.status === "active" ||
