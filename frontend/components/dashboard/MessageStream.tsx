@@ -69,10 +69,10 @@ export function MessageStream() {
     <div
       className="dashboard-panel"
       style={{
-        gridArea: "timeline",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        height: "100%",
       }}
     >
       <div

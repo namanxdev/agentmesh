@@ -1,3 +1,4 @@
+import asyncio
 from backend.events.bus import EventBus
 from .client import MCPClientWrapper
 
@@ -25,11 +26,18 @@ class MCPRegistry:
             raise KeyError(f"MCP server '{name}' not registered.")
         return self._clients[name]
 
-    async def connect_all(self):
-        """Connect to all registered MCP servers (graceful on failure)."""
+    async def connect_all(self, timeout_seconds: float = 5.0):
+        """Connect to all registered MCP servers without blocking forever."""
         for name, client in self._clients.items():
             try:
-                await client.connect()
+                await asyncio.wait_for(client.connect(), timeout=timeout_seconds)
+            except asyncio.TimeoutError:
+                await self._event_bus.emit({
+                    "type": "mcp.connection_error",
+                    "workflow_id": "",
+                    "server": name,
+                    "error": f"Connection timed out after {timeout_seconds:.1f}s",
+                })
             except Exception as exc:
                 await self._event_bus.emit({
                     "type": "mcp.connection_error",

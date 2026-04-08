@@ -390,6 +390,28 @@ body {
     radial-gradient(circle at 12% 18%, rgba(240, 106, 55, 0.13), transparent 24%),
     radial-gradient(circle at 84% 8%, rgba(215, 255, 112, 0.08), transparent 18%),
     linear-gradient(180deg, #120f0d 0%, #171210 100%);
+  transition: grid-template-columns 220ms ease-out, grid-template-rows 220ms ease-out;
+}
+
+.panel-collapse-chevron {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.panel-collapse-chevron:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background: rgba(240, 106, 55, 0.08);
 }
 
 .dashboard-kicker {

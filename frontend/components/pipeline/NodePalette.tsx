@@ -1,45 +1,105 @@
 "use client";
-import { useState, useEffect } from "react";
-import { NODE_COLORS, NODE_ICONS } from "./nodes/BaseNode";
+
+import { useEffect, useState } from "react";
 import type { NodeKind, PipelineDefinition } from "@/types/pipeline";
 import { usePipelineStore } from "@/stores/pipelineStore";
+import { NODE_COLORS, NODE_ICONS } from "./nodes/BaseNode";
 
 const PALETTE_ITEMS: Array<{ kind: NodeKind; name: string; description: string }> = [
-  { kind: "input",     name: "Input",     description: "Pipeline entry point" },
-  { kind: "output",    name: "Output",    description: "Collect final result" },
+  { kind: "input", name: "Input", description: "Pipeline entry point" },
+  { kind: "output", name: "Output", description: "Collect final result" },
   { kind: "llm_agent", name: "LLM Agent", description: "AI reasoning agent" },
-  { kind: "tool",      name: "Tool",      description: "MCP tool call" },
-  { kind: "text",      name: "Text",      description: "Prompt template with {{variables}}" },
-  { kind: "router",    name: "Router",    description: "Conditional branch" },
-  { kind: "memory",    name: "Memory",    description: "Context / vector store" },
+  { kind: "tool", name: "Tool", description: "MCP tool call" },
+  { kind: "text", name: "Text", description: "Prompt template with {{variables}}" },
+  { kind: "router", name: "Router", description: "Conditional branch" },
+  { kind: "memory", name: "Memory", description: "Context / vector store" },
   { kind: "transform", name: "Transform", description: "JSON parse, extract, format" },
-  { kind: "parallel",  name: "Parallel",  description: "Fan-out to multiple agents" },
+  { kind: "parallel", name: "Parallel", description: "Fan-out to multiple agents" },
 ];
 
+type PipelineTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  definition: PipelineDefinition;
+};
+
+function isPipelineTemplate(value: unknown): value is PipelineTemplate {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const template = value as Record<string, unknown>;
+  return (
+    typeof template.id === "string" &&
+    typeof template.name === "string" &&
+    typeof template.description === "string" &&
+    typeof template.definition === "object" &&
+    template.definition !== null
+  );
+}
+
 export function NodePalette() {
-  const [templates, setTemplates] = useState<Array<{ id: string; name: string; description: string; definition: PipelineDefinition }>>([]);
+  const [templates, setTemplates] = useState<PipelineTemplate[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
+  const [templateError, setTemplateError] = useState<string | null>(null);
   const loadTemplate = usePipelineStore((s) => s.loadTemplate);
 
+  const fetchTemplates = async () => {
+    setIsLoadingTemplates(true);
+    setTemplateError(null);
+
+    try {
+      const response = await fetch("/api/pipelines/templates", {
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { templates?: unknown; error?: unknown }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(
+          typeof payload?.error === "string"
+            ? payload.error
+            : `Request failed with status ${response.status}`
+        );
+      }
+
+      if (!Array.isArray(payload?.templates)) {
+        throw new Error("Templates response was invalid");
+      }
+
+      setTemplates(payload.templates.filter(isPipelineTemplate));
+    } catch (error) {
+      setTemplates([]);
+      setTemplateError(
+        error instanceof Error ? error.message : "Unable to load templates"
+      );
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
   useEffect(() => {
-    fetch("/api/pipelines/templates")
-      .then((r) => r.json())
-      .then((d) => setTemplates(d.templates ?? []))
-      .catch(() => {});
+    void fetchTemplates();
   }, []);
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, kind: NodeKind) => {
-    e.dataTransfer.setData("application/pipeline-node-kind", kind);
-    e.dataTransfer.effectAllowed = "copy";
+  const handleDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    kind: NodeKind
+  ) => {
+    event.dataTransfer.setData("application/pipeline-node-kind", kind);
+    event.dataTransfer.effectAllowed = "copy";
   };
 
   return (
     <div
       className="dashboard-panel"
       style={{
-        gridArea: "agents",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        height: "100%",
       }}
     >
       <div
@@ -75,45 +135,204 @@ export function NodePalette() {
           gap: 8,
         }}
       >
-        {templates.length > 0 && (
-          <>
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", padding: "6px 4px 4px", fontFamily: "var(--font-mono)" }}>
-              Templates
-            </div>
-            {templates.map((t) => (
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "var(--text-muted)",
+            padding: "6px 4px 4px",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
+          Templates
+        </div>
+
+        {isLoadingTemplates ? (
+          <div
+            style={{
+              padding: "12px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.03)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              Loading templates...
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-muted)",
+                lineHeight: 1.5,
+              }}
+            >
+              Fetching starter workflows from the pipeline API.
+            </span>
+          </div>
+        ) : templateError ? (
+          <div
+            style={{
+              padding: "10px 12px",
+              borderRadius: 14,
+              border: "1px solid rgba(213,80,63,0.2)",
+              background: "rgba(213,80,63,0.06)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--status-error)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              Templates unavailable
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-muted)",
+                lineHeight: 1.5,
+              }}
+            >
+              {templateError}
+            </span>
+            <button
+              onClick={() => {
+                void fetchTemplates();
+              }}
+              style={{
+                fontSize: 10,
+                color: "var(--text-muted)",
+                background: "transparent",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: 8,
+                padding: "4px 8px",
+                cursor: "pointer",
+                fontFamily: "var(--font-mono)",
+                textAlign: "left",
+              }}
+            >
+              Retry {"->"}
+            </button>
+          </div>
+        ) : templates.length === 0 ? (
+          <div
+            style={{
+              padding: "12px",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.03)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              No templates found
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-muted)",
+                lineHeight: 1.5,
+              }}
+            >
+              The backend responded, but it did not return any starter workflows.
+            </span>
+          </div>
+        ) : (
+          templates.map((template) => (
+            <div
+              key={template.id}
+              onClick={() => loadTemplate(template.definition)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(240,106,55,0.06)",
+                cursor: "pointer",
+                marginBottom: 4,
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.background = "rgba(240,106,55,0.12)";
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = "rgba(240,106,55,0.06)";
+              }}
+            >
               <div
-                key={t.id}
-                onClick={() => loadTemplate(t.definition)}
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "rgba(240,106,55,0.06)",
-                  cursor: "pointer",
-                  marginBottom: 4,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  marginBottom: 2,
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(240,106,55,0.12)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(240,106,55,0.06)"; }}
               >
-                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 }}>{t.name}</div>
-                <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1.4 }}>{t.description}</div>
+                {template.name}
               </div>
-            ))}
-            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "8px 0" }} />
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", padding: "2px 4px 4px", fontFamily: "var(--font-mono)" }}>
-              Nodes
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-muted)",
+                  lineHeight: 1.4,
+                }}
+              >
+                {template.description}
+              </div>
             </div>
-          </>
+          ))
         )}
+
+        <div
+          style={{
+            height: 1,
+            background: "rgba(255,255,255,0.06)",
+            margin: "8px 0",
+          }}
+        />
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "var(--text-muted)",
+            padding: "2px 4px 4px",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
+          Nodes
+        </div>
 
         {PALETTE_ITEMS.map(({ kind, name, description }) => {
           const color = NODE_COLORS[kind];
           const icon = NODE_ICONS[kind];
+
           return (
             <div
               key={kind}
               draggable
-              onDragStart={(e) => handleDragStart(e, kind)}
+              onDragStart={(event) => handleDragStart(event, kind)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -126,17 +345,14 @@ export function NodePalette() {
                 cursor: "grab",
                 transition: "background 0.12s, border-color 0.12s",
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLDivElement).style.background =
-                  `${color}14`;
-                (e.currentTarget as HTMLDivElement).style.borderColor = color;
+              onMouseEnter={(event) => {
+                event.currentTarget.style.background = `${color}14`;
+                event.currentTarget.style.borderColor = color;
               }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLDivElement).style.background =
-                  "var(--bg-tertiary)";
-                (e.currentTarget as HTMLDivElement).style.borderColor =
-                  "var(--border-subtle)";
-                (e.currentTarget as HTMLDivElement).style.borderLeftColor = color;
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = "var(--bg-tertiary)";
+                event.currentTarget.style.borderColor = "var(--border-subtle)";
+                event.currentTarget.style.borderLeftColor = color;
               }}
             >
               <span
@@ -184,7 +400,6 @@ export function NodePalette() {
         })}
       </div>
 
-      {/* Footer hint */}
       <div
         style={{
           padding: "12px 14px 16px",

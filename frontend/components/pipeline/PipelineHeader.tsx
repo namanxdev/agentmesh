@@ -15,7 +15,14 @@ const buttonBase: React.CSSProperties = {
   transition: "transform 0.2s ease, opacity 0.2s ease",
 };
 
-export function PipelineHeader() {
+type AppTab = "build" | "analytics" | "settings";
+
+interface PipelineHeaderProps {
+  activeTab: AppTab;
+  onTabChange: (tab: AppTab) => void;
+}
+
+export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) {
   const {
     mode,
     setMode,
@@ -163,6 +170,43 @@ export function PipelineHeader() {
           />
           {mode === "build" ? "Build mode" : "Run mode"}
         </span>
+      </div>
+
+      {/* Tab switcher */}
+      <div
+        style={{
+          display: "flex",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 999,
+          background: "rgba(255,255,255,0.03)",
+          padding: 3,
+          gap: 2,
+        }}
+      >
+        {(["build", "analytics", "settings"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => onTabChange(tab)}
+            style={{
+              borderRadius: 999,
+              padding: "7px 16px",
+              fontSize: 11,
+              fontWeight: 700,
+              fontFamily: "var(--font-display)",
+              letterSpacing: "0.04em",
+              textTransform: "capitalize",
+              cursor: "pointer",
+              border: "none",
+              background:
+                activeTab === tab ? "rgba(240,106,55,0.18)" : "transparent",
+              color:
+                activeTab === tab ? "var(--accent-primary)" : "var(--text-muted)",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            {tab === "build" ? "Build" : tab === "analytics" ? "Analytics" : "Settings"}
+          </button>
+        ))}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>

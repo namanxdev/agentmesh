@@ -88,12 +88,20 @@ def create_app(
 ) -> FastAPI:
     """Create and configure the FastAPI application."""
 
-    from contextlib import asynccontextmanager
+    import asyncio
+    from contextlib import asynccontextmanager, suppress
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        await mcp_registry.connect_all()
-        yield
+        # Optional MCP servers should not block the API from becoming ready.
+        startup_task = asyncio.create_task(mcp_registry.connect_all())
+        try:
+            yield
+        finally:
+            if not startup_task.done():
+                startup_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await startup_task
 
     app = FastAPI(title="AgentMesh API", version="1.0.0", lifespan=lifespan)
     add_middleware(app)

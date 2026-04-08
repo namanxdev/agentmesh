@@ -2,7 +2,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
+const WS_BASE = process.env.NEXT_PUBLIC_WS_URL ?? "ws://127.0.0.1:8000";
 
 export interface UseWebSocketOptions {
   onMessage: (data: unknown) => void;

@@ -14,10 +14,10 @@ export function AgentSidebar({ agentNames }: AgentSidebarProps) {
     <aside
       className="dashboard-panel"
       style={{
-        gridArea: "agents",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        height: "100%",
       }}
     >
       <div

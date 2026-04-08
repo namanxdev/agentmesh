@@ -6,9 +6,8 @@ import type { Session } from "next-auth";
 import { signOut, useSession } from "next-auth/react";
 
 const NAV_LINKS = [
-  { href: "#features", label: "System" },
-  { href: "#how-it-works", label: "Flow" },
-  { href: "#tech-stack", label: "Compatibility" },
+  { href: "#how-it-works", label: "How it works" },
+  { href: "#tech-stack", label: "Tech stack" },
   { href: "#launch", label: "Launch" },
 ];
 
@@ -35,41 +34,41 @@ export function Navbar({ initialSession }: NavbarProps) {
   }, []);
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-4">
+    <nav className="fixed inset-x-0 top-0 z-50 px-3 pt-2 sm:px-4">
       <div className="mx-auto max-w-[1440px]">
         <div
-          className={`rounded-[30px] border border-[color:var(--border-default)] bg-[rgba(255,250,244,0.72)] backdrop-blur-xl transition-all duration-500 ${
+          className={`rounded-[26px] border border-[color:var(--border-default)] bg-[rgba(255,250,244,0.72)] backdrop-blur-xl transition-all duration-500 ${
             scrolled
-              ? "shadow-[0_24px_80px_rgba(23,18,15,0.16)]"
-              : "shadow-[0_18px_55px_rgba(23,18,15,0.08)]"
+              ? "shadow-[0_18px_56px_rgba(23,18,15,0.14)]"
+              : "shadow-[0_14px_38px_rgba(23,18,15,0.08)]"
           }`}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2 md:px-5">
             <Link
               href="/"
               className="flex items-center gap-3 no-underline"
               style={{ color: "var(--text-primary)" }}
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.78)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-                <span className="grid grid-cols-2 gap-[3px]">
-                  <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent-primary)]" />
-                  <span className="h-[5px] w-[5px] rounded-full bg-[var(--landing-acid)]" />
-                  <span className="h-[5px] w-[5px] rounded-full bg-[var(--landing-ink)]" />
-                  <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent-primary)]" />
+              <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.82)] px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                <span
+                  className="rounded-full border border-[rgba(23,18,15,0.1)] px-2 py-1 text-[10px] uppercase tracking-[0.28em]"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  AM
                 </span>
               </span>
               <span className="flex flex-col">
                 <span
-                  className="text-[11px] uppercase tracking-[0.32em]"
-                  style={{ fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}
+                  className="text-[0.95rem] uppercase tracking-[-0.08em]"
+                  style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
                 >
                   AgentMesh
                 </span>
                 <span
-                  className="text-[0.88rem]"
-                  style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
+                  className="hidden text-[10px] uppercase tracking-[0.26em] lg:block"
+                  style={{ fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}
                 >
-                  Inspectable multi-agent runtime
+                  Mission Control for MCP agents
                 </span>
               </span>
             </Link>
@@ -80,7 +79,7 @@ export function Navbar({ initialSession }: NavbarProps) {
                   <a
                     key={href}
                     href={href}
-                    className="rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.24em] no-underline transition-all duration-300 hover:-translate-y-0.5 hover:bg-[rgba(23,18,15,0.06)]"
+                    className="rounded-full px-4 py-1.5 text-[10px] uppercase tracking-[0.22em] no-underline transition-all duration-300 hover:-translate-y-0.5 hover:bg-[rgba(23,18,15,0.06)]"
                     style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
                   >
                     {label}
@@ -90,13 +89,13 @@ export function Navbar({ initialSession }: NavbarProps) {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden items-center gap-2 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.5)] px-4 py-2.5 md:flex">
+              <div className="hidden items-center gap-2 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.5)] px-3 py-2 md:flex">
                 <span
-                  className="landing-signal-dot h-2.5 w-2.5 rounded-full"
+                  className="landing-signal-dot h-2 w-2 rounded-full"
                   style={{ background: "var(--landing-acid)" }}
                 />
                 <span
-                  className="text-[11px] uppercase tracking-[0.28em]"
+                  className="text-[10px] uppercase tracking-[0.22em]"
                   style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}
                 >
                   Live event fabric
@@ -107,7 +106,7 @@ export function Navbar({ initialSession }: NavbarProps) {
                 <>
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
                     style={{
                       background: "var(--landing-ink)",
                       color: "var(--landing-paper)",
@@ -133,13 +132,13 @@ export function Navbar({ initialSession }: NavbarProps) {
                     className="rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.58)] px-1 py-1 no-underline shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
                     style={{ color: "var(--text-primary)" }}
                   >
-                    <span className="flex items-center gap-3 rounded-full pr-4">
+                      <span className="flex items-center gap-3 rounded-full pr-4">
                       <span
                         style={{
                           position: "relative",
                           display: "inline-flex",
-                          width: 42,
-                          height: 42,
+                          width: 38,
+                          height: 38,
                           borderRadius: 999,
                           overflow: "hidden",
                           alignItems: "center",
@@ -184,7 +183,7 @@ export function Navbar({ initialSession }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => signOut({ callbackUrl: "/" })}
-                    className="landing-chip text-xs uppercase tracking-[0.22em] transition-transform duration-300 hover:-translate-y-0.5"
+                    className="landing-chip px-4 py-2 text-[10px] uppercase tracking-[0.2em] transition-transform duration-300 hover:-translate-y-0.5"
                     style={{
                       color: "var(--text-primary)",
                       fontFamily: "var(--font-mono)",
@@ -198,14 +197,14 @@ export function Navbar({ initialSession }: NavbarProps) {
                 <>
                   <Link
                     href="/login"
-                    className="landing-chip text-xs uppercase tracking-[0.22em] no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                    className="landing-chip px-4 py-2 text-[10px] uppercase tracking-[0.2em] no-underline transition-transform duration-300 hover:-translate-y-0.5"
                     style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
                   >
                     Log in
                   </Link>
                   <Link
                     href="/signup"
-                    className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
                     style={{
                       background: "var(--landing-ink)",
                       color: "var(--landing-paper)",
@@ -230,12 +229,12 @@ export function Navbar({ initialSession }: NavbarProps) {
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto border-t border-[color:var(--border-subtle)] px-4 pb-3 xl:hidden">
+          <div className="flex gap-2 overflow-x-auto border-t border-[color:var(--border-subtle)] px-4 pb-2 pt-2 xl:hidden">
             {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className="landing-chip shrink-0 text-[11px] uppercase tracking-[0.24em] no-underline"
+                className="landing-chip shrink-0 px-3 py-2 text-[10px] uppercase tracking-[0.22em] no-underline"
                 style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
               >
                 {label}

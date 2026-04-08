@@ -17,32 +17,52 @@ export function GitHubCTA() {
   return (
     <section id="launch" className="py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-        <ScrollReveal className="landing-panel-dark overflow-hidden rounded-[38px] p-6 sm:p-8 lg:p-10">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+        <ScrollReveal
+          className="overflow-hidden rounded-[38px] border p-6 sm:p-8 lg:p-10"
+          style={{
+            borderColor: "rgba(23,18,15,0.12)",
+            background: "linear-gradient(180deg, rgba(215,255,112,0.92), rgba(215,255,112,0.78))",
+            boxShadow: "0 28px 80px rgba(23,18,15,0.1)",
+          }}
+        >
+          <div className="grid gap-8 lg:grid-cols-[0.88fr_1.12fr] lg:items-end">
             <div>
-              <p className="landing-kicker text-[rgba(247,240,232,0.52)]">04 / Launch</p>
+              <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.54)" }}>
+                04 / Open source
+              </p>
               <h2
                 className="mt-4 max-w-[520px] text-[clamp(2.8rem,5.4vw,4.8rem)] leading-[0.95] tracking-[-0.07em]"
-                style={{ fontFamily: "var(--font-display)", fontWeight: 900, color: "#f7f0e8" }}
+                style={{ fontFamily: "var(--font-display)", fontWeight: 900, color: "var(--landing-ink)" }}
               >
-                Put the better front end in front of the product.
+                AgentMesh is open source.
               </h2>
               <p
                 className="mt-5 max-w-[430px] text-base leading-7"
-                style={{ color: "rgba(247,240,232,0.7)" }}
+                style={{ color: "rgba(23,18,15,0.72)" }}
               >
-                No fake repo URL, no placeholder clone line. This close is about the next real
-                step in your local environment: run the front end, open Mission Control, and see
-                the new visual system with the actual product surface.
+                The close now matches the rest of the page: bold, direct, and product-first.
+                It points people at the real app and the real local entry point instead of ending
+                on another dark block.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-4">
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <div
+                  className="rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
+                  style={{
+                    borderColor: "rgba(23,18,15,0.12)",
+                    background: "rgba(255,255,255,0.42)",
+                    color: "var(--landing-ink)",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  Self-hosted / MCP-native / typed events
+                </div>
                 <Link
                   href="/dashboard"
                   className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
                   style={{
-                    background: "var(--landing-acid)",
-                    color: "var(--landing-ink)",
+                    background: "var(--landing-ink)",
+                    color: "var(--landing-paper)",
                     fontFamily: "var(--font-display)",
                     fontWeight: 800,
                   }}
@@ -50,33 +70,37 @@ export function GitHubCTA() {
                   Open Mission Control
                 </Link>
                 <a
-                  href="#features"
-                  className="inline-flex items-center gap-3 rounded-full border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                  href="#tech-stack"
+                  className="inline-flex items-center gap-3 rounded-full border px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
                   style={{
-                    color: "#f7f0e8",
+                    borderColor: "rgba(23,18,15,0.12)",
+                    background: "rgba(255,255,255,0.36)",
+                    color: "var(--landing-ink)",
                     fontFamily: "var(--font-display)",
                     fontWeight: 700,
                   }}
                 >
-                  Revisit the system
+                  Read the stack
                 </a>
               </div>
             </div>
 
             <div className="grid gap-4">
-              <div className="rounded-[30px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-5 sm:p-6">
+              <div className="rounded-[30px] border border-[rgba(23,18,15,0.12)] bg-[rgba(255,255,255,0.36)] p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="landing-kicker text-[rgba(247,240,232,0.52)]">Start locally</p>
+                    <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.54)" }}>
+                      Start locally
+                    </p>
                     <p
                       className="mt-3 text-[1.5rem] leading-tight tracking-[-0.04em]"
                       style={{
                         fontFamily: "var(--font-display)",
                         fontWeight: 800,
-                        color: "#f7f0e8",
+                        color: "var(--landing-ink)",
                       }}
                     >
-                      Front end entry point
+                      Local entry point
                     </p>
                   </div>
                   <button
@@ -84,10 +108,10 @@ export function GitHubCTA() {
                     onClick={copyCommand}
                     className="rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
                     style={{
-                      background: copied ? "var(--landing-acid)" : "rgba(255,255,255,0.06)",
-                      color: copied ? "var(--landing-ink)" : "#f7f0e8",
+                      background: copied ? "var(--landing-ink)" : "rgba(23,18,15,0.06)",
+                      color: copied ? "var(--landing-paper)" : "var(--landing-ink)",
                       fontFamily: "var(--font-mono)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      border: "1px solid rgba(23,18,15,0.12)",
                       cursor: "pointer",
                     }}
                   >
@@ -96,7 +120,7 @@ export function GitHubCTA() {
                 </div>
 
                 <div
-                  className="mt-5 rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(10,9,8,0.4)] p-4"
+                  className="mt-5 rounded-[24px] border border-[rgba(23,18,15,0.1)] bg-[rgba(23,18,15,0.92)] p-4"
                   style={{ fontFamily: "var(--font-mono)", color: "#f7f0e8" }}
                 >
                   <span style={{ color: "var(--landing-acid)" }}>$</span> {startCommand}
@@ -104,13 +128,13 @@ export function GitHubCTA() {
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {[
-                    "The landing palette is scoped so the dashboard stays intact.",
-                    "Mission Control remains one click away for actual workflow use.",
+                    "Warm landing, dark dashboard, one coherent product surface.",
+                    "Mission Control stays one click away from the editorial story.",
                   ].map((item) => (
                     <div
                       key={item}
-                      className="rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm leading-6"
-                      style={{ color: "rgba(247,240,232,0.76)" }}
+                      className="rounded-[20px] border border-[rgba(23,18,15,0.1)] bg-[rgba(255,255,255,0.34)] px-4 py-3 text-sm leading-6"
+                      style={{ color: "rgba(23,18,15,0.76)" }}
                     >
                       {item}
                     </div>
@@ -121,20 +145,22 @@ export function GitHubCTA() {
               <div className="grid gap-4 sm:grid-cols-3">
                 {[
                   { label: "Aesthetic", value: "editorial" },
-                  { label: "Tone", value: "product-first" },
-                  { label: "Motion", value: "purposeful" },
+                  { label: "Runtime", value: "observable" },
+                  { label: "Source", value: "open" },
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-4"
+                    className="rounded-[24px] border border-[rgba(23,18,15,0.12)] bg-[rgba(255,255,255,0.32)] p-4"
                   >
-                    <p className="landing-kicker text-[rgba(247,240,232,0.52)]">{item.label}</p>
+                    <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.54)" }}>
+                      {item.label}
+                    </p>
                     <p
                       className="mt-3 text-2xl tracking-[-0.05em]"
                       style={{
                         fontFamily: "var(--font-display)",
                         fontWeight: 800,
-                        color: "#f7f0e8",
+                        color: "var(--landing-ink)",
                       }}
                     >
                       {item.value}

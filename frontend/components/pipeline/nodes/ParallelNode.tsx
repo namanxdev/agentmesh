@@ -62,20 +62,27 @@ export const ParallelNode = memo(function ParallelNode({
         style={getHandleStyle(color, { left: "50%", transform: "translateX(-50%)" })}
       />
 
-      {/* Two source handles — fan-out to parallel branches */}
+      {/* Three source handles — fan-out to parallel branches */}
       <Handle
         type="source"
         position={Position.Bottom}
         id="source-left"
         className="pipeline-node__handle"
-        style={getHandleStyle(color, { left: "30%" })}
+        style={getHandleStyle(color, { left: "20%" })}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="source-middle"
+        className="pipeline-node__handle"
+        style={getHandleStyle(color, { left: "50%", transform: "translateX(-50%)" })}
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="source-right"
         className="pipeline-node__handle"
-        style={getHandleStyle(color, { left: "70%" })}
+        style={getHandleStyle(color, { left: "80%" })}
       />
     </BaseNode>
   );

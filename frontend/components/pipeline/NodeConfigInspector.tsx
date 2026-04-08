@@ -351,7 +351,7 @@ export function NodeConfigInspector() {
       <div
         className="dashboard-panel"
         style={{
-          gridArea: "inspector",
+          height: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
