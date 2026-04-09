@@ -377,6 +377,34 @@ class TestPipelineToWorkflowConfig:
         agent = result["agent_registry"].get("searcher")
         assert "brave_search" in agent.config.mcp_servers
 
+    def test_parallel_fan_out_sets_list_start(self):
+        """input → parallel → [A, B] → C should start with ["A", "B"] in parallel."""
+        mock_llm, event_bus = self._make_registry_and_bus()
+        nodes = [
+            _make_node("n-in", "input", {"description": "parallel task"}),
+            _make_node("n-par", "parallel", {}),
+            self._make_llm_node("n-a", "A"),
+            self._make_llm_node("n-b", "B"),
+            self._make_llm_node("n-c", "C"),
+            _make_node("n-out", "output"),
+        ]
+        edges = [
+            _make_edge("e1", "n-in", "n-par"),
+            _make_edge("e2", "n-par", "n-a"),
+            _make_edge("e3", "n-par", "n-b"),
+            _make_edge("e4", "n-a", "n-c"),
+            _make_edge("e5", "n-b", "n-c"),
+            _make_edge("e6", "n-c", "n-out"),
+        ]
+        definition = {"name": "test", "nodes": nodes, "edges": edges}
+        result = pipeline_to_workflow_config(definition, mock_llm, event_bus)
+
+        gc = result["graph_config"]
+        assert set(gc["start"]) == {"A", "B"}, f"Expected parallel start, got {gc['start']}"
+        assert gc["A"] == {"on_complete": "C"}
+        assert gc["B"] == {"on_complete": "C"}
+        assert gc["C"] == {"on_complete": "end"}
+
     def test_empty_agent_pipeline_returns_empty_graph(self):
         mock_llm, event_bus = self._make_registry_and_bus()
         nodes = [_make_node("n1", "input"), _make_node("n2", "output")]

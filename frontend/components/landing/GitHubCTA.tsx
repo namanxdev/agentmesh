@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { motion } from "framer-motion";
 
 export function GitHubCTA() {
   const [copied, setCopied] = useState(false);
@@ -15,14 +15,17 @@ export function GitHubCTA() {
   };
 
   return (
-    <section id="launch" className="py-20 sm:py-24">
-      <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-        <ScrollReveal
-          className="overflow-hidden rounded-[38px] border p-6 sm:p-8 lg:p-10"
+    <section id="launch" className="py-20 sm:py-24 relative z-10 bg-[linear-gradient(to_bottom,rgb(250,245,239),rgb(255,255,255))]">
+      <div className="mx-auto max-w-[1440px] px-5 md:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 80, filter: "blur(10px)", scale: 0.98 }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="overflow-hidden rounded-[40px] border p-6 sm:p-10 lg:p-14 shadow-sm hover:shadow-[0_40px_100px_rgba(215,255,112,0.15)] transition-all duration-700 hover:-translate-y-2 cursor-default"
           style={{
             borderColor: "rgba(23,18,15,0.12)",
-            background: "linear-gradient(180deg, rgba(215,255,112,0.92), rgba(215,255,112,0.78))",
-            boxShadow: "0 28px 80px rgba(23,18,15,0.1)",
+            background: "linear-gradient(180deg, rgba(215,255,112,0.95), rgba(215,255,112,0.85))",
           }}
         >
           <div className="grid gap-8 lg:grid-cols-[0.88fr_1.12fr] lg:items-end">
@@ -30,19 +33,21 @@ export function GitHubCTA() {
               <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.54)" }}>
                 04 / Open source
               </p>
-              <h2
-                className="mt-4 max-w-[520px] text-[clamp(2.8rem,5.4vw,4.8rem)] leading-[0.95] tracking-[-0.07em]"
+              <motion.h2
+                initial={{ filter: "blur(8px)", opacity: 0, y: 20 }}
+                whileInView={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-4 max-w-[550px] text-[clamp(3.8rem,7vw,7rem)] leading-[0.85] tracking-[-0.06em]"
                 style={{ fontFamily: "var(--font-display)", fontWeight: 900, color: "var(--landing-ink)" }}
               >
-                AgentMesh is open source.
-              </h2>
+                Own the orchestration.
+              </motion.h2>
               <p
-                className="mt-5 max-w-[430px] text-base leading-7"
+                className="mt-6 max-w-[440px] text-lg leading-8"
                 style={{ color: "rgba(23,18,15,0.72)" }}
               >
-                The close now matches the rest of the page: bold, direct, and product-first.
-                It points people at the real app and the real local entry point instead of ending
-                on another dark block.
+                Built for teams scaling AI in production. Control execution flow, trace every tool call, and inject human safety gates without surrendering your architecture to black-box commercial platforms.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -128,13 +133,13 @@ export function GitHubCTA() {
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {[
-                    "Warm landing, dark dashboard, one coherent product surface.",
-                    "Mission Control stays one click away from the editorial story.",
+                    "Complete execution provenance.",
+                    "Native multi-agent parallelization.",
                   ].map((item) => (
                     <div
                       key={item}
-                      className="rounded-[20px] border border-[rgba(23,18,15,0.1)] bg-[rgba(255,255,255,0.34)] px-4 py-3 text-sm leading-6"
-                      style={{ color: "rgba(23,18,15,0.76)" }}
+                      className="rounded-[20px] border border-[rgba(23,18,15,0.1)] bg-[rgba(255,255,255,0.34)] px-4 py-3 text-[13px] font-medium leading-6"
+                      style={{ color: "rgba(23,18,15,0.85)" }}
                     >
                       {item}
                     </div>
@@ -170,7 +175,7 @@ export function GitHubCTA() {
               </div>
             </div>
           </div>
-        </ScrollReveal>
+        </motion.div>
       </div>
     </section>
   );

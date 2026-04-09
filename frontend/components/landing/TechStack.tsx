@@ -1,6 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { staggerContainer, staggerItem } from "@/lib/motion";
 
 const STACK_ITEMS = [
   "LangGraph",
@@ -39,22 +41,27 @@ export function TechStack() {
   return (
     <section id="tech-stack" className="border-b border-[color:var(--border-subtle)] py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-        <ScrollReveal className="max-w-[880px]">
+        <motion.div
+          initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-[880px]"
+        >
           <p className="landing-kicker">03 / Tech stack</p>
           <h2
-            className="mt-4 text-[clamp(2.8rem,6vw,5rem)] leading-[0.95] tracking-[-0.07em]"
+            className="mt-4 text-[clamp(3.5rem,7vw,6.5rem)] leading-[0.85] tracking-[-0.05em]"
             style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
           >
-            Plug into real stacks, not a demo-only playground.
+            Built for production scale.
           </h2>
           <p
-            className="mt-5 max-w-[560px] text-base leading-7"
+            className="mt-6 max-w-[600px] text-lg leading-8"
             style={{ color: "var(--text-secondary)" }}
           >
-            This section is now a clean horizontal compatibility strip plus three aligned
-            system panels. No stray absolute ornaments, no broken grid columns.
+            We didn’t invent a new proprietary runtime. AgentMesh is a pure observability and control layer that wraps your existing multi-agent stack in a deterministic fabric.
           </p>
-        </ScrollReveal>
+        </motion.div>
 
         <div className="mt-10 overflow-hidden rounded-[30px] border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.36)] px-4 py-4">
           <div className="landing-marquee">
@@ -74,27 +81,46 @@ export function TechStack() {
           </div>
         </div>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {STACK_PANELS.map((panel) => {
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: "-80px" }}
+          className="mt-12 grid gap-6 lg:grid-cols-3"
+        >
+          {STACK_PANELS.map((panel, idx) => {
             const dark = panel.tone === "dark";
 
             return (
-              <article
+              <motion.article
+                variants={staggerItem}
                 key={panel.title}
-                className={`rounded-[30px] p-6 sm:p-7 ${dark ? "landing-panel-dark" : "landing-panel"}`}
+                whileHover={{ y: -8, scale: 1.01 }}
+                className={`group relative overflow-hidden rounded-[40px] p-6 sm:p-9 transition-shadow duration-500 hover:shadow-[0_40px_80px_rgba(23,18,15,0.08)] ${dark ? "landing-panel-dark" : "landing-panel"}`}
               >
-                <p
-                  className="text-[11px] uppercase tracking-[0.28em]"
-                  style={{
-                    color: dark ? "rgba(247,240,232,0.48)" : "var(--text-tertiary)",
-                    fontFamily: "var(--font-mono)",
-                  }}
+                {/* Awwwards style background numeral */}
+                <div
+                  className={`absolute -right-4 -bottom-8 text-[12rem] sm:text-[14rem] leading-none tracking-tighter select-none pointer-events-none transition-transform duration-700 group-hover:scale-110 ${
+                    dark ? "text-white opacity-5" : "text-black opacity-[0.03]"
+                  }`}
+                  style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
                 >
-                  {panel.title}
-                </p>
+                  0{idx + 1}
+                </div>
+                
+                <div className="relative z-10 flex h-full flex-col">
+                  <p
+                    className="text-[11px] uppercase tracking-[0.28em]"
+                    style={{
+                      color: dark ? "rgba(247,240,232,0.48)" : "var(--text-tertiary)",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    {panel.title}
+                  </p>
 
-                <h3
-                  className="mt-5 text-[1.8rem] leading-tight tracking-[-0.05em]"
+                  <h3
+                    className="mt-5 text-[1.8rem] leading-tight tracking-[-0.05em]"
                   style={{
                     color: dark ? "#f7f0e8" : "var(--text-primary)",
                     fontFamily: "var(--font-display)",
@@ -144,10 +170,11 @@ export function TechStack() {
                     </div>
                   ))}
                 </div>
-              </article>
+                </div>
+              </motion.article>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

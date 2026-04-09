@@ -89,11 +89,11 @@ export function Navbar({ initialSession }: NavbarProps) {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden items-center gap-2 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.5)] px-3 py-2 md:flex">
-                <span
-                  className="landing-signal-dot h-2 w-2 rounded-full"
-                  style={{ background: "var(--landing-acid)" }}
-                />
+              <div className="hidden items-center gap-2.5 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.5)] px-3.5 py-2 md:flex shadow-sm hover:shadow-md transition-shadow">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "var(--landing-acid)" }}></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "var(--landing-acid)", boxShadow: "0 0 8px var(--landing-acid)" }}></span>
+                </span>
                 <span
                   className="text-[10px] uppercase tracking-[0.22em]"
                   style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}

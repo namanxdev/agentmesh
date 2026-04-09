@@ -48,14 +48,14 @@ export function HeroSection() {
         }}
       />
 
-      <div className="mx-auto grid max-w-[1440px] gap-x-8 gap-y-12 px-5 pb-16 md:px-8 lg:grid-cols-12 lg:items-start xl:gap-x-12">
+      <div className="mx-auto max-w-[1440px] px-5 pb-16 md:px-8 flex flex-col items-center text-center">
         <motion.div
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="relative z-10 lg:col-span-5 lg:pt-4 xl:pt-6"
+          className="relative z-10 flex flex-col items-center w-full"
         >
-          <motion.div variants={staggerItem} className="flex flex-wrap gap-3">
+          <motion.div variants={staggerItem} className="flex flex-wrap justify-center gap-3">
             {HERO_TAGS.map((tag) => (
               <span
                 key={tag}
@@ -74,19 +74,22 @@ export function HeroSection() {
             ))}
           </motion.div>
 
-          <motion.div variants={staggerItem} className="mt-8 max-w-[760px]">
+          <motion.div variants={staggerItem} className="mt-8 relative w-full flex flex-col items-center">
             <p className="landing-kicker">Editorial orchestration layer</p>
-            <h1
-              className="mt-4 max-w-[7.2ch] text-[clamp(3.5rem,7vw,7.4rem)] uppercase leading-[0.9] tracking-[-0.085em]"
+            <motion.h1
+              initial={{ filter: "blur(12px)", opacity: 0, y: 30 }}
+              animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+              transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-4 w-full text-[clamp(4.5rem,10vw,12rem)] uppercase leading-[0.8] tracking-[-0.04em] relative z-10"
               style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
             >
               Build the mesh.
-              <span className="mt-2 block">
-                Direct every <span className="landing-serif normal-case">handoff</span>.
+              <span className="mt-3 block text-[clamp(3.5rem,8vw,10.5rem)]" style={{ color: "var(--text-secondary)" }}>
+                Direct every <span className="landing-serif normal-case text-transparent bg-clip-text relative inline-block" style={{ backgroundImage: "linear-gradient(to right, var(--accent-primary), #ff8a00)" }}>handoff.<motion.span className="absolute -inset-2 opacity-40 blur-2xl z-[-1]" style={{ backgroundImage: "linear-gradient(to right, var(--accent-primary), #ff8a00)" }} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}/></span>
               </span>
-            </h1>
+            </motion.h1>
             <p
-              className="mt-6 max-w-[620px] text-lg leading-8 md:text-xl"
+              className="mt-6 max-w-[700px] text-lg leading-8 md:text-xl text-center"
               style={{ color: "var(--text-secondary)" }}
             >
               AgentMesh turns multi-agent orchestration into a surface you can actually direct.
@@ -95,7 +98,7 @@ export function HeroSection() {
             </p>
           </motion.div>
 
-          <motion.div variants={staggerItem} className="mt-8 flex flex-wrap gap-4">
+          <motion.div variants={staggerItem} className="mt-10 flex flex-wrap justify-center items-center gap-4">
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
@@ -131,11 +134,11 @@ export function HeroSection() {
             </a>
           </motion.div>
 
-          <motion.div variants={staggerItem} className="mt-9 grid gap-4 sm:grid-cols-2">
+          <motion.div variants={staggerItem} className="mt-16 grid gap-4 w-full max-w-[1080px] sm:grid-cols-2 lg:grid-cols-4 text-left">
             {HERO_STATS.map(({ value, label }) => (
-              <div key={label} className="landing-panel min-h-[118px] rounded-[24px] px-5 py-5">
+              <div key={label} className="landing-panel min-h-[118px] rounded-[24px] px-5 py-5 transition-transform duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_50px_rgba(23,18,15,0.06)] group cursor-default">
                 <div
-                  className="text-[2.15rem] leading-none tracking-[-0.06em]"
+                  className="text-[2.15rem] leading-none tracking-[-0.06em] transition-colors group-hover:text-[color:var(--accent-primary)]"
                   style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
                 >
                   {value}
@@ -155,11 +158,13 @@ export function HeroSection() {
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="relative z-10 lg:col-start-7 lg:col-span-6 lg:mt-8 xl:mt-12"
+          className="relative z-10 mt-20 xl:mt-24 w-full max-w-[1080px] mx-auto text-left"
         >
           <motion.div
             variants={staggerItem}
-            className="landing-floating absolute left-6 top-0 hidden rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.88)] px-4 py-2.5 shadow-[0_18px_48px_rgba(23,18,15,0.12)] xl:flex"
+            animate={{ y: [-4, 4, -4] }}
+            transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+            className="hidden w-max rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.88)] px-4 py-2.5 shadow-[0_18px_48px_rgba(23,18,15,0.12)] xl:mb-8 xl:flex hover:scale-105 transition-transform"
             style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}
           >
             Parallel when safe. Human when needed.
@@ -171,7 +176,7 @@ export function HeroSection() {
                 <div>
                   <p className="landing-kicker">Mission control</p>
                   <h2
-                    className="mt-3 max-w-[420px] text-3xl leading-tight tracking-[-0.05em] sm:text-4xl"
+                    className="mt-3 max-w-[420px] text-3xl leading-tight tracking-tight sm:text-4xl"
                     style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
                   >
                     Watch the mesh think in public.
@@ -213,55 +218,95 @@ export function HeroSection() {
                         "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))",
                     }}
                   >
-                    <div
+                    <motion.div
                       aria-hidden="true"
-                      className="absolute inset-0 opacity-30"
+                      className="absolute inset-0 opacity-30 pointer-events-none"
                       style={{
                         backgroundImage:
                           "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
                         backgroundSize: "36px 36px",
                       }}
+                      animate={{ backgroundPosition: ["0px 0px", "-36px -36px"] }}
+                      transition={{ ease: "linear", duration: 8, repeat: Infinity }}
                     />
+                    <style dangerouslySetInnerHTML={{ __html: `
+                      @keyframes active-scan {
+                        0% { transform: translateY(-150%); opacity: 0; }
+                        50% { opacity: 1; }
+                        100% { transform: translateY(400%); opacity: 0; }
+                      }
+                    `}} />
                     <div
                       aria-hidden="true"
-                      className="absolute left-[18%] right-[18%] top-[31%] hidden h-px bg-gradient-to-r from-transparent via-[rgba(232,93,42,0.65)] to-transparent md:block"
+                      className="absolute inset-x-0 top-0 h-48 pointer-events-none z-10"
+                      style={{
+                        background: "linear-gradient(to bottom, transparent, rgba(215,255,112,0.05), transparent)",
+                        animation: "active-scan 6s cubic-bezier(0.4, 0, 0.2, 1) infinite"
+                      }}
                     />
-                    <div
+                    {/* Animated connecting pipeline paths */}
+                    <motion.div
                       aria-hidden="true"
-                      className="absolute bottom-[31%] left-[18%] right-[18%] hidden h-px bg-gradient-to-r from-transparent via-[rgba(215,255,112,0.6)] to-transparent md:block"
+                      className="absolute left-[15%] top-[29%] h-px w-[70%] hidden md:block origin-left"
+                      style={{ background: "linear-gradient(90deg, transparent, rgba(232,93,42,0.85), transparent)" }}
+                      initial={{ scaleX: 0, opacity: 0 }}
+                      animate={{ scaleX: 1, opacity: 1 }}
+                      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                    />
+                    <motion.div
+                      aria-hidden="true"
+                      className="absolute left-[15%] bottom-[33%] h-px w-[70%] hidden md:block origin-right"
+                      style={{ background: "linear-gradient(270deg, transparent, rgba(215,255,112,0.85), transparent)" }}
+                      initial={{ scaleX: 0, opacity: 0 }}
+                      animate={{ scaleX: 1, opacity: 1 }}
+                      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+                    />
+                    <motion.div
+                      aria-hidden="true"
+                      className="absolute left-[49.5%] top-[25%] h-[50%] w-px hidden md:block origin-top"
+                      style={{ background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent)" }}
+                      initial={{ scaleY: 0, opacity: 0 }}
+                      animate={{ scaleY: 1, opacity: 1 }}
+                      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.7 }}
                     />
 
-                    <div className="relative grid gap-3 md:grid-cols-2">
+                    <div className="relative grid gap-4 pb-6 md:grid-cols-2 md:gap-y-8 md:gap-x-4 md:pb-8">
                       {GRAPH_NODES.map((node, index) => (
                         <div
                           key={node.name}
-                          className={`rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-4 ${
+                          className={`rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-4 shadow-sm min-w-0 ${
                             index === 1 ? "md:translate-y-6" : ""
                           } ${
-                            index === 2 ? "md:-translate-y-1" : ""
+                            index === 2 ? "md:-translate-y-3" : ""
+                          } ${
+                            index === 3 ? "md:translate-y-3" : ""
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
                               <p
                                 className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
                                 style={{ fontFamily: "var(--font-mono)" }}
                               >
                                 {node.name}
                               </p>
-                              <p className="mt-2 text-lg font-semibold tracking-[-0.03em]">
+                              <p className="mt-1 text-[15px] font-semibold leading-snug tracking-tight text-[#f7f0e8] truncate">
                                 {node.meta}
                               </p>
                             </div>
                             {node.live ? (
                               <span
-                                className="rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.24em]"
+                                className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.24em] font-medium"
                                 style={{
                                   background: "rgba(215,255,112,0.14)",
                                   color: "var(--landing-acid)",
                                   fontFamily: "var(--font-mono)",
                                 }}
                               >
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "var(--landing-acid)" }}></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "var(--landing-acid)" }}></span>
+                                </span>
                                 live
                               </span>
                             ) : (
@@ -275,7 +320,7 @@ export function HeroSection() {
                       ))}
                     </div>
 
-                    <div className="relative mt-5 grid gap-3 sm:grid-cols-3">
+                    <div className="relative mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                       {[
                         ["active step", "handoff to reviewer"],
                         ["tool call", "github.read_file"],
@@ -283,15 +328,15 @@ export function HeroSection() {
                       ].map(([kicker, value]) => (
                         <div
                           key={kicker}
-                          className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-3"
+                          className="flex-1 min-w-[120px] rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-4 py-3"
                         >
                           <p
-                            className="text-[11px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.48)]"
+                            className="text-[10px] uppercase tracking-[0.24em] text-[rgba(247,240,232,0.5)]"
                             style={{ fontFamily: "var(--font-mono)" }}
                           >
                             {kicker}
                           </p>
-                          <p className="mt-2 text-base font-semibold">{value}</p>
+                          <p className="mt-1.5 text-sm font-medium leading-snug truncate text-white">{value}</p>
                         </div>
                       ))}
                     </div>
@@ -326,11 +371,11 @@ export function HeroSection() {
                       {TRACE_LINES.map(({ label, accent }, index) => (
                         <div
                           key={label}
-                          className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-[rgba(255,255,255,0.56)] px-4 py-3"
+                          className="group grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-[rgba(255,255,255,0.56)] px-4 py-3 transition-colors duration-300 hover:bg-white hover:border-[color:var(--border-default)] cursor-default"
                         >
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ background: accent }} />
+                          <span className="h-2.5 w-2.5 rounded-full transition-transform group-hover:scale-125" style={{ background: accent }} />
                           <span
-                            className="text-[11px] uppercase tracking-[0.24em]"
+                            className="text-[11px] uppercase tracking-[0.24em] transition-colors group-hover:text-black"
                             style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
                           >
                             {label}
@@ -352,12 +397,14 @@ export function HeroSection() {
                     </p>
                     <div className="mt-4 flex items-end justify-between gap-4">
                       <div>
-                        <p
+                        <motion.p
                           className="text-4xl leading-none tracking-[-0.06em]"
                           style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
+                          animate={{ opacity: [1, 0.8, 1, 1, 0.85, 1] }}
+                          transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", times: [0, 0.1, 0.2, 0.5, 0.6, 1] }}
                         >
                           97%
-                        </p>
+                        </motion.p>
                         <p
                           className="mt-2 max-w-[180px] text-sm leading-6"
                           style={{ color: "rgba(23,18,15,0.76)" }}

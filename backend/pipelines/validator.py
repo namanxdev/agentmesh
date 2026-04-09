@@ -227,7 +227,19 @@ def pipeline_to_workflow_config(
     if not agent_names:
         return {"agent_registry": agent_registry, "graph_config": {}, "task": task}
 
-    graph_config["start"] = agent_names[0]
+    # Determine which llm_agents are starting nodes (no upstream llm_agent).
+    # Agents that ARE targets of other llm_agents have an upstream agent and are
+    # not starts.  All remaining agents run first — in parallel if there are
+    # multiple, sequentially if there is exactly one.
+    llm_agent_id_set = set(llm_agent_ids)
+    has_upstream_agent: set[str] = set()
+    for nid in llm_agent_ids:
+        for target in adj[nid]:
+            if target in llm_agent_id_set:
+                has_upstream_agent.add(node_map[target]["config"].get("name", target))
+
+    start_agents = [name for name in agent_names if name not in has_upstream_agent]
+    graph_config["start"] = start_agents[0] if len(start_agents) == 1 else start_agents
 
     for i, nid in enumerate(llm_agent_ids):
         agent_name = node_map[nid]["config"].get("name", nid)
