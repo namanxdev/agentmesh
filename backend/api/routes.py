@@ -401,8 +401,8 @@ def create_app(
             await db.execute(
                 text(
                     "INSERT INTO pipeline_runs"
-                    " (id, user_id, pipeline_id, workflow_id, status, created_at, updated_at)"
-                    " VALUES (:id, :uid, :pid, :wid, 'running', :now, :now)"
+                    " (id, user_id, pipeline_id, workflow_id, status, created_at)"
+                    " VALUES (:id, :uid, :pid, :wid, 'running', :now)"
                 ),
                 {
                     "id": run_db_id,
@@ -437,14 +437,13 @@ def create_app(
                             text(
                                 "UPDATE pipeline_runs"
                                 " SET status=:status, total_tokens=:tokens,"
-                                " duration_seconds=:dur, updated_at=:now"
+                                " duration_seconds=:dur"
                                 " WHERE id=:rid"
                             ),
                             {
                                 "status": status,
                                 "tokens": result.total_tokens,
                                 "dur": result.total_duration,
-                                "now": _datetime.datetime.now(_datetime.UTC),
                                 "rid": run_db_id,
                             },
                         )
