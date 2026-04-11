@@ -34,71 +34,43 @@ export function Navbar({ initialSession }: NavbarProps) {
   }, []);
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 px-3 pt-2 sm:px-4">
-      <div className="mx-auto max-w-[1440px]">
-        <div
-          className={`rounded-[26px] border border-[color:var(--border-default)] bg-[rgba(255,250,244,0.72)] backdrop-blur-xl transition-all duration-500 ${
-            scrolled
-              ? "shadow-[0_18px_56px_rgba(23,18,15,0.14)]"
-              : "shadow-[0_14px_38px_rgba(23,18,15,0.08)]"
-          }`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2 md:px-5">
+    <nav className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ease-in-out ${
+        scrolled ? "bg-[rgba(250,245,239,0.92)] backdrop-blur-2xl border-b border-[color:var(--border-subtle)] shadow-[0_4px_30px_rgba(23,18,15,0.04)] py-4" : "bg-transparent py-6"
+    }`}>
+      <div className="mx-auto max-w-[1440px] px-6 md:px-8">
+        <div className="flex items-center justify-between gap-4">
             <Link
               href="/"
-              className="flex items-center gap-3 no-underline"
+              className="flex items-center gap-3 no-underline group"
               style={{ color: "var(--text-primary)" }}
             >
-              <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.82)] px-2 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-                <span
-                  className="rounded-full border border-[rgba(23,18,15,0.1)] px-2 py-1 text-[10px] uppercase tracking-[0.28em]"
-                  style={{ fontFamily: "var(--font-mono)" }}
-                >
-                  AM
-                </span>
-              </span>
-              <span className="flex flex-col">
-                <span
-                  className="text-[0.95rem] uppercase tracking-[-0.08em]"
-                  style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
-                >
-                  AgentMesh
-                </span>
-                <span
-                  className="hidden text-[10px] uppercase tracking-[0.26em] lg:block"
-                  style={{ fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}
-                >
-                  Mission Control for MCP agents
-                </span>
-              </span>
+              <span className="text-[1.4rem] tracking-[-0.04em] uppercase transition-colors group-hover:text-[var(--accent-primary)]" style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}>AgentMesh</span>
             </Link>
 
-            <div className="hidden flex-1 items-center justify-center px-6 xl:flex">
-              <div className="flex items-center gap-1 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.58)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)]">
+            <div className="hidden flex-1 items-center justify-center gap-10 xl:flex">
                 {NAV_LINKS.map(({ href, label }) => (
                   <a
                     key={href}
                     href={href}
-                    className="rounded-full px-4 py-1.5 text-[10px] uppercase tracking-[0.22em] no-underline transition-all duration-300 hover:-translate-y-0.5 hover:bg-[rgba(23,18,15,0.06)]"
+                    className="text-[11px] uppercase tracking-[0.22em] font-semibold transition-colors hover:text-[color:var(--accent-primary)]"
                     style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
                   >
                     {label}
                   </a>
                 ))}
-              </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden items-center gap-2.5 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.5)] px-3.5 py-2 md:flex shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="hidden items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-white px-4 py-2 md:flex shadow-sm hover:shadow-md transition-shadow cursor-default">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "var(--landing-acid)" }}></span>
                   <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "var(--landing-acid)", boxShadow: "0 0 8px var(--landing-acid)" }}></span>
                 </span>
                 <span
-                  className="text-[10px] uppercase tracking-[0.22em]"
-                  style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}
+                  className="text-[10px] uppercase tracking-[0.24em] font-bold"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
                 >
-                  Live event fabric
+                  Live Connection
                 </span>
               </div>
 
@@ -106,16 +78,15 @@ export function Navbar({ initialSession }: NavbarProps) {
                 <>
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                    className="hidden lg:inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm no-underline transition-all duration-300 hover:-translate-y-0.5"
                     style={{
                       background: "var(--landing-ink)",
                       color: "var(--landing-paper)",
                       fontFamily: "var(--font-display)",
                       fontWeight: 700,
-                      boxShadow: "0 18px 40px rgba(23, 18, 15, 0.18)",
                     }}
                   >
-                    Open Mission Control
+                    Open Console
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <path
                         d="M3.5 8H12.5M8.5 4L12.5 8L8.5 12"
@@ -129,7 +100,7 @@ export function Navbar({ initialSession }: NavbarProps) {
 
                   <Link
                     href="/dashboard"
-                    className="rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.58)] px-1 py-1 no-underline shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
+                    className="rounded-full border border-[color:var(--border-default)] bg-white px-1.5 py-1.5 no-underline shadow-[0_2px_10px_rgba(23,18,15,0.04)]"
                     style={{ color: "var(--text-primary)" }}
                   >
                       <span className="flex items-center gap-3 rounded-full pr-4">
@@ -137,17 +108,17 @@ export function Navbar({ initialSession }: NavbarProps) {
                         style={{
                           position: "relative",
                           display: "inline-flex",
-                          width: 38,
-                          height: 38,
+                          width: 32,
+                          height: 32,
                           borderRadius: 999,
                           overflow: "hidden",
                           alignItems: "center",
                           justifyContent: "center",
                           border: "1px solid rgba(23, 18, 15, 0.12)",
-                          background: "rgba(23, 18, 15, 0.08)",
-                          color: "var(--landing-ink)",
+                          background: "var(--landing-ink)",
+                          color: "white",
                           fontFamily: "var(--font-mono)",
-                          fontSize: 12,
+                          fontSize: 10,
                           fontWeight: 700,
                           letterSpacing: "0.08em",
                         }}
@@ -165,16 +136,16 @@ export function Navbar({ initialSession }: NavbarProps) {
                       </span>
                       <span className="hidden min-w-0 flex-col md:flex">
                         <span
-                          className="text-[11px] uppercase tracking-[0.18em]"
+                          className="text-[9px] uppercase tracking-[0.2em]"
                           style={{ fontFamily: "var(--font-mono)", color: "var(--text-tertiary)" }}
                         >
-                          Signed in
+                          Dashboard
                         </span>
                         <span
-                          className="max-w-[180px] truncate text-sm"
+                          className="max-w-[120px] truncate text-[13px]"
                           style={{ fontFamily: "var(--font-display)", fontWeight: 700 }}
                         >
-                          {user.name || user.email || "Google account"}
+                          {user.name || user.email || "Log in"}
                         </span>
                       </span>
                     </span>
@@ -183,34 +154,33 @@ export function Navbar({ initialSession }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => signOut({ callbackUrl: "/" })}
-                    className="landing-chip px-4 py-2 text-[10px] uppercase tracking-[0.2em] transition-transform duration-300 hover:-translate-y-0.5"
+                    className="landing-chip px-3 py-2 border-transparent bg-transparent text-[10px] uppercase tracking-[0.2em] font-semibold transition-colors hover:text-[color:var(--accent-primary)] hover:-translate-y-0"
                     style={{
-                      color: "var(--text-primary)",
+                      color: "var(--text-secondary)",
                       fontFamily: "var(--font-mono)",
                       cursor: "pointer",
                     }}
                   >
-                    Log out
+                    Logout
                   </button>
                 </>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="landing-chip px-4 py-2 text-[10px] uppercase tracking-[0.2em] no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                    className="landing-chip px-4 py-2 text-[10px] uppercase tracking-[0.2em] no-underline bg-transparent border-transparent font-semibold transition-colors hover:text-[color:var(--accent-primary)] hover:-translate-y-0"
                     style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
                   >
                     Log in
                   </Link>
                   <Link
                     href="/signup"
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,18,15,0.12)]"
                     style={{
                       background: "var(--landing-ink)",
                       color: "var(--landing-paper)",
                       fontFamily: "var(--font-display)",
                       fontWeight: 700,
-                      boxShadow: "0 18px 40px rgba(23, 18, 15, 0.18)",
                     }}
                   >
                     Sign up
@@ -227,20 +197,6 @@ export function Navbar({ initialSession }: NavbarProps) {
                 </>
               )}
             </div>
-          </div>
-
-          <div className="flex gap-2 overflow-x-auto border-t border-[color:var(--border-subtle)] px-4 pb-2 pt-2 xl:hidden">
-            {NAV_LINKS.map(({ href, label }) => (
-              <a
-                key={href}
-                href={href}
-                className="landing-chip shrink-0 px-3 py-2 text-[10px] uppercase tracking-[0.22em] no-underline"
-                style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
-              >
-                {label}
-              </a>
-            ))}
-          </div>
         </div>
       </div>
     </nav>

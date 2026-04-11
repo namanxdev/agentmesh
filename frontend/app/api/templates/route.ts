@@ -6,6 +6,7 @@ export async function GET() {
   try {
     const res = await fetch(`${FASTAPI_URL}/api/pipelines/templates`, {
       next: { revalidate: 60 },
+      signal: AbortSignal.timeout(10_000),
     });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });

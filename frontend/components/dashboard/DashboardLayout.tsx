@@ -6,13 +6,12 @@ import { AgentSidebar } from "./AgentSidebar";
 import { ToolCallInspector } from "./ToolCallInspector";
 import { MessageStream } from "./MessageStream";
 import { AnalyticsView } from "./AnalyticsView";
-import { PipelineSettingsView } from "./PipelineSettingsView";
 import { PipelineHeader } from "@/components/pipeline/PipelineHeader";
 import { PipelineCanvas } from "@/components/pipeline/PipelineCanvas";
 import { NodePalette } from "@/components/pipeline/NodePalette";
 import { NodeConfigInspector } from "@/components/pipeline/NodeConfigInspector";
 
-type AppTab = "build" | "analytics" | "settings";
+type AppTab = "build" | "analytics";
 
 const chevronBtnStyle: React.CSSProperties = {
   position: "absolute",
@@ -47,8 +46,8 @@ export function DashboardLayout() {
   // Tab + panel collapse state — ephemeral layout state, not persisted to store
   const [activeTab, setActiveTab] = useState<AppTab>("build");
   const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
-  const [bottomCollapsed, setBottomCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(true);
+  const [bottomCollapsed, setBottomCollapsed] = useState(true);
 
   useEffect(() => {
     setMode("build");
@@ -331,7 +330,7 @@ export function DashboardLayout() {
         </>
       ) : (
         <div style={{ gridArea: "main", minHeight: 0, overflow: "hidden" }}>
-          {activeTab === "analytics" ? <AnalyticsView /> : <PipelineSettingsView />}
+          <AnalyticsView />
         </div>
       )}
 

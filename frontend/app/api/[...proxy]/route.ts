@@ -37,6 +37,7 @@ async function proxyRequest(
   const fetchOptions: RequestInit = {
     method: request.method,
     headers: forwardHeaders,
+    signal: AbortSignal.timeout(30_000),
   };
 
   if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
@@ -57,9 +58,10 @@ async function proxyRequest(
       headers: responseHeaders,
     });
   } catch (err) {
-    console.error("[proxy] FastAPI unreachable:", err);
+    const isTimeout = err instanceof Error && err.name === "TimeoutError";
+    console.error(isTimeout ? "[proxy] FastAPI timed out:" : "[proxy] FastAPI unreachable:", err);
     return NextResponse.json(
-      { error: "Backend unavailable" },
+      { error: isTimeout ? "Backend timed out" : "Backend unavailable" },
       { status: 503 }
     );
   }

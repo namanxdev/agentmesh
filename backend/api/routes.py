@@ -57,6 +57,7 @@ class PipelineRunRequest(BaseModel):
     pipeline: PipelineDefinitionModel
     task: str
     initial_state: dict = {}
+    pipeline_id: Optional[str] = None
 
 
 class SavePipelineRequest(BaseModel):
@@ -237,7 +238,7 @@ def create_app(
         import datetime as _datetime
         import json as _json
         new_id = str(uuid.uuid4())
-        now = _datetime.datetime.utcnow()
+        now = _datetime.datetime.now(_datetime.UTC)
         await db.execute(
             text(
                 "INSERT INTO mcp_servers (id, user_id, name, server_type, command_or_url, env_vars, created_at)"
@@ -393,18 +394,22 @@ def create_app(
         }
 
         import datetime as _datetime
+        from backend.db.engine import AsyncSessionLocal as _ASL
+        run_db_id = str(uuid.uuid4())
+        pid = request.pipeline_id
         try:
             await db.execute(
                 text(
                     "INSERT INTO pipeline_runs"
                     " (id, user_id, pipeline_id, workflow_id, status, created_at, updated_at)"
-                    " VALUES (:id, :uid, NULL, :wid, 'running', :now, :now)"
+                    " VALUES (:id, :uid, :pid, :wid, 'running', :now, :now)"
                 ),
                 {
-                    "id": str(uuid.uuid4()),
+                    "id": run_db_id,
                     "uid": user_id,
+                    "pid": pid,
                     "wid": workflow_id,
-                    "now": _datetime.datetime.utcnow(),
+                    "now": _datetime.datetime.now(_datetime.UTC),
                 },
             )
             await db.commit()
@@ -416,13 +421,36 @@ def create_app(
                 task=task,
                 initial_state=request.initial_state,
             )
+            status = "completed" if result.success else "error"
             _runs[workflow_id].update({
-                "status": "completed" if result.success else "error",
+                "status": status,
                 "result": result.state.messages[-1] if result.state.messages else {},
                 "token_usage": result.state.token_usage,
                 "duration_seconds": result.total_duration,
                 "error": result.error,
             })
+            # Write final status, tokens, and duration back to DB
+            if pid:
+                try:
+                    async with _ASL() as run_db:
+                        await run_db.execute(
+                            text(
+                                "UPDATE pipeline_runs"
+                                " SET status=:status, total_tokens=:tokens,"
+                                " duration_seconds=:dur, updated_at=:now"
+                                " WHERE id=:rid"
+                            ),
+                            {
+                                "status": status,
+                                "tokens": result.total_tokens,
+                                "dur": result.total_duration,
+                                "now": _datetime.datetime.now(_datetime.UTC),
+                                "rid": run_db_id,
+                            },
+                        )
+                        await run_db.commit()
+                except Exception:
+                    pass  # non-critical
 
         asyncio.create_task(_run())
 
@@ -450,7 +478,7 @@ def create_app(
         import json as _json
         import uuid as _uuid
         import datetime as _datetime
-        now = _datetime.datetime.utcnow()
+        now = _datetime.datetime.now(_datetime.UTC)
         defn = {
             "name": request.definition.name,
             "nodes": [
@@ -601,7 +629,7 @@ def create_app(
 
         trigger_id = str(uuid.uuid4())
         secret = secrets.token_hex(32)
-        now = _datetime.datetime.utcnow()
+        now = _datetime.datetime.now(_datetime.UTC)
         await db.execute(
             text(
                 "INSERT INTO triggers (id, user_id, pipeline_id, trigger_type, secret, cron_schedule, is_active, created_at)"
@@ -675,7 +703,6 @@ def create_app(
     ):
         """Public endpoint — no auth required. Secured via HMAC-SHA256 signature."""
         import asyncio
-        import datetime as _datetime
 
         body_bytes = await raw_request.body()
 
@@ -825,31 +852,12 @@ def create_default_app() -> FastAPI:
     agent_registry = AgentRegistry(llm_provider=llm, event_bus=event_bus)
     mcp_registry = MCPRegistry(event_bus=event_bus)
 
-    # Register MCP servers from environment
-    if os.getenv("GITHUB_TOKEN"):
-        mcp_registry.register(
-            "github",
-            transport_config={
-                "transport": "stdio",
-                "command": "npx",
-                "args": ["-y", "@modelcontextprotocol/server-github"],
-                "env": {"GITHUB_TOKEN": os.getenv("GITHUB_TOKEN", "")},
-            }
-        )
-
-    github_ws_url = os.getenv("FILESYSTEM_MCP_URL")
-    if github_ws_url:
-        mcp_registry.register(
-            "filesystem",
-            transport_config={"transport": "http", "url": github_ws_url}
-        )
-
-    web_search_url = os.getenv("WEB_SEARCH_MCP_URL")
-    if web_search_url:
-        mcp_registry.register(
-            "web-search",
-            transport_config={"transport": "http", "url": web_search_url}
-        )
+    # NOTE: MCP servers are now exclusively user-managed via
+    # POST /api/mcp/user-servers — no startup-time registration.
+    # A hardcoded GitHub MCP used to live here but it spawned
+    # `npx -y @modelcontextprotocol/server-github` at startup, which
+    # on Windows stalls the event loop for 30-60s on first run while
+    # npm downloads the package. That made the whole API unreachable.
 
     # Load demo workflow definitions
     from backend.workflows import DEMO_WORKFLOWS

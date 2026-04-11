@@ -6,15 +6,15 @@ import { usePipelineStore } from "@/stores/pipelineStore";
 import type { NodeKind } from "@/types/pipeline";
 
 export const NODE_COLORS: Record<NodeKind, string> = {
-  input: "#72d5e6",
-  output: "#d7ff70",
-  llm_agent: "#f06a37",
-  tool: "#f6c36d",
-  text: "#73bdf6",
-  router: "#ff8f6b",
-  memory: "#6fd3b2",
-  transform: "#ff9b71",
-  parallel: "#A855F7",
+  input: "#4ADE80", // Green 400
+  output: "#F472B6", // Pink 400
+  llm_agent: "#D7FF70", // Acid Green
+  tool: "#E85D2A", // Burnt Orange
+  text: "#60A5FA", // Blue 400
+  router: "#FB923C", // Orange 400
+  memory: "#2DD4BF", // Teal 400
+  transform: "#A78BFA", // Violet 400
+  parallel: "#FF70A6", // Neon pink
 };
 
 export const NODE_ICONS: Record<NodeKind, string> = {
@@ -86,87 +86,84 @@ export const NODE_CONTENT_STYLES = {
   stack: {
     display: "flex",
     flexDirection: "column",
-    gap: 12,
+    gap: 8,
   } satisfies CSSProperties,
   chips: {
     display: "flex",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 6,
   } satisfies CSSProperties,
   chip: {
     display: "inline-flex",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 999,
+    borderRadius: 4,
     background: "rgba(255,255,255,0.03)",
-    padding: "6px 10px",
+    padding: "4px 6px",
     color: "var(--text-secondary)",
     fontFamily: "var(--font-mono)",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 600,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.06em",
     textTransform: "uppercase",
   } satisfies CSSProperties,
   metricGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 8,
+    gap: 6,
   } satisfies CSSProperties,
   metric: {
     display: "flex",
     flexDirection: "column",
-    gap: 7,
-    padding: "11px 12px",
+    gap: 4,
+    padding: "8px 10px",
     border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.04)",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+    borderRadius: 6,
+    background: "rgba(255,255,255,0.02)",
   } satisfies CSSProperties,
   metricLabel: {
     color: "var(--text-tertiary)",
     fontFamily: "var(--font-mono)",
-    fontSize: 9,
-    fontWeight: 600,
-    letterSpacing: "0.14em",
+    fontSize: 8,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
     textTransform: "uppercase",
   } satisfies CSSProperties,
   metricValue: {
     overflow: "hidden",
     color: "var(--text-primary)",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 600,
-    lineHeight: 1.35,
+    lineHeight: 1.2,
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   } satisfies CSSProperties,
   preview: {
-    padding: "13px 14px",
+    padding: "10px",
     border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.04)",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+    borderRadius: 6,
+    background: "rgba(255,255,255,0.02)",
   } satisfies CSSProperties,
   previewCopy: {
-    margin: "8px 0 0",
+    margin: "4px 0 0",
     color: "var(--text-secondary)",
-    fontSize: 12,
-    lineHeight: 1.6,
+    fontSize: 10,
+    lineHeight: 1.5,
   } satisfies CSSProperties,
   routeList: {
     display: "flex",
     flexDirection: "column",
-    gap: 8,
+    gap: 6,
   } satisfies CSSProperties,
   route: {
     display: "flex",
     alignItems: "center",
-    gap: 11,
-    padding: "12px 13px",
+    gap: 8,
+    padding: "8px 10px",
     border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.04)",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+    borderRadius: 6,
+    background: "rgba(255,255,255,0.02)",
   } satisfies CSSProperties,
 } as const;
 
@@ -202,11 +199,10 @@ export function getHandleStyle(
 ): CSSProperties {
   return {
     background: accentColor,
-    width: 14,
-    height: 14,
-    border: "3px solid #120f0d",
-    borderRadius: 999,
-    boxShadow: `0 0 0 4px ${withAlpha(accentColor, 0.18)}, 0 0 18px ${withAlpha(accentColor, 0.26)}`,
+    width: 10,
+    height: 10,
+    border: "2px solid #0c0a09",
+    borderRadius: 2,
     ...extra,
   };
 }
@@ -234,18 +230,18 @@ export function getHandleLabelStyle(accentColor: string): CSSProperties {
 export function getTextareaStyle(accentColor: string): CSSProperties {
   return {
     width: "100%",
-    minHeight: 116,
+    minHeight: 80,
     resize: "none",
+    overflow: "hidden",
     border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 18,
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)), rgba(18,14,12,0.85)",
-    padding: "14px 16px",
+    borderRadius: 6,
+    background: "rgba(0,0,0,0.2)",
+    padding: "8px 10px",
     color: "var(--text-primary)",
     fontFamily: "var(--font-mono)",
-    fontSize: 12,
-    lineHeight: 1.7,
-    outline: `1px solid ${withAlpha(accentColor, 0)}`,
+    fontSize: 10,
+    lineHeight: 1.5,
+    outline: "none",
     boxSizing: "border-box",
   };
 }
@@ -298,37 +294,20 @@ export const BaseNode = memo(function BaseNode({
         {
           "--node-accent": accentColor,
           position: "relative",
-          minWidth: 258,
-          maxWidth: 340,
-          overflow: "hidden",
+          minWidth: 180,
+          maxWidth: 240,
           border: `1px solid ${borderColor}`,
-          borderRadius: 24,
-          background: `radial-gradient(circle at top left, ${withAlpha(accentColor, 0.16)}, transparent 38%), linear-gradient(180deg, rgba(35, 28, 24, 0.96), rgba(18, 14, 12, 0.98))`,
+          borderRadius: 8,
+          background: `rgba(12, 10, 9, 0.95)`,
           boxShadow: selected
-            ? `0 34px 90px rgba(0,0,0,0.42), 0 0 0 1px ${withAlpha(accentColor, 0.38)}, 0 0 36px ${withAlpha(accentColor, 0.16)}, inset 0 1px 0 rgba(255,255,255,0.06)`
-            : "0 22px 60px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)",
+            ? `0 0 0 1px ${accentColor}, 0 8px 30px rgba(0,0,0,0.5)`
+            : "0 4px 12px rgba(0,0,0,0.3)",
           color: "var(--text-primary)",
           cursor: "pointer",
-          transition: "transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out), border-color 220ms var(--ease-out)",
+          transition: "box-shadow 150ms ease, border-color 150ms ease",
         } as CSSProperties
       }
     >
-      <div
-        className="pipeline-node__orb"
-        style={{
-          position: "absolute",
-          top: -64,
-          right: -32,
-          width: 128,
-          height: 128,
-          borderRadius: 999,
-          background: `radial-gradient(circle, ${withAlpha(accentColor, 0.38)}, transparent 68%)`,
-          filter: "blur(8px)",
-          opacity: 0.42,
-          pointerEvents: "none",
-        }}
-      />
-
       <div
         className="pipeline-node__top"
         style={{
@@ -337,8 +316,8 @@ export const BaseNode = memo(function BaseNode({
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
-          gap: 12,
-          padding: "16px 16px 0",
+          gap: 10,
+          padding: "10px 10px 0",
         }}
       >
         <div
@@ -356,18 +335,16 @@ export const BaseNode = memo(function BaseNode({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              minWidth: 34,
-              height: 34,
-              padding: "0 8px",
-              borderRadius: 999,
+              minWidth: 20,
+              height: 20,
+              padding: "0 4px",
+              borderRadius: 4,
               border: `1px solid ${withAlpha(accentColor, 0.28)}`,
               background: withAlpha(accentColor, 0.14),
               color: accentColor,
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: 8,
               fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
             }}
           >
             {NODE_ICONS[kind]}
@@ -377,27 +354,14 @@ export const BaseNode = memo(function BaseNode({
               className="pipeline-node__kicker"
               style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: 700,
-                letterSpacing: "0.22em",
+                letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 color: withAlpha(accentColor, 0.85),
               }}
             >
               {meta.kicker}
-            </div>
-            <div
-              className="pipeline-node__serial"
-              style={{
-                marginTop: 3,
-                fontFamily: "var(--font-mono)",
-                fontSize: 9,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "var(--text-tertiary)",
-              }}
-            >
-              {id.slice(0, 6).toUpperCase()}
             </div>
           </div>
         </div>
@@ -415,15 +379,15 @@ export const BaseNode = memo(function BaseNode({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 30,
-            height: 30,
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 999,
+            width: 22,
+            height: 22,
+            borderRadius: 4,
             background: "rgba(255,255,255,0.03)",
             color: "var(--text-tertiary)",
+            fontSize: 10,
             cursor: "pointer",
+            border: "none",
             opacity: 0,
-            transition: "opacity 160ms var(--ease-out), background 160ms var(--ease-out), color 160ms var(--ease-out), border-color 160ms var(--ease-out)",
           }}
         >
           X
@@ -432,16 +396,14 @@ export const BaseNode = memo(function BaseNode({
 
       <div
         className="pipeline-node__heading"
-        style={{ position: "relative", zIndex: 1, padding: "12px 16px 0" }}
+        style={{ position: "relative", zIndex: 1, padding: "8px 10px 0" }}
       >
         <div
           className="pipeline-node__title"
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: 18,
+            fontSize: 13,
             fontWeight: 800,
-            lineHeight: 1,
-            letterSpacing: "-0.05em",
             color: "var(--text-primary)",
           }}
         >
@@ -450,10 +412,10 @@ export const BaseNode = memo(function BaseNode({
         <p
           className="pipeline-node__subtitle"
           style={{
-            margin: "9px 0 0",
+            margin: "4px 0 0",
             color: "var(--text-secondary)",
-            fontSize: 12,
-            lineHeight: 1.55,
+            fontSize: 10,
+            lineHeight: 1.4,
           }}
         >
           {meta.description}
@@ -468,8 +430,8 @@ export const BaseNode = memo(function BaseNode({
             zIndex: 1,
             display: "flex",
             flexDirection: "column",
-            gap: 12,
-            padding: "15px 16px 16px",
+            gap: 8,
+            padding: "10px 10px 10px",
           }}
         >
           {children}

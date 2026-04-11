@@ -18,7 +18,7 @@ def _prepare_url(raw: str) -> tuple[str, dict]:
     return them as connect_args instead.
     """
     if not raw:
-        return "postgresql+asyncpg://localhost/agentmesh", {}
+        return "postgresql+asyncpg://localhost/agentmesh", {"timeout": 5}
 
     raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
     raw = raw.replace("postgres://", "postgresql+asyncpg://", 1)
@@ -37,13 +37,23 @@ def _prepare_url(raw: str) -> tuple[str, dict]:
     connect_args: dict = {}
     if needs_ssl:
         connect_args["ssl"] = True
+    # Fail fast instead of hanging when DB is unreachable.
+    # asyncpg respects "timeout" (seconds to wait for a connection).
+    connect_args.setdefault("timeout", 5)
 
     return clean_url, connect_args
 
 
 _URL, _CONNECT_ARGS = _prepare_url(os.environ.get("DATABASE_CONN", ""))
 
-engine = create_async_engine(_URL, echo=False, pool_pre_ping=True, connect_args=_CONNECT_ARGS)
+engine = create_async_engine(
+    _URL,
+    echo=False,
+    pool_pre_ping=True,
+    connect_args=_CONNECT_ARGS,
+    pool_timeout=6,       # seconds to wait for a pool slot
+    pool_recycle=1800,    # recycle connections every 30 min
+)
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

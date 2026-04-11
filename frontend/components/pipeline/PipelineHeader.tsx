@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useUIStore } from "@/stores/uiStore";
 
@@ -15,7 +16,7 @@ const buttonBase: React.CSSProperties = {
   transition: "transform 0.2s ease, opacity 0.2s ease",
 };
 
-type AppTab = "build" | "analytics" | "settings";
+type AppTab = "build" | "analytics";
 
 interface PipelineHeaderProps {
   activeTab: AppTab;
@@ -183,7 +184,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
           gap: 2,
         }}
       >
-        {(["build", "analytics", "settings"] as const).map((tab) => (
+        {(["build", "analytics"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => onTabChange(tab)}
@@ -204,7 +205,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
               transition: "background 0.15s, color 0.15s",
             }}
           >
-            {tab === "build" ? "Build" : tab === "analytics" ? "Analytics" : "Settings"}
+            {tab === "build" ? "Build" : "Analytics"}
           </button>
         ))}
       </div>
@@ -230,6 +231,27 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
         >
           ⚙
         </Link>
+
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          title="Sign out"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "1px solid var(--border-subtle)",
+            background: "rgba(255,255,255,0.03)",
+            color: "var(--text-muted)",
+            cursor: "pointer",
+            fontSize: 15,
+            transition: "border-color 0.2s, color 0.2s",
+          }}
+        >
+          ↪
+        </button>
 
         <span
           className="dashboard-chip text-[11px] uppercase tracking-[0.24em]"

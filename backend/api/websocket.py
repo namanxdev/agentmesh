@@ -9,7 +9,14 @@ async def websocket_events_handler(ws: WebSocket, event_bus: EventBus):
     Replays buffered events on connect, then streams live events.
     Accepts client commands: ping, subscribe (no-op for MVP), replay.
     """
-    await event_bus.subscribe(ws)
+    try:
+        await event_bus.subscribe(ws)
+    except Exception:
+        try:
+            await ws.close()
+        except Exception:
+            pass
+        return
     try:
         while True:
             raw = await ws.receive_text()

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useRef, type ChangeEvent } from "react";
-import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
   BaseNode,
   NODE_COLORS,
@@ -29,8 +29,6 @@ export const TextNode = memo(function TextNode({
   const config = data.config as TextNodeConfig;
   const color = NODE_COLORS.text;
   const updateNodeConfig = usePipelineStore((s) => s.updateNodeConfig);
-  const { updateNode } = useReactFlow();
-  const mirrorRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const variables = config.variables ?? [];
@@ -40,22 +38,16 @@ export const TextNode = memo(function TextNode({
       const content = e.target.value;
       const newVars = extractVariables(content);
 
-      if (mirrorRef.current && textareaRef.current) {
-        mirrorRef.current.textContent = content + " ";
-        const newHeight = Math.max(116, mirrorRef.current.scrollHeight);
-        const newWidth = Math.min(
-          560,
-          Math.max(260, mirrorRef.current.scrollWidth + 28)
-        );
-
-        updateNode(id, {
-          style: { height: newHeight + 116, width: newWidth },
-        });
-      }
+      // Auto-resize: update the DOM element's height directly — no React
+      // state or React Flow node mutations, so the controlled value is never
+      // stomped by a competing re-render.
+      const el = e.target;
+      el.style.height = "auto";
+      el.style.height = `${Math.max(80, el.scrollHeight)}px`;
 
       updateNodeConfig(id, { content, variables: newVars });
     },
-    [id, updateNode, updateNodeConfig]
+    [id, updateNodeConfig]
   );
 
   const handleSpacing = 32;
@@ -100,36 +92,14 @@ export const TextNode = memo(function TextNode({
           </div>
         ) : null}
 
-        <div style={{ position: "relative" }}>
-          <textarea
-            ref={textareaRef}
-            value={config.content}
-            onChange={handleChange}
-            placeholder="Write prompt text with {{variables}}..."
-            className="pipeline-node__textarea nodrag"
-            style={getTextareaStyle(color)}
-          />
-
-          <div
-            ref={mirrorRef}
-            aria-hidden
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              visibility: "hidden",
-              pointerEvents: "none",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              fontSize: 12,
-              fontFamily: "var(--font-mono)",
-              padding: "14px 16px",
-              lineHeight: 1.7,
-              minWidth: 260,
-              maxWidth: 560,
-            }}
-          />
-        </div>
+        <textarea
+          ref={textareaRef}
+          value={config.content}
+          onChange={handleChange}
+          placeholder="Write prompt text with {{variables}}..."
+          className="pipeline-node__textarea nodrag"
+          style={getTextareaStyle(color)}
+        />
       </div>
 
       <Handle

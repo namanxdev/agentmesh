@@ -247,7 +247,7 @@ export function HeroSection() {
                     {/* Animated connecting pipeline paths */}
                     <motion.div
                       aria-hidden="true"
-                      className="absolute left-[15%] top-[29%] h-px w-[70%] hidden md:block origin-left"
+                      className="absolute left-[15%] top-[29%] h-px w-[70%] hidden md:block origin-left z-0"
                       style={{ background: "linear-gradient(90deg, transparent, rgba(232,93,42,0.85), transparent)" }}
                       initial={{ scaleX: 0, opacity: 0 }}
                       animate={{ scaleX: 1, opacity: 1 }}
@@ -255,7 +255,7 @@ export function HeroSection() {
                     />
                     <motion.div
                       aria-hidden="true"
-                      className="absolute left-[15%] bottom-[33%] h-px w-[70%] hidden md:block origin-right"
+                      className="absolute left-[15%] bottom-[33%] h-px w-[70%] hidden md:block origin-right z-0"
                       style={{ background: "linear-gradient(270deg, transparent, rgba(215,255,112,0.85), transparent)" }}
                       initial={{ scaleX: 0, opacity: 0 }}
                       animate={{ scaleX: 1, opacity: 1 }}
@@ -263,18 +263,18 @@ export function HeroSection() {
                     />
                     <motion.div
                       aria-hidden="true"
-                      className="absolute left-[49.5%] top-[25%] h-[50%] w-px hidden md:block origin-top"
+                      className="absolute left-[49.5%] top-[25%] h-[50%] w-px hidden md:block origin-top z-0"
                       style={{ background: "linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent)" }}
                       initial={{ scaleY: 0, opacity: 0 }}
                       animate={{ scaleY: 1, opacity: 1 }}
                       transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.7 }}
                     />
 
-                    <div className="relative grid gap-4 pb-6 md:grid-cols-2 md:gap-y-8 md:gap-x-4 md:pb-8">
+                    <div className="relative z-10 grid gap-4 pb-6 md:grid-cols-2 md:gap-y-8 md:gap-x-4 md:pb-8">
                       {GRAPH_NODES.map((node, index) => (
                         <div
                           key={node.name}
-                          className={`rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-4 shadow-sm min-w-0 ${
+                          className={`rounded-[22px] border border-[rgba(255,255,255,0.1)] bg-[rgba(12,10,9,0.72)] backdrop-blur-xl p-4 shadow-[0_8px_30px_rgba(0,0,0,0.12)] min-w-0 ${
                             index === 1 ? "md:translate-y-6" : ""
                           } ${
                             index === 2 ? "md:-translate-y-3" : ""

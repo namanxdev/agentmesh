@@ -284,13 +284,18 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
   },
 
   runPipeline: async (task) => {
-    const { serializePipeline } = get();
+    const state = get();
     set({ isRunning: true });
-    const definition = serializePipeline();
+    const definition = state.serializePipeline();
     const res = await fetch("/api/pipelines/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pipeline: definition, task, initial_state: {} }),
+      body: JSON.stringify({
+        pipeline: definition,
+        task,
+        initial_state: {},
+        pipeline_id: state.currentPipelineId ?? undefined,
+      }),
     });
     if (!res.ok) {
       set({ isRunning: false });

@@ -28,9 +28,9 @@ export function GitHubCTA() {
             background: "linear-gradient(180deg, rgba(215,255,112,0.95), rgba(215,255,112,0.85))",
           }}
         >
-          <div className="grid gap-8 lg:grid-cols-[0.88fr_1.12fr] lg:items-end">
-            <div>
-              <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.54)" }}>
+          <div className="flex flex-col gap-12">
+            <div className="flex flex-col items-center w-full">
+              <p className="landing-kicker text-center" style={{ color: "rgba(23,18,15,0.54)" }}>
                 04 / Open source
               </p>
               <motion.h2
@@ -38,19 +38,19 @@ export function GitHubCTA() {
                 whileInView={{ filter: "blur(0px)", opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-4 max-w-[550px] text-[clamp(3.8rem,7vw,7rem)] leading-[0.85] tracking-[-0.06em]"
+                className="mt-4 w-full text-center text-[clamp(3.8rem,7vw,7rem)] leading-[0.85] tracking-[-0.06em]"
                 style={{ fontFamily: "var(--font-display)", fontWeight: 900, color: "var(--landing-ink)" }}
               >
                 Own the orchestration.
               </motion.h2>
               <p
-                className="mt-6 max-w-[440px] text-lg leading-8"
+                className="mt-6 max-w-[700px] text-lg leading-8 text-center"
                 style={{ color: "rgba(23,18,15,0.72)" }}
               >
                 Built for teams scaling AI in production. Control execution flow, trace every tool call, and inject human safety gates without surrendering your architecture to black-box commercial platforms.
               </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
+              <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
                 <div
                   className="rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
                   style={{
@@ -90,7 +90,7 @@ export function GitHubCTA() {
               </div>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-4 w-full max-w-[1080px] mx-auto text-left">
               <div className="rounded-[30px] border border-[rgba(23,18,15,0.12)] bg-[rgba(255,255,255,0.36)] p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>

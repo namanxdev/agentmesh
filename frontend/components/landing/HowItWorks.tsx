@@ -74,9 +74,9 @@ export function HowItWorks() {
 
           <div className="lg:col-start-6 lg:col-span-7 relative pl-10 md:pl-12 py-4">
             {/* Scrubbable Scroll Progress Connector Line */}
-            <div className="absolute left-[19px] md:left-[23px] top-12 bottom-12 w-[2px] bg-[rgba(23,18,15,0.06)]" />
+            <div className="absolute left-[12px] md:left-[14px] top-12 bottom-12 w-[2px] bg-[rgba(23,18,15,0.06)]" />
             <motion.div
-              className="absolute left-[19px] md:left-[23px] top-12 bottom-12 w-[2px] origin-top bg-[var(--landing-acid)] shadow-[0_0_15px_var(--landing-acid)]"
+              className="absolute left-[12px] md:left-[14px] top-12 bottom-12 w-[2px] origin-top bg-[var(--landing-acid)] shadow-[0_0_15px_var(--landing-acid)]"
               style={{ scaleY: scrollYProgress }}
             />
 

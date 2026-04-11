@@ -43,46 +43,54 @@ export function NodePalette() {
   const [templates, setTemplates] = useState<PipelineTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
   const [templateError, setTemplateError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const loadTemplate = usePipelineStore((s) => s.loadTemplate);
 
-  const fetchTemplates = async () => {
-    setIsLoadingTemplates(true);
-    setTemplateError(null);
-
-    try {
-      const response = await fetch("/api/pipelines/templates", {
-        cache: "no-store",
-      });
-      const payload = (await response.json().catch(() => null)) as
-        | { templates?: unknown; error?: unknown }
-        | null;
-
-      if (!response.ok) {
-        throw new Error(
-          typeof payload?.error === "string"
-            ? payload.error
-            : `Request failed with status ${response.status}`
-        );
-      }
-
-      if (!Array.isArray(payload?.templates)) {
-        throw new Error("Templates response was invalid");
-      }
-
-      setTemplates(payload.templates.filter(isPipelineTemplate));
-    } catch (error) {
-      setTemplates([]);
-      setTemplateError(
-        error instanceof Error ? error.message : "Unable to load templates"
-      );
-    } finally {
-      setIsLoadingTemplates(false);
-    }
-  };
-
   useEffect(() => {
-    void fetchTemplates();
-  }, []);
+    let cancelled = false;
+    // Retry delays: 2s, 4s, 8s, 15s — handles the FastAPI startup race condition
+    // where the server is briefly unavailable immediately after a cold start.
+    const RETRY_DELAYS = [2000, 4000, 8000, 15000];
+
+    const attempt = async (retriesLeft: number): Promise<void> => {
+      if (cancelled) return;
+      setIsLoadingTemplates(true);
+      setTemplateError(null);
+
+      try {
+        const response = await fetch("/api/pipelines/templates", { cache: "no-store" });
+        const payload = (await response.json().catch(() => null)) as
+          | { templates?: unknown; error?: unknown }
+          | null;
+
+        if (!response.ok) {
+          throw new Error(
+            typeof payload?.error === "string"
+              ? payload.error
+              : `Request failed with status ${response.status}`
+          );
+        }
+        if (!Array.isArray(payload?.templates)) {
+          throw new Error("Templates response was invalid");
+        }
+        if (!cancelled) setTemplates(payload.templates.filter(isPipelineTemplate));
+      } catch (error) {
+        if (cancelled) return;
+        const delay = RETRY_DELAYS[RETRY_DELAYS.length - 1 - retriesLeft];
+        if (retriesLeft > 0 && delay !== undefined) {
+          await new Promise<void>((r) => setTimeout(r, delay));
+          return attempt(retriesLeft - 1);
+        }
+        setTemplates([]);
+        setTemplateError(error instanceof Error ? error.message : "Unable to load templates");
+      } finally {
+        if (!cancelled) setIsLoadingTemplates(false);
+      }
+    };
+
+    void attempt(RETRY_DELAYS.length - 1);
+    return () => { cancelled = true; };
+  }, [retryKey]);
 
   const handleDragStart = (
     event: React.DragEvent<HTMLDivElement>,
@@ -126,6 +134,7 @@ export function NodePalette() {
       </div>
 
       <div
+        className="custom-scrollbar"
         style={{
           flex: 1,
           overflowY: "auto",
@@ -211,9 +220,7 @@ export function NodePalette() {
               {templateError}
             </span>
             <button
-              onClick={() => {
-                void fetchTemplates();
-              }}
+              onClick={() => setRetryKey((k) => k + 1)}
               style={{
                 fontSize: 10,
                 color: "var(--text-muted)",

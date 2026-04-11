@@ -15,8 +15,13 @@ class EventBus:
         """Accept connection and replay buffered events."""
         await ws.accept()
         self._subscribers.append(ws)
-        for event in self._event_buffer:
-            await ws.send_json(event)
+        try:
+            for event in self._event_buffer:
+                await ws.send_json(event)
+        except Exception:
+            if ws in self._subscribers:
+                self._subscribers.remove(ws)
+            raise
 
     def unsubscribe(self, ws: WebSocket):
         if ws in self._subscribers:
