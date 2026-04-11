@@ -323,6 +323,9 @@ def create_app(
         import asyncio
 
         # Fetch and decrypt user's API keys
+        import logging as _logging
+        _log = _logging.getLogger(__name__)
+
         result = await db.execute(
             text("SELECT provider, encrypted_key FROM api_keys WHERE user_id = :uid"),
             {"uid": user_id},
@@ -339,6 +342,7 @@ def create_app(
             try:
                 api_key = decrypt(row.encrypted_key)
             except Exception:
+                _log.warning("Failed to decrypt API key for provider '%s' (user %s)", row.provider, user_id)
                 continue
             if row.provider == "gemini":
                 from backend.llm.gemini import GeminiProvider
@@ -349,6 +353,12 @@ def create_app(
             elif row.provider == "openai":
                 from backend.llm.openai_provider import OpenAIProvider
                 providers["openai"] = OpenAIProvider(api_key=api_key)
+
+        if not providers:
+            raise HTTPException(
+                status_code=403,
+                detail={"error": "no_keys", "message": "API keys could not be read. Please re-add your keys in Settings."},
+            )
 
         user_llm = MultiProvider(providers)
 
@@ -556,9 +566,10 @@ def create_app(
         result = await db.execute(
             text(
                 "SELECT id, workflow_id, status, total_tokens, duration_seconds, created_at"
-                " FROM pipeline_runs WHERE pipeline_id=:pid ORDER BY created_at DESC LIMIT 20"
+                " FROM pipeline_runs WHERE pipeline_id=:pid AND user_id=:uid"
+                " ORDER BY created_at DESC LIMIT 20"
             ),
-            {"pid": pipeline_id},
+            {"pid": pipeline_id, "uid": user_id},
         )
         rows = result.fetchall()
         return {
@@ -767,6 +778,12 @@ def create_app(
             elif krow.provider == "openai":
                 from backend.llm.openai_provider import OpenAIProvider
                 providers["openai"] = OpenAIProvider(api_key=api_key)
+
+        if not providers:
+            raise HTTPException(
+                status_code=403,
+                detail={"error": "no_keys", "message": "No valid API keys found for this user."},
+            )
 
         user_llm = MultiProvider(providers)
 
