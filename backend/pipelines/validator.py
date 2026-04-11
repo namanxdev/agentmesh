@@ -99,6 +99,10 @@ def pipeline_to_workflow_config(
     """
     from backend.agents.base import AgentConfig
     from backend.agents.registry import AgentRegistry
+    from backend.agents.pipeline_nodes import MemoryAgent, TransformAgent
+
+    # Kinds that participate in the execution graph (have their own graph node).
+    EXECUTABLE_KINDS = {"llm_agent", "memory", "transform"}
 
     nodes = definition["nodes"]
     edges = definition["edges"]
@@ -118,15 +122,14 @@ def pipeline_to_workflow_config(
     # Build fresh AgentRegistry
     agent_registry = AgentRegistry(llm_provider=llm_provider, event_bus=event_bus)
 
-    # Find all llm_agent nodes in topological order
-    # Simple topo sort using Kahn's
+    # Topological sort (Kahn's algorithm)
     in_deg = {n["id"]: 0 for n in nodes}
     for e in edges:
         if e["source"] in in_deg and e["target"] in in_deg:
             in_deg[e["target"]] += 1
 
     queue = deque(nid for nid, d in in_deg.items() if d == 0)
-    topo_order = []
+    topo_order: list[str] = []
     temp_in_deg = dict(in_deg)
     while queue:
         u = queue.popleft()
@@ -136,18 +139,22 @@ def pipeline_to_workflow_config(
             if temp_in_deg[v] == 0:
                 queue.append(v)
 
-    llm_agent_ids = [nid for nid in topo_order if node_map[nid]["kind"] == "llm_agent"]
+    # All nodes that participate in the execution graph, in topo order
+    executable_ids = [nid for nid in topo_order if node_map[nid]["kind"] in EXECUTABLE_KINDS]
+    llm_agent_ids = [nid for nid in executable_ids if node_map[nid]["kind"] == "llm_agent"]
 
-    # Collect mcp_servers from tool nodes per downstream llm_agent
+    # Per-llm_agent data collected from adjacent structural nodes
     mcp_servers_map: dict[str, list[str]] = {nid: [] for nid in llm_agent_ids}
     system_prompt_prefixes: dict[str, str] = {nid: "" for nid in llm_agent_ids}
 
+    # Reverse adjacency (for upstream lookups)
+    rev_adj: dict[str, list[str]] = {n["id"]: [] for n in nodes}
+    for e in edges:
+        if e["source"] in rev_adj and e["target"] in rev_adj:
+            rev_adj[e["target"]].append(e["source"])
+
     def find_nearest_llm_agent_upstream(node_id: str) -> str | None:
         """BFS backward to find nearest upstream llm_agent."""
-        rev_adj: dict[str, list[str]] = {n["id"]: [] for n in nodes}
-        for e in edges:
-            if e["source"] in rev_adj and e["target"] in rev_adj:
-                rev_adj[e["target"]].append(e["source"])
         visited: set[str] = set()
         q: deque[str] = deque([node_id])
         while q:
@@ -161,8 +168,23 @@ def pipeline_to_workflow_config(
                 q.append(parent)
         return None
 
+    def find_nearest_executable_downstream(node_id: str) -> str | None:
+        """BFS forward to find nearest downstream executable node (llm_agent/memory/transform)."""
+        visited: set[str] = set()
+        q: deque[str] = deque([node_id])
+        while q:
+            curr = q.popleft()
+            if curr in visited:
+                continue
+            visited.add(curr)
+            if curr != node_id and node_map[curr]["kind"] in EXECUTABLE_KINDS:
+                return curr
+            for child in adj[curr]:
+                q.append(child)
+        return None
+
+    # For backwards-compat in parallel fan-out (still needs llm_agent specifically)
     def find_nearest_llm_agent_downstream(node_id: str) -> str | None:
-        """BFS forward to find nearest downstream llm_agent."""
         visited: set[str] = set()
         q: deque[str] = deque([node_id])
         while q:
@@ -176,7 +198,7 @@ def pipeline_to_workflow_config(
                 q.append(child)
         return None
 
-    # Process tool nodes (attach to upstream llm_agent)
+    # Tool nodes: attach MCP server to the nearest upstream llm_agent
     for n in nodes:
         if n["kind"] == "tool":
             agent_id = find_nearest_llm_agent_upstream(n["id"])
@@ -185,7 +207,7 @@ def pipeline_to_workflow_config(
                 if server and server not in mcp_servers_map[agent_id]:
                     mcp_servers_map[agent_id].append(server)
 
-    # Process text nodes (prepend to downstream llm_agent system_prompt)
+    # Text nodes: prepend content to the nearest downstream llm_agent system_prompt
     for n in nodes:
         if n["kind"] == "text":
             agent_id = find_nearest_llm_agent_downstream(n["id"])
@@ -194,60 +216,89 @@ def pipeline_to_workflow_config(
                 if content:
                     system_prompt_prefixes[agent_id] = content + "\n\n"
 
-    # Register llm_agent nodes as AgentConfig
-    for nid in llm_agent_ids:
+    # Register all executable nodes in the registry
+    for nid in executable_ids:
         n = node_map[nid]
+        kind = n["kind"]
         cfg = n["config"]
-        system_prompt = system_prompt_prefixes[nid] + cfg.get("system_prompt", "")
-        agent_config = AgentConfig(
-            name=cfg.get("name", nid),
-            role="agent",
-            system_prompt=system_prompt,
-            model=cfg.get("model", "gemini-2.0-flash"),
-            temperature=float(cfg.get("temperature", 0.7)),
-            mcp_servers=mcp_servers_map[nid],
-            handoff_rules={},
-        )
-        agent_registry.register(agent_config)
 
-        # Inject MCP clients into agent
-        if mcp_registry:
-            agent = agent_registry.get(agent_config.name)
-            for server_name in agent_config.mcp_servers:
-                try:
-                    client = mcp_registry.get_client(server_name)
-                    agent.register_mcp_client(server_name, client)
-                except (KeyError, Exception):
-                    pass  # server not configured — tools will gracefully fail
+        if kind == "llm_agent":
+            system_prompt = system_prompt_prefixes[nid] + cfg.get("system_prompt", "")
+            agent_config = AgentConfig(
+                name=cfg.get("name", nid),
+                role="agent",
+                system_prompt=system_prompt,
+                model=cfg.get("model", "gemini-2.0-flash"),
+                temperature=float(cfg.get("temperature", 0.7)),
+                mcp_servers=mcp_servers_map[nid],
+                handoff_rules={},
+            )
+            agent_registry.register(agent_config)
 
-    # Build graph_config
+            # Wire up MCP clients
+            if mcp_registry:
+                agent = agent_registry.get(agent_config.name)
+                for server_name in agent_config.mcp_servers:
+                    try:
+                        client = mcp_registry.get_client(server_name)
+                        agent.register_mcp_client(server_name, client)
+                    except (KeyError, Exception):
+                        pass
+
+        elif kind == "memory":
+            mem_agent = MemoryAgent(
+                name=cfg.get("key", nid),   # use key as the node's identity name
+                key=cfg.get("key", "memory"),
+                memory_type=cfg.get("memory_type", "context"),
+                event_bus=event_bus,
+            )
+            agent_registry.register_instance(mem_agent)
+
+        elif kind == "transform":
+            tr_agent = TransformAgent(
+                name=nid,                    # node id as identity (transforms are anonymous)
+                transform_type=cfg.get("transform_type", "json_parse"),
+                expression=cfg.get("expression", ""),
+                event_bus=event_bus,
+            )
+            agent_registry.register_instance(tr_agent)
+
+    # Helper: get the execution name for a node id
+    def exec_name(nid: str) -> str:
+        n = node_map[nid]
+        kind = n["kind"]
+        cfg = n.get("config", {})
+        if kind == "llm_agent":
+            return cfg.get("name", nid)
+        if kind == "memory":
+            return cfg.get("key", nid)
+        return nid  # transform uses node id
+
+    # Build graph_config from all executable nodes
     graph_config: dict = {}
-    agent_names = [node_map[nid]["config"].get("name", nid) for nid in llm_agent_ids]
+    exec_names = [exec_name(nid) for nid in executable_ids]
 
-    if not agent_names:
+    if not exec_names:
         return {"agent_registry": agent_registry, "graph_config": {}, "task": task}
 
-    # Determine which llm_agents are starting nodes (no upstream llm_agent).
-    # Agents that ARE targets of other llm_agents have an upstream agent and are
-    # not starts.  All remaining agents run first — in parallel if there are
-    # multiple, sequentially if there is exactly one.
-    llm_agent_id_set = set(llm_agent_ids)
-    has_upstream_agent: set[str] = set()
-    for nid in llm_agent_ids:
+    # Starting nodes: executable nodes with no upstream executable node
+    executable_id_set = set(executable_ids)
+    has_upstream_exec: set[str] = set()
+    for nid in executable_ids:
         for target in adj[nid]:
-            if target in llm_agent_id_set:
-                has_upstream_agent.add(node_map[target]["config"].get("name", target))
+            if target in executable_id_set:
+                has_upstream_exec.add(exec_name(target))
 
-    start_agents = [name for name in agent_names if name not in has_upstream_agent]
-    graph_config["start"] = start_agents[0] if len(start_agents) == 1 else start_agents
+    start_nodes = [name for name in exec_names if name not in has_upstream_exec]
+    graph_config["start"] = start_nodes[0] if len(start_nodes) == 1 else start_nodes
 
-    for i, nid in enumerate(llm_agent_ids):
-        agent_name = node_map[nid]["config"].get("name", nid)
+    for nid in executable_ids:
+        name = exec_name(nid)
         downstream = adj[nid]
 
-        # Check if next is a router
+        # Router nodes connected directly downstream
         router_nodes = [node_map[d] for d in downstream if node_map[d]["kind"] == "router"]
-        # Check if next is a parallel fan-out node
+        # Parallel fan-out nodes connected directly downstream
         parallel_nodes = [node_map[d] for d in downstream if node_map[d]["kind"] == "parallel"]
 
         if router_nodes:
@@ -255,58 +306,58 @@ def pipeline_to_workflow_config(
             transitions: dict[str, str] = {}
             for cond in router["config"].get("conditions", []):
                 target_id = cond.get("target", "")
-                # Find the llm_agent with that name
+                # Resolve target name: look for any executable node with that name
                 target_node = next(
-                    (n for n in nodes if n["kind"] == "llm_agent" and n["config"].get("name", n["id"]) == target_id),
+                    (
+                        nd for nd in nodes
+                        if nd["kind"] in EXECUTABLE_KINDS
+                        and (nd["config"].get("name", nd["id"]) == target_id
+                             or nd["config"].get("key", nd["id"]) == target_id
+                             or nd["id"] == target_id)
+                    ),
                     None,
                 )
-                if target_node:
-                    transitions[cond["key"]] = target_id
-                else:
-                    transitions[cond["key"]] = "end"
-            graph_config[agent_name] = transitions
+                transitions[cond["key"]] = exec_name(target_node["id"]) if target_node else "end"
+            graph_config[name] = transitions
+
         elif parallel_nodes:
-            # Fan-out: collect all llm_agents reachable directly from the parallel node.
             parallel_node = parallel_nodes[0]
-            branch_agent_names: list[str] = []
+            branch_names: list[str] = []
             for branch_target in adj[parallel_node["id"]]:
                 branch_node = node_map[branch_target]
-                if branch_node["kind"] == "llm_agent":
-                    branch_agent_names.append(branch_node["config"].get("name", branch_target))
+                if branch_node["kind"] in EXECUTABLE_KINDS:
+                    branch_names.append(exec_name(branch_target))
                 else:
-                    # Traverse through structural nodes to find the first llm_agent.
-                    further = find_nearest_llm_agent_downstream(branch_target)
+                    further = find_nearest_executable_downstream(branch_target)
                     if further:
-                        branch_agent_names.append(node_map[further]["config"].get("name", further))
+                        branch_names.append(exec_name(further))
 
-            if len(branch_agent_names) >= 2:
-                graph_config[agent_name] = {"on_complete": branch_agent_names}
-            elif len(branch_agent_names) == 1:
-                # Degenerate parallel with one branch — treat as sequential.
-                graph_config[agent_name] = {"on_complete": branch_agent_names[0]}
+            if len(branch_names) >= 2:
+                graph_config[name] = {"on_complete": branch_names}
+            elif len(branch_names) == 1:
+                graph_config[name] = {"on_complete": branch_names[0]}
             else:
-                graph_config[agent_name] = {"on_complete": "end"}
+                graph_config[name] = {"on_complete": "end"}
+
         else:
-            # Find next llm_agent downstream
-            next_llm_id = None
+            # Find next executable node downstream
+            next_exec_id = None
             for d in downstream:
-                if node_map[d]["kind"] == "llm_agent":
-                    next_llm_id = d
+                if node_map[d]["kind"] in EXECUTABLE_KINDS:
+                    next_exec_id = d
                     break
                 elif node_map[d]["kind"] == "output":
-                    pass  # will map to end
+                    pass  # maps to end
                 else:
-                    # skip non-agent nodes, look further
-                    further = find_nearest_llm_agent_downstream(d)
+                    further = find_nearest_executable_downstream(d)
                     if further:
-                        next_llm_id = further
+                        next_exec_id = further
                         break
 
-            if next_llm_id:
-                next_name = node_map[next_llm_id]["config"].get("name", next_llm_id)
-                graph_config[agent_name] = {"on_complete": next_name}
+            if next_exec_id:
+                graph_config[name] = {"on_complete": exec_name(next_exec_id)}
             else:
-                graph_config[agent_name] = {"on_complete": "end"}
+                graph_config[name] = {"on_complete": "end"}
 
     return {
         "agent_registry": agent_registry,

@@ -17,6 +17,11 @@ class AgentRegistry:
         self._agents[config.name] = agent
         return agent
 
+    def register_instance(self, agent: Agent) -> Agent:
+        """Store a pre-built agent (or agent-like node) directly."""
+        self._agents[agent.config.name] = agent
+        return agent
+
     def get(self, name: str) -> Agent:
         if name not in self._agents:
             raise KeyError(f"Agent '{name}' not registered.")

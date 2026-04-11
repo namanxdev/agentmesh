@@ -53,6 +53,12 @@ export function DashboardLayout() {
     setMode("build");
   }, [setMode]);
 
+  // Auto-open the inspector (Output tab) when a run starts so the user
+  // doesn't have to manually expand the right panel to see results.
+  useEffect(() => {
+    if (mode === "run") setRightCollapsed(false);
+  }, [mode]);
+
   const agentNames = nodes
     .filter((n) => n.data?.kind === "llm_agent")
     .map((n) => (n.data?.config as { name?: string } | undefined)?.name ?? n.data?.label ?? n.id);

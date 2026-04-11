@@ -180,8 +180,8 @@ class WorkflowOrchestrator:
                         await self._event_bus.emit({
                             "type": "agent.handoff",
                             "workflow_id": self.workflow_id,
-                            "fromAgent": current_node,
-                            "toAgent": next_node,
+                            "from": current_node,
+                            "to": next_node,
                             "reason": result.routing_key,
                         })
 
