@@ -61,20 +61,20 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
     }
   };
 
-  const [noKeys, setNoKeys] = useState(false);
+  const [noKeys, setNoKeys] = useState<string | null>(null);
 
   const handleGo = async () => {
     if (!task.trim()) return;
     setError(null);
-    setNoKeys(false);
+    setNoKeys(null);
     try {
       await runPipeline(task.trim());
       setShowTaskInput(false);
       setTask("");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Run failed";
-      if (msg.toLowerCase().includes("no_keys") || msg.toLowerCase().includes("no api key")) {
-        setNoKeys(true);
+      if (msg.toLowerCase().includes("no_keys") || msg.toLowerCase().includes("no api key") || msg.toLowerCase().includes("missing api key") || msg.toLowerCase().includes("missing_provider") || msg.toLowerCase().includes("needs a")) {
+        setNoKeys(msg === "no_keys" ? "No API keys — Add in Settings →" : msg);
       } else {
         setError(msg);
       }
@@ -271,9 +271,14 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
               textDecoration: "none",
               border: "1px solid var(--status-warning)44",
               background: "var(--status-warning)0f",
+              maxWidth: 420,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
+            title={noKeys}
           >
-            No API keys — Add in Settings →
+            {noKeys} →
           </Link>
         ) : null}
 

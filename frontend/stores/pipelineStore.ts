@@ -303,8 +303,8 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       try {
         const body = await res.json();
         const detail = body?.detail;
-        if (detail?.error === "no_keys") {
-          errorMsg = "no_keys";
+        if (detail?.error === "no_keys" || detail?.error === "missing_provider") {
+          errorMsg = detail.message ?? "no_keys";
         } else if (typeof detail === "string") {
           errorMsg = detail;
         } else if (detail?.message) {

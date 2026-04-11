@@ -53,10 +53,13 @@ export function DashboardLayout() {
     setMode("build");
   }, [setMode]);
 
-  // Auto-open the inspector (Output tab) when a run starts so the user
-  // doesn't have to manually expand the right panel to see results.
+  // Auto-open the inspector + event stream when a run starts so the user
+  // sees results and errors without having to expand panels manually.
   useEffect(() => {
-    if (mode === "run") setRightCollapsed(false);
+    if (mode === "run") {
+      setRightCollapsed(false);
+      setBottomCollapsed(false);
+    }
   }, [mode]);
 
   const agentNames = nodes

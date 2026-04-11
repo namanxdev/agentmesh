@@ -370,6 +370,34 @@ def create_app(
             for e in defn.edges
         ]
 
+        # Pre-validate that each llm_agent node's model has a matching saved key.
+        # This surfaces "wrong provider" errors immediately rather than mid-execution.
+        def _required_family(model: str) -> str:
+            m = model.lower()
+            if m.startswith("gemini"):
+                return "gemini"
+            if m.startswith(("gpt", "o1", "o3", "o4")):
+                return "openai"
+            return "groq"
+
+        missing: list[str] = []
+        for n in nodes:
+            if n["kind"] == "llm_agent":
+                model = n["config"].get("model", "gemini-2.0-flash")
+                family = _required_family(model)
+                if family not in providers:
+                    agent_name = n["config"].get("name", n["id"])
+                    missing.append(f"'{agent_name}' needs a {family.capitalize()} key (model: {model})")
+
+        if missing:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "missing_provider",
+                    "message": "Missing API keys for: " + "; ".join(missing) + ". Add them in Settings.",
+                },
+            )
+
         validation = validate_pipeline(nodes, edges)
         if not validation["is_dag"]:
             raise HTTPException(status_code=422, detail={"errors": validation["errors"]})
