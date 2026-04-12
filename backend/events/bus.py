@@ -1,6 +1,9 @@
 import uuid
 import time
+import logging
 from fastapi import WebSocket
+
+_log = logging.getLogger(__name__)
 
 
 class EventBus:
@@ -18,7 +21,8 @@ class EventBus:
         try:
             for event in self._event_buffer:
                 await ws.send_json(event)
-        except Exception:
+        except Exception as e:
+            _log.warning("Error replaying events to new subscriber: %s", e)
             if ws in self._subscribers:
                 self._subscribers.remove(ws)
             raise
@@ -40,7 +44,8 @@ class EventBus:
         for ws in self._subscribers:
             try:
                 await ws.send_json(event)
-            except Exception:
+            except Exception as e:
+                _log.warning("Error sending event to subscriber, marking for removal: %s", e)
                 disconnected.append(ws)
         for ws in disconnected:
             self._subscribers.remove(ws)

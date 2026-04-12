@@ -18,7 +18,10 @@ def _prepare_url(raw: str) -> tuple[str, dict]:
     return them as connect_args instead.
     """
     if not raw:
-        return "postgresql+asyncpg://localhost/agentmesh", {"timeout": 5}
+        # Allow tests to run without DATABASE_CONN
+        if os.getenv("AGENTMESH_ENV") == "test":
+            return "postgresql+asyncpg://localhost/agentmesh_test", {"timeout": 5}
+        raise RuntimeError("DATABASE_CONN environment variable is required")
 
     raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
     raw = raw.replace("postgres://", "postgresql+asyncpg://", 1)

@@ -32,6 +32,8 @@ class GroqProvider(BaseLLMProvider):
         return self._parse_response(response)
 
     def _parse_response(self, response) -> LLMResponse:
+        if not response.choices:
+            raise ValueError("LLM returned no choices")
         msg = response.choices[0].message
         tool_calls = []
         if msg.tool_calls:

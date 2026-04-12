@@ -138,6 +138,8 @@ class WorkflowOrchestrator:
                         if join_node is None:
                             join_node = candidate
 
+                    if not branch_names:
+                        raise ValueError("Parallel branch cannot be empty")
                     state.last_agent = branch_names[-1]
                     state.routing_key = "on_complete"
 

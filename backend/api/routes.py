@@ -451,8 +451,8 @@ def create_app(
                 },
             )
             await db.commit()
-        except Exception:
-            pass  # non-critical, don't fail the run
+        except Exception as e:
+            _log.warning("Non-critical error saving pipeline run to DB: %s", e)
 
         async def _run():
             result = await orchestrator.run(
@@ -486,8 +486,8 @@ def create_app(
                             },
                         )
                         await run_db.commit()
-                except Exception:
-                    pass  # non-critical
+                except Exception as e:
+                    _log.warning("Non-critical error updating pipeline run status: %s", e)
 
         asyncio.create_task(_run())
 
@@ -757,6 +757,8 @@ def create_app(
 
         # Validate HMAC-SHA256 signature
         sig_header = raw_request.headers.get("x-hub-signature-256", "")
+        if not sig_header:
+            raise HTTPException(status_code=403, detail="Missing signature header")
         expected = "sha256=" + hmac.new(
             trigger_row.secret.encode(), body_bytes, hashlib.sha256
         ).hexdigest()
@@ -776,7 +778,8 @@ def create_app(
         import json as _json
         try:
             body_data = _json.loads(body_bytes) if body_bytes else {}
-        except Exception:
+        except Exception as e:
+            _log.warning("Failed to parse webhook body as JSON: %s", e)
             body_data = {}
         task = body_data.get("task", "Triggered via webhook")
 
@@ -795,7 +798,8 @@ def create_app(
         for krow in key_rows:
             try:
                 api_key = decrypt(krow.encrypted_key)
-            except Exception:
+            except Exception as e:
+                _log.warning("Failed to decrypt API key for provider '%s': %s", krow.provider, e)
                 continue
             if krow.provider == "gemini":
                 from backend.llm.gemini import GeminiProvider
@@ -815,6 +819,8 @@ def create_app(
 
         user_llm = MultiProvider(providers)
 
+        if not pipeline_row.definition:
+            raise HTTPException(status_code=404, detail="Pipeline definition is empty")
         defn = pipeline_row.definition if isinstance(pipeline_row.definition, dict) else _json.loads(pipeline_row.definition)
         nodes = defn.get("nodes", [])
         edges = defn.get("edges", [])

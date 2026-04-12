@@ -51,6 +51,8 @@ class GeminiProvider(BaseLLMProvider):
         return [types.Tool(function_declarations=declarations)]
 
     def _parse_response(self, response) -> LLMResponse:
+        if not response.candidates:
+            raise ValueError("LLM returned no candidates")
         text, tool_calls = "", []
         for part in response.candidates[0].content.parts:
             if part.function_call and part.function_call.name:

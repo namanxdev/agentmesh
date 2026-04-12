@@ -59,7 +59,9 @@ async function proxyRequest(
     });
   } catch (err) {
     const isTimeout = err instanceof Error && err.name === "TimeoutError";
-    console.error(isTimeout ? "[proxy] FastAPI timed out:" : "[proxy] FastAPI unreachable:", err);
+    if (process.env.NODE_ENV === "development") {
+      console.error(isTimeout ? "[proxy] FastAPI timed out:" : "[proxy] FastAPI unreachable:", err);
+    }
     return NextResponse.json(
       { error: isTimeout ? "Backend timed out" : "Backend unavailable" },
       { status: 503 }

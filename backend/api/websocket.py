@@ -1,6 +1,9 @@
 import json
+import logging
 from fastapi import WebSocket, WebSocketDisconnect
 from backend.events.bus import EventBus
+
+_log = logging.getLogger(__name__)
 
 
 async def websocket_events_handler(ws: WebSocket, event_bus: EventBus):
@@ -11,11 +14,12 @@ async def websocket_events_handler(ws: WebSocket, event_bus: EventBus):
     """
     try:
         await event_bus.subscribe(ws)
-    except Exception:
+    except Exception as e:
+        _log.warning("Failed to subscribe WebSocket client: %s", e)
         try:
             await ws.close()
-        except Exception:
-            pass
+        except Exception as close_err:
+            _log.warning("Failed to close WebSocket after subscription error: %s", close_err)
         return
     try:
         while True:
@@ -36,5 +40,6 @@ async def websocket_events_handler(ws: WebSocket, event_bus: EventBus):
 
     except WebSocketDisconnect:
         event_bus.unsubscribe(ws)
-    except Exception:
+    except Exception as e:
+        _log.warning("WebSocket error during message handling: %s", e)
         event_bus.unsubscribe(ws)
