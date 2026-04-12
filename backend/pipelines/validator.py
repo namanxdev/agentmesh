@@ -146,6 +146,7 @@ def pipeline_to_workflow_config(
     # Per-llm_agent data collected from adjacent structural nodes
     mcp_servers_map: dict[str, list[str]] = {nid: [] for nid in llm_agent_ids}
     system_prompt_prefixes: dict[str, str] = {nid: "" for nid in llm_agent_ids}
+    handoff_rules_map: dict[str, dict[str, str]] = {nid: {} for nid in llm_agent_ids}
 
     # Reverse adjacency (for upstream lookups)
     rev_adj: dict[str, list[str]] = {n["id"]: [] for n in nodes}
@@ -216,6 +217,31 @@ def pipeline_to_workflow_config(
                 if content:
                     system_prompt_prefixes[agent_id] = content + "\n\n"
 
+    # Router nodes: populate handoff_rules for the upstream llm_agent and inject
+    # a routing instruction into its system prompt so it emits [ROUTE: key].
+    for n in nodes:
+        if n["kind"] == "router":
+            conditions = n["config"].get("conditions", [])
+            if not conditions:
+                continue
+            agent_id = find_nearest_llm_agent_upstream(n["id"])
+            if agent_id and agent_id in handoff_rules_map:
+                keys = [c["key"] for c in conditions if c.get("key")]
+                for key in keys:
+                    handoff_rules_map[agent_id][key] = key
+                # Inject routing instruction into system prompt suffix
+                key_list = " | ".join(f'"{k}"' for k in keys)
+                routing_instruction = (
+                    f"\n\nAt the end of your response you MUST output exactly one routing tag "
+                    f"on its own line to direct the workflow. Choose from: {key_list}. "
+                    f"Format: [ROUTE: chosen_key]"
+                )
+                system_prompt_prefixes[agent_id] = (
+                    system_prompt_prefixes[agent_id] + routing_instruction
+                    if system_prompt_prefixes[agent_id]
+                    else routing_instruction
+                )
+
     # Register all executable nodes in the registry
     for nid in executable_ids:
         n = node_map[nid]
@@ -231,7 +257,7 @@ def pipeline_to_workflow_config(
                 model=cfg.get("model", "gemini-2.0-flash"),
                 temperature=float(cfg.get("temperature", 0.7)),
                 mcp_servers=mcp_servers_map[nid],
-                handoff_rules={},
+                handoff_rules=handoff_rules_map[nid],
             )
             agent_registry.register(agent_config)
 
