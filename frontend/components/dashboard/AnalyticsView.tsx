@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { usePipelineStore } from "@/stores/pipelineStore";
+import { BentoGrid, BentoCard } from "@/components/bento-grid";
+import { Play, CheckCircle2, Clock, Hash, AlertTriangle, Activity } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface PipelineRun {
   id: string;
@@ -12,22 +15,10 @@ interface PipelineRun {
   created_at: string;
 }
 
-const cardStyle: React.CSSProperties = {
-  flex: 1,
-  minWidth: 0,
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.03)",
-  padding: "20px 24px",
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-};
-
 const statusColors: Record<string, string> = {
-  completed: "var(--status-active)",
-  running: "var(--status-warning)",
-  error: "var(--status-error)",
+  completed: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+  running: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+  error: "text-rose-500 bg-rose-500/10 border-rose-500/20",
 };
 
 export function AnalyticsView() {
@@ -60,300 +51,169 @@ export function AnalyticsView() {
       : null;
 
   return (
-    <div
-      style={{
-        padding: "32px 40px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 28,
-        height: "100%",
-        overflowY: "auto",
-        boxSizing: "border-box",
-      }}
-    >
-      <div>
-        <p
-          className="dashboard-kicker"
-          style={{ margin: "0 0 8px", letterSpacing: "0.14em" }}
-        >
-          Pipeline analytics
-        </p>
-        <h1
-          style={{
-            color: "var(--text-primary)",
-            fontFamily: "var(--font-display)",
-            fontSize: 32,
-            fontWeight: 800,
-            letterSpacing: "-0.04em",
-            margin: 0,
-          }}
-        >
-          Run history
+    <div className="flex flex-col h-full w-full p-6 md:p-10 gap-8 overflow-y-auto custom-scrollbar">
+      <div className="flex flex-col gap-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 w-fit">
+            <Activity className="w-3 h-3 text-indigo-400" />
+            <p className="text-[10px] sm:text-xs uppercase tracking-widest font-mono text-indigo-300 font-semibold">
+              Pipeline Analytics
+            </p>
+        </div>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-2 font-display">
+          Run History
         </h1>
       </div>
 
       {!currentPipelineId ? (
-        <div
-          className="dashboard-panel"
-          style={{
-            padding: "48px 32px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 12,
-            textAlign: "center",
-          }}
-        >
-          <span style={{ fontSize: 36, opacity: 0.3 }}>◷</span>
-          <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>
-            Save your pipeline first to track run history
+        <div className="flex flex-col items-center justify-center p-12 mt-8 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-xl text-center">
+          <Play className="w-16 h-16 text-neutral-600 mb-6 font-light stroke-[1]" />
+          <h2 className="text-xl font-medium text-neutral-300 mb-2">No Active Pipeline</h2>
+          <p className="text-sm text-neutral-500 max-w-sm">
+            Save your pipeline first in the build canvas to track workflow run history.
           </p>
         </div>
       ) : loading ? (
-        <p style={{ color: "var(--text-muted)", fontSize: 13, fontFamily: "var(--font-mono)" }}>
-          Loading…
-        </p>
+        <div className="flex items-center justify-center p-20">
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+        </div>
       ) : error ? (
-        <p style={{ color: "var(--status-error)", fontSize: 13, fontFamily: "var(--font-mono)" }}>
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium">
+          <AlertTriangle className="w-5 h-5" />
           {error}
-        </p>
+        </div>
       ) : (
-        <>
-          {/* Stat cards */}
-          <div style={{ display: "flex", gap: 14 }}>
-            <div style={cardStyle}>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Total runs
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 36,
-                  fontWeight: 800,
-                  color: "var(--text-primary)",
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
-                }}
-              >
-                {runs.length}
-              </span>
-            </div>
-            <div style={cardStyle}>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Completed
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 36,
-                  fontWeight: 800,
-                  color: "var(--status-active)",
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
-                }}
-              >
-                {completed.length}
-              </span>
-            </div>
-            <div style={cardStyle}>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Avg duration
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 36,
-                  fontWeight: 800,
-                  color: "var(--text-primary)",
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
-                }}
-              >
-                {avgDuration !== null ? `${avgDuration.toFixed(1)}s` : "—"}
-              </span>
-            </div>
-            <div style={cardStyle}>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Avg tokens
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: 36,
-                  fontWeight: 800,
-                  color: "var(--text-primary)",
-                  letterSpacing: "-0.04em",
-                  lineHeight: 1,
-                }}
-              >
-                {avgTokens !== null ? avgTokens.toLocaleString() : "—"}
-              </span>
-            </div>
-          </div>
+        <div className="flex flex-col gap-8 w-full max-w-[1920px]">
+          {/* KPI Bento Grid */}
+          <BentoGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <BentoCard className="col-span-1 border border-white/10 bg-white/[0.03] backdrop-blur-md rounded-[24px]">
+              <div className="flex flex-col h-full z-10 w-full justify-between">
+                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400 mb-4 block">Total Runs</span>
+                <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">{runs.length}</span>
+              </div>
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                 <Activity className="w-16 h-16 text-white" />
+              </div>
+            </BentoCard>
 
-          {/* Run table */}
-          {runs.length === 0 ? (
-            <div
-              className="dashboard-panel"
-              style={{
-                padding: "48px 32px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 12,
-                textAlign: "center",
-              }}
-            >
-              <span style={{ fontSize: 36, opacity: 0.3 }}>▷</span>
-              <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>
-                No runs yet — run this pipeline to see history
-              </p>
-            </div>
-          ) : (
-            <div
-              className="dashboard-panel"
-              style={{ overflow: "hidden", flexShrink: 0 }}
-            >
-              {/* Table header */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 100px 90px 90px 140px",
-                  gap: 12,
-                  padding: "12px 20px",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                {["Workflow ID", "Status", "Duration", "Tokens", "Date"].map((h) => (
-                  <span
-                    key={h}
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    {h}
-                  </span>
-                ))}
+            <BentoCard className="col-span-1 border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md rounded-[24px]">
+              <div className="flex flex-col h-full z-10 w-full justify-between">
+                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-emerald-500/80 mb-4 block">Completed</span>
+                <span className="text-4xl md:text-5xl font-bold text-emerald-400 tracking-tight">{completed.length}</span>
               </div>
-              <div style={{ overflowY: "auto", maxHeight: 360 }}>
-                {runs.map((run) => (
-                  <div
-                    key={run.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 100px 90px 90px 140px",
-                      gap: 12,
-                      padding: "12px 20px",
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
-                      alignItems: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 11,
-                        color: "var(--text-secondary)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {run.workflow_id}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 10,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                        color: statusColors[run.status] ?? "var(--text-muted)",
-                        background: `${statusColors[run.status] ?? "transparent"}18`,
-                        border: `1px solid ${statusColors[run.status] ?? "transparent"}44`,
-                        borderRadius: 6,
-                        padding: "2px 8px",
-                        display: "inline-block",
-                      }}
-                    >
-                      {run.status}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 11,
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      {run.duration_seconds != null
-                        ? `${run.duration_seconds.toFixed(1)}s`
-                        : "—"}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 11,
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      {run.total_tokens != null
-                        ? run.total_tokens.toLocaleString()
-                        : "—"}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 11,
-                        color: "var(--text-tertiary)",
-                      }}
-                    >
-                      {new Date(run.created_at).toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                ))}
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                 <CheckCircle2 className="w-16 h-16 text-emerald-400" />
               </div>
-            </div>
-          )}
-        </>
+            </BentoCard>
+
+            <BentoCard className="col-span-1 border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md rounded-[24px]">
+              <div className="flex flex-col h-full z-10 w-full justify-between">
+                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-indigo-400/80 mb-4 block">Avg Duration</span>
+                <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                  {avgDuration !== null ? <>{avgDuration.toFixed(1)}<span className="text-2xl text-neutral-500">s</span></> : "—"}
+                </span>
+              </div>
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                 <Clock className="w-16 h-16 text-indigo-400" />
+              </div>
+            </BentoCard>
+
+            <BentoCard className="col-span-1 border border-fuchsia-500/20 bg-fuchsia-500/5 backdrop-blur-md rounded-[24px]">
+              <div className="flex flex-col h-full z-10 w-full justify-between">
+                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-fuchsia-400/80 mb-4 block">Avg Tokens</span>
+                <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                  {avgTokens !== null ? avgTokens.toLocaleString() : "—"}
+                </span>
+              </div>
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                 <Hash className="w-16 h-16 text-fuchsia-400" />
+              </div>
+            </BentoCard>
+          </BentoGrid>
+
+          {/* Runs Table Section */}
+          <div className="flex-1 min-h-[300px]">
+            {runs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-16 rounded-[32px] border border-white/5 bg-white/[0.02] text-center w-full">
+                <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                   <Play className="w-8 h-8 text-neutral-500" />
+                </div>
+                <h3 className="text-xl font-semibold text-neutral-200 mb-2">No runs yet</h3>
+                <p className="text-neutral-500 text-sm">Return to the canvas and run this pipeline to see history.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col w-full rounded-[32px] border border-white/10 bg-[#0a0a0a]/60 backdrop-blur-xl overflow-hidden shadow-2xl">
+                {/* Desktop Native Table Header */}
+                <div className="hidden lg:grid grid-cols-12 gap-4 p-5 bg-white/[0.02] border-b border-white/10 text-[10px] font-mono tracking-widest uppercase text-neutral-500">
+                  <span className="col-span-4">Workflow ID</span>
+                  <span className="col-span-2">Status</span>
+                  <span className="col-span-2">Duration</span>
+                  <span className="col-span-2">Tokens</span>
+                  <span className="col-span-2 text-right">Date</span>
+                </div>
+
+                {/* Runs List (Responsive) */}
+                <div className="flex flex-col divide-y divide-white/5 max-h-[500px] overflow-y-auto custom-scrollbar">
+                  {runs.map((run, i) => (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      key={run.id} 
+                      className="grid grid-cols-2 gap-y-4 lg:grid-cols-12 lg:gap-4 p-5 lg:items-center hover:bg-white/[0.02] transition-colors"
+                    >
+                      {/* ID */}
+                      <div className="col-span-2 lg:col-span-4 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
+                        <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Workflow ID</span>
+                        <span className="font-mono text-sm text-neutral-300 truncate pr-4">
+                          {run.workflow_id}
+                        </span>
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
+                        <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Status</span>
+                        <div className="flex">
+                           <span className={`text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColors[run.status] || "text-neutral-500 bg-neutral-500/10 border-neutral-500/20"}`}>
+                             {run.status}
+                           </span>
+                        </div>
+                      </div>
+
+                      {/* Duration */}
+                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
+                        <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Duration</span>
+                        <span className="font-mono text-sm text-neutral-300">
+                          {run.duration_seconds != null ? `${run.duration_seconds.toFixed(1)}s` : "—"}
+                        </span>
+                      </div>
+
+                      {/* Tokens */}
+                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
+                         <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Tokens</span>
+                         <span className="font-mono text-sm text-neutral-300">
+                          {run.total_tokens != null ? run.total_tokens.toLocaleString() : "—"}
+                         </span>
+                      </div>
+
+                      {/* Date */}
+                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center lg:justify-end gap-1 lg:gap-0">
+                         <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Date</span>
+                         <span className="font-mono text-xs text-neutral-400 tabular-nums">
+                          {new Date(run.created_at).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                         </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { KeyRound, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react";
 
 interface ApiKeyCardProps {
   provider: "gemini" | "groq" | "openai";
@@ -69,136 +70,104 @@ export function ApiKeyCard({
 
   return (
     <div
+      className="group relative flex flex-col gap-4 p-5 md:p-6 rounded-[20px] bg-[#0c0a09]/80 border transition-all duration-300"
       style={{
-        background: "var(--bg-secondary)",
-        border: `1px solid ${isSaved ? accentColor + "44" : "var(--border-subtle)"}`,
-        borderRadius: 14,
-        padding: "20px 22px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-        transition: "border-color 0.2s ease",
+        borderColor: isSaved ? `${accentColor}33` : "rgba(255,255,255,0.06)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.02)",
+        backdropFilter: "blur(12px)"
       }}
     >
+      {/* Background glow when saved */}
+      {isSaved && (
+        <div 
+          className="absolute inset-0 rounded-[20px] opacity-10 pointer-events-none transition-opacity duration-500"
+          style={{ background: `radial-gradient(circle at top right, ${accentColor}, transparent 60%)` }}
+        />
+      )}
+
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div className="flex items-start md:items-center justify-between flex-col md:flex-row gap-3 relative z-10">
+        <div className="flex items-center gap-3">
           <div
+            className="flex items-center justify-center w-10 h-10 rounded-xl"
             style={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              background: accentColor,
-              boxShadow: `0 0 8px ${accentColor}88`,
-              flexShrink: 0,
-            }}
-          />
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-display)",
+              background: `linear-gradient(135deg, ${accentColor}33, ${accentColor}11)`,
+              border: `1px solid ${accentColor}44`,
+              color: accentColor,
             }}
           >
-            {label}
-          </span>
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base font-bold text-neutral-100 tracking-tight">
+              {label}
+            </span>
+            <span className="text-xs text-neutral-500 font-medium">Provider</span>
+          </div>
         </div>
 
-        <span
+        <div
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono font-bold tracking-widest uppercase"
           style={{
-            fontSize: 10,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            padding: "3px 8px",
-            borderRadius: 999,
-            border: `1px solid ${isSaved ? accentColor + "55" : "var(--border-default)"}`,
-            background: isSaved ? accentColor + "18" : "var(--bg-tertiary)",
-            color: isSaved ? accentColor : "var(--text-muted)",
-            fontFamily: "var(--font-mono)",
+            border: `1px solid ${isSaved ? accentColor + "55" : "rgba(255,255,255,0.1)"}`,
+            background: isSaved ? accentColor + "18" : "rgba(255,255,255,0.03)",
+            color: isSaved ? accentColor : "#737373",
           }}
         >
-          {isSaved ? "saved" : "not set"}
-        </span>
+          {isSaved ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+          {isSaved ? "Secured" : "Not Set"}
+        </div>
       </div>
 
-      <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
+      <p className="text-xs text-neutral-400 leading-relaxed font-medium relative z-10">
         {description}
       </p>
 
       {/* Key input */}
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="flex flex-col sm:flex-row gap-2 relative z-10">
         <input
           type="password"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSave()}
           placeholder={isSaved ? "Paste new key to replace…" : "Paste your API key…"}
-          style={{
-            flex: 1,
-            background: "var(--bg-tertiary)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 8,
-            color: "var(--text-primary)",
-            fontSize: 12,
-            padding: "8px 12px",
-            outline: "none",
-            fontFamily: "var(--font-mono)",
-          }}
+          className="flex-1 bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-2.5 outline-none focus:border-white/30 focus:ring-1 focus:ring-white/10 transition-all font-mono placeholder:text-neutral-600 placeholder:font-sans"
         />
         <button
           onClick={handleSave}
           disabled={!value.trim() || loading}
+          className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap"
           style={{
-            padding: "8px 16px",
-            borderRadius: 8,
-            border: "none",
-            background: value.trim() && !loading ? accentColor : "var(--bg-tertiary)",
-            color: value.trim() && !loading ? "#0a0a0a" : "var(--text-muted)",
-            fontSize: 12,
-            fontWeight: 700,
+            background: value.trim() && !loading ? accentColor : "rgba(255,255,255,0.05)",
+            color: value.trim() && !loading ? "#000" : "#737373",
             cursor: value.trim() && !loading ? "pointer" : "not-allowed",
-            transition: "background 0.2s ease, color 0.2s ease",
-            fontFamily: "var(--font-display)",
-            whiteSpace: "nowrap",
+            boxShadow: value.trim() && !loading ? `0 0 20px ${accentColor}44` : "none"
           }}
         >
-          {loading ? "Saving…" : "Save"}
+          {loading ? "Encrypting…" : "Save Key"}
         </button>
       </div>
 
       {/* Status / saved-at row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 20, gap: 8 }}>
-        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", flex: 1 }}>
-          {error && <span style={{ color: "var(--status-error)" }}>{error}</span>}
-          {success && <span style={{ color: "var(--status-active)" }}>Saved successfully</span>}
+      <div className="flex items-center justify-between min-h-[24px] gap-2 mt-1 relative z-10">
+        <div className="text-[11px] font-mono flex-1">
+          {error && <span className="text-red-400">{error}</span>}
+          {success && <span style={{ color: accentColor }}>Encrypted uniquely to your account.</span>}
           {!error && !success && isSaved && savedAt && (
-            <span style={{ color: "var(--text-muted)" }}>
-              Added {new Date(savedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+            <span className="text-neutral-500">
+              Active since {(new Date(savedAt)).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
             </span>
           )}
-        </span>
+        </div>
 
         {isSaved && (
           <button
             onClick={handleDelete}
             disabled={deleting}
-            style={{
-              background: "rgba(239,68,68,0.08)",
-              border: "1px solid rgba(239,68,68,0.25)",
-              borderRadius: 6,
-              color: "var(--status-error)",
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: deleting ? "not-allowed" : "pointer",
-              opacity: deleting ? 0.5 : 1,
-              padding: "4px 10px",
-              fontFamily: "var(--font-mono)",
-              whiteSpace: "nowrap",
-            }}
+            className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-500 font-mono text-[10px] font-bold uppercase tracking-wider hover:bg-red-500/20 hover:border-red-500/40 transition-all disabled:opacity-50"
           >
-            {deleting ? "Removing…" : "Remove key"}
+             <Trash2 className="w-3 h-3" />
+            {deleting ? "Removing…" : "Revoke"}
           </button>
         )}
       </div>
