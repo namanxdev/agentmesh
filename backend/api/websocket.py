@@ -1,6 +1,8 @@
 import json
 import logging
+
 from fastapi import WebSocket, WebSocketDisconnect
+
 from backend.events.bus import EventBus
 
 _log = logging.getLogger(__name__)

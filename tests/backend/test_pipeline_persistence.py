@@ -70,7 +70,7 @@ class TestListTemplates:
         assert resp.status_code == 200
         body = resp.json()
         assert "templates" in body
-        assert len(body["templates"]) == 2
+        assert len(body["templates"]) == 3
 
     @pytest.mark.asyncio
     async def test_template_ids(self, app):
@@ -508,7 +508,7 @@ class TestPipelineTemplatesModule:
     def test_module_exports_list(self):
         from backend.pipelines.templates import PIPELINE_TEMPLATES
         assert isinstance(PIPELINE_TEMPLATES, list)
-        assert len(PIPELINE_TEMPLATES) == 2
+        assert len(PIPELINE_TEMPLATES) == 3
 
     def test_research_synthesis_node_ids(self):
         from backend.pipelines.templates import PIPELINE_TEMPLATES

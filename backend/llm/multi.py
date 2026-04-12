@@ -1,4 +1,3 @@
-from typing import Optional
 from .base import BaseLLMProvider, LLMResponse
 
 
@@ -37,7 +36,7 @@ class MultiProvider(BaseLLMProvider):
     async def generate(
         self,
         messages: list[dict],
-        tools: Optional[list[dict]] = None,
+        tools: list[dict] | None = None,
         model: str = "gemini-2.0-flash",
         temperature: float = 0.7,
         max_tokens: int = 4096,

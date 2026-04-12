@@ -1,6 +1,7 @@
 import json
-from typing import Optional
+
 from openai import AsyncOpenAI
+
 from .base import BaseLLMProvider, LLMResponse
 
 
@@ -13,7 +14,7 @@ class OpenAIProvider(BaseLLMProvider):
     async def generate(
         self,
         messages: list[dict],
-        tools: Optional[list[dict]] = None,
+        tools: list[dict] | None = None,
         model: str = "gpt-4o-mini",
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -38,10 +39,12 @@ class OpenAIProvider(BaseLLMProvider):
         tool_calls = []
         if msg.tool_calls:
             for tc in msg.tool_calls:
-                tool_calls.append({
-                    "name": tc.function.name,
-                    "args": json.loads(tc.function.arguments),
-                })
+                tool_calls.append(
+                    {
+                        "name": tc.function.name,
+                        "args": json.loads(tc.function.arguments),
+                    }
+                )
         return LLMResponse(
             text=msg.content or "",
             tool_calls=tool_calls,

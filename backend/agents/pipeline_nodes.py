@@ -8,14 +8,14 @@ Both implement the same process() interface as Agent so they can be stored
 in AgentRegistry and driven by WorkflowOrchestrator without any changes to
 the orchestrator itself.
 """
+
 from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
-from backend.events.bus import EventBus
 from backend.agents.base import AgentConfig, AgentResult, AgentStatus
+from backend.events.bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class _BaseNodeAgent:
         self.config = AgentConfig(
             name=name,
             role=role,
-            system_prompt="",   # not used
+            system_prompt="",  # not used
             mcp_servers=[],
             handoff_rules={},
         )
@@ -44,28 +44,33 @@ class _BaseNodeAgent:
 
     async def _emit_activated(self, description: str, workflow_id: str) -> None:
         self.status = AgentStatus.ACTIVE
-        await self._event_bus.emit({
-            "type": "agent.activated",
-            "workflow_id": workflow_id,
-            "agentName": self.config.name,
-            "role": self.config.role,
-            "taskDescription": description,
-        })
+        await self._event_bus.emit(
+            {
+                "type": "agent.activated",
+                "workflow_id": workflow_id,
+                "agentName": self.config.name,
+                "role": self.config.role,
+                "taskDescription": description,
+            }
+        )
 
     async def _emit_completed(self, output: str, workflow_id: str) -> None:
         self.status = AgentStatus.COMPLETED
-        await self._event_bus.emit({
-            "type": "agent.completed",
-            "workflow_id": workflow_id,
-            "agentName": self.config.name,
-            "output": output,
-            "tokenUsage": {"input": 0, "output": 0},
-        })
+        await self._event_bus.emit(
+            {
+                "type": "agent.completed",
+                "workflow_id": workflow_id,
+                "agentName": self.config.name,
+                "output": output,
+                "tokenUsage": {"input": 0, "output": 0},
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
 # MemoryAgent
 # ---------------------------------------------------------------------------
+
 
 class MemoryAgent(_BaseNodeAgent):
     """
@@ -127,6 +132,7 @@ class MemoryAgent(_BaseNodeAgent):
 # TransformAgent
 # ---------------------------------------------------------------------------
 
+
 class TransformAgent(_BaseNodeAgent):
     """
     Applies a deterministic transformation to shared workflow state.
@@ -161,7 +167,7 @@ class TransformAgent(_BaseNodeAgent):
         await self._emit_activated(description, workflow_id)
 
         output: str
-        updates: Optional[dict]
+        updates: dict | None
 
         if self._transform_type == "json_parse":
             field = self._expression or "last_output"
@@ -183,14 +189,16 @@ class TransformAgent(_BaseNodeAgent):
                 for k in keys:
                     if isinstance(value, dict):
                         value = value[k]
-                    elif isinstance(value, (list, tuple)):
+                    elif isinstance(value, list | tuple):
                         value = value[int(k)]
                     else:
                         raise KeyError(k)
                 output = value if isinstance(value, str) else json.dumps(value, default=str)
                 updates = {"extracted": value}
             except (KeyError, IndexError, ValueError) as exc:
-                logger.warning("TransformAgent extract failed for path %r: %s", self._expression, exc)
+                logger.warning(
+                    "TransformAgent extract failed for path %r: %s", self._expression, exc
+                )
                 output = f"[extract: path '{self._expression}' not found: {exc}]"
                 updates = None
 
@@ -198,6 +206,7 @@ class TransformAgent(_BaseNodeAgent):
             try:
                 # Use format_map with a defaultdict so missing keys become empty strings.
                 from collections import defaultdict
+
                 safe_state: dict = defaultdict(str, {k: str(v) for k, v in state.items()})
                 output = self._expression.format_map(safe_state)
                 updates = {"formatted": output}

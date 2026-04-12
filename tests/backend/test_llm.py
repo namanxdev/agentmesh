@@ -31,15 +31,19 @@ async def test_gemini_generate_text():
     mock_part.function_call = MagicMock()
     mock_part.function_call.name = ""
     mock_part.text = "Looks good."
+
+    mock_candidate = MagicMock()
+    mock_candidate.content.parts = [mock_part]
+
     mock_response = MagicMock()
-    mock_response.parts = [mock_part]
+    mock_response.candidates = [mock_candidate]
     mock_response.usage_metadata.prompt_token_count = 100
     mock_response.usage_metadata.candidates_token_count = 50
 
-    with patch("google.generativeai.GenerativeModel") as MockModel:
+    with patch("google.genai.Client") as MockClient:
         instance = MagicMock()
-        instance.generate_content_async = AsyncMock(return_value=mock_response)
-        MockModel.return_value = instance
+        instance.aio.models.generate_content = AsyncMock(return_value=mock_response)
+        MockClient.return_value = instance
 
         provider = GeminiProvider(api_key="test")
         result = await provider.generate(

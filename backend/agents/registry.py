@@ -1,5 +1,6 @@
-from backend.llm.base import BaseLLMProvider
 from backend.events.bus import EventBus
+from backend.llm.base import BaseLLMProvider
+
 from .base import Agent, AgentConfig, AgentStatus
 
 

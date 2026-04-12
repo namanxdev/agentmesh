@@ -1,6 +1,6 @@
-from typing import Optional
 from google import genai
 from google.genai import types
+
 from .base import BaseLLMProvider, LLMResponse
 
 
@@ -13,7 +13,7 @@ class GeminiProvider(BaseLLMProvider):
     async def generate(
         self,
         messages: list[dict],
-        tools: Optional[list[dict]] = None,
+        tools: list[dict] | None = None,
         model: str = "gemini-2.0-flash",
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -33,10 +33,12 @@ class GeminiProvider(BaseLLMProvider):
         result = []
         for msg in messages:
             role = "user" if msg["role"] in ("user", "tool") else "model"
-            result.append(types.Content(
-                role=role,
-                parts=[types.Part.from_text(text=str(msg.get("content", "")))],
-            ))
+            result.append(
+                types.Content(
+                    role=role,
+                    parts=[types.Part.from_text(text=str(msg.get("content", "")))],
+                )
+            )
         return result
 
     def _format_tools(self, tools: list[dict]) -> list[types.Tool]:
@@ -56,7 +58,9 @@ class GeminiProvider(BaseLLMProvider):
         text, tool_calls = "", []
         for part in response.candidates[0].content.parts:
             if part.function_call and part.function_call.name:
-                tool_calls.append({"name": part.function_call.name, "args": dict(part.function_call.args)})
+                tool_calls.append(
+                    {"name": part.function_call.name, "args": dict(part.function_call.args)}
+                )
             elif part.text:
                 text += part.text
         return LLMResponse(

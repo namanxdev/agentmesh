@@ -87,8 +87,16 @@ PIPELINE_TEMPLATES = [
             ],
             "edges": [
                 {"id": "e-input-searcher", "source": "input-1", "target": "agent-searcher"},
-                {"id": "e-searcher-extractor", "source": "agent-searcher", "target": "agent-extractor"},
-                {"id": "e-extractor-analyst", "source": "agent-extractor", "target": "agent-analyst"},
+                {
+                    "id": "e-searcher-extractor",
+                    "source": "agent-searcher",
+                    "target": "agent-extractor",
+                },
+                {
+                    "id": "e-extractor-analyst",
+                    "source": "agent-extractor",
+                    "target": "agent-analyst",
+                },
                 {"id": "e-analyst-writer", "source": "agent-analyst", "target": "agent-writer"},
                 {"id": "e-writer-output", "source": "agent-writer", "target": "output-1"},
             ],
@@ -181,8 +189,16 @@ PIPELINE_TEMPLATES = [
             "edges": [
                 {"id": "e-input-fetcher", "source": "input-1", "target": "agent-fetcher"},
                 {"id": "e-fetcher-reviewer", "source": "agent-fetcher", "target": "agent-reviewer"},
-                {"id": "e-reviewer-scanner", "source": "agent-reviewer", "target": "agent-security-scanner"},
-                {"id": "e-scanner-summarizer", "source": "agent-security-scanner", "target": "agent-summarizer"},
+                {
+                    "id": "e-reviewer-scanner",
+                    "source": "agent-reviewer",
+                    "target": "agent-security-scanner",
+                },
+                {
+                    "id": "e-scanner-summarizer",
+                    "source": "agent-security-scanner",
+                    "target": "agent-summarizer",
+                },
                 {"id": "e-summarizer-output", "source": "agent-summarizer", "target": "output-1"},
             ],
         },
@@ -309,7 +325,11 @@ PIPELINE_TEMPLATES = [
                     "target": "agent-risk",
                     "sourceHandle": "source-right",
                 },
-                {"id": "e-technical-synthesis", "source": "agent-technical", "target": "agent-synthesis"},
+                {
+                    "id": "e-technical-synthesis",
+                    "source": "agent-technical",
+                    "target": "agent-synthesis",
+                },
                 {"id": "e-market-synthesis", "source": "agent-market", "target": "agent-synthesis"},
                 {"id": "e-risk-synthesis", "source": "agent-risk", "target": "agent-synthesis"},
                 {"id": "e-synthesis-output", "source": "agent-synthesis", "target": "output-1"},

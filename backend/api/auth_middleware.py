@@ -1,16 +1,15 @@
-from typing import Optional
 from fastapi import Depends, Header, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.engine import get_db
 
 
 async def get_current_user(
-    x_user_id: Optional[str] = Header(None),
-    x_user_email: Optional[str] = Header(None),
-    x_user_name: Optional[str] = Header(None),
-    x_user_image: Optional[str] = Header(None),
+    x_user_id: str | None = Header(None),
+    x_user_email: str | None = Header(None),
+    x_user_name: str | None = Header(None),
+    x_user_image: str | None = Header(None),
     db: AsyncSession = Depends(get_db),
 ) -> str:
     """

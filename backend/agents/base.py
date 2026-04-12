@@ -1,10 +1,10 @@
 import re
-import time
 from enum import Enum
-from typing import Optional
+
 from pydantic import BaseModel, Field
-from backend.llm.base import BaseLLMProvider, LLMResponse
+
 from backend.events.bus import EventBus
+from backend.llm.base import BaseLLMProvider, LLMResponse
 from backend.mcp.client import MCPClientWrapper
 
 
@@ -32,7 +32,7 @@ class AgentResult(BaseModel):
     output: str
     routing_key: str = "on_complete"
     token_usage: dict = Field(default_factory=lambda: {"input": 0, "output": 0})
-    state_updates: Optional[dict] = None
+    state_updates: dict | None = None
 
 
 class Agent:
@@ -79,13 +79,15 @@ class Agent:
     async def process(self, task: str, state: dict, workflow_id: str = "") -> AgentResult:
         """Run one agent turn: think -> optional tool calls -> produce output."""
         self.status = AgentStatus.ACTIVE
-        await self._event_bus.emit({
-            "type": "agent.activated",
-            "workflow_id": workflow_id,
-            "agentName": self.config.name,
-            "role": self.config.role,
-            "taskDescription": task[:200],
-        })
+        await self._event_bus.emit(
+            {
+                "type": "agent.activated",
+                "workflow_id": workflow_id,
+                "agentName": self.config.name,
+                "role": self.config.role,
+                "taskDescription": task[:200],
+            }
+        )
 
         messages = self._build_messages(task, state)
         tools = self._get_all_tool_definitions()
@@ -119,11 +121,13 @@ class Agent:
                         args=tc.get("args", {}),
                         workflow_id=workflow_id,
                     )
-                tool_result_messages.append({
-                    "role": "tool",
-                    "content": str(result_content),
-                    "tool_name": namespaced,
-                })
+                tool_result_messages.append(
+                    {
+                        "role": "tool",
+                        "content": str(result_content),
+                        "tool_name": namespaced,
+                    }
+                )
 
             messages = messages + [{"role": "assistant", "content": ""}] + tool_result_messages
             self.status = AgentStatus.THINKING
@@ -140,21 +144,25 @@ class Agent:
         self.status = AgentStatus.COMPLETED
         routing_key = self._determine_routing_key(response.text)
 
-        await self._event_bus.emit({
-            "type": "agent.completed",
-            "workflow_id": workflow_id,
-            "agentName": self.config.name,
-            "output": response.text[:2000],
-            "tokenUsage": total_usage,
-        })
-        await self._event_bus.emit({
-            "type": "token.usage",
-            "workflow_id": workflow_id,
-            "agentName": self.config.name,
-            "input": total_usage["input"],
-            "output": total_usage["output"],
-            "total": total_usage["input"] + total_usage["output"],
-        })
+        await self._event_bus.emit(
+            {
+                "type": "agent.completed",
+                "workflow_id": workflow_id,
+                "agentName": self.config.name,
+                "output": response.text[:2000],
+                "tokenUsage": total_usage,
+            }
+        )
+        await self._event_bus.emit(
+            {
+                "type": "token.usage",
+                "workflow_id": workflow_id,
+                "agentName": self.config.name,
+                "input": total_usage["input"],
+                "output": total_usage["output"],
+                "total": total_usage["input"] + total_usage["output"],
+            }
+        )
 
         return AgentResult(
             output=response.text,

@@ -1,5 +1,6 @@
-import os
 import logging
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -44,5 +45,7 @@ def add_middleware(app: FastAPI) -> None:
         logger.error("Unhandled exception at %s", request.url.path, exc_info=True)
         return JSONResponse(
             status_code=500,
-            content={"error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"}},
+            content={
+                "error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"}
+            },
         )

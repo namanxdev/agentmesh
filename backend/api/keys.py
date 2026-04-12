@@ -1,12 +1,13 @@
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.auth_middleware import get_current_user
-from backend.db.engine import get_db
 from backend.crypto import encrypt
+from backend.db.engine import get_db
 
 router = APIRouter(prefix="/api/keys", tags=["keys"])
 

@@ -1,11 +1,11 @@
 import asyncio
 import time
 import uuid
-from typing import Optional
-from backend.agents.base import AgentConfig
+
 from backend.events.bus import EventBus
-from .state import WorkflowState, WorkflowResult
+
 from .handoff import HandoffRouter
+from .state import WorkflowResult, WorkflowState
 
 
 class WorkflowOrchestrator:
@@ -38,14 +38,12 @@ class WorkflowOrchestrator:
         agents: dict,
         graph_config: dict,
         event_bus: EventBus,
-        workflow_id: Optional[str] = None,
+        workflow_id: str | None = None,
         max_iterations: int = 20,
         timeout_seconds: float = 120.0,
     ):
         self._agents = agents
-        self._router = HandoffRouter(
-            {k: v for k, v in graph_config.items() if k != "start"}
-        )
+        self._router = HandoffRouter({k: v for k, v in graph_config.items() if k != "start"})
         self._start = graph_config["start"]
         self._event_bus = event_bus
         self.workflow_id = workflow_id or f"wf_{uuid.uuid4().hex[:8]}"
@@ -70,21 +68,21 @@ class WorkflowOrchestrator:
         )
         return agent_name, result
 
-    async def run(
-        self, task: str, initial_state: Optional[dict] = None
-    ) -> WorkflowResult:
+    async def run(self, task: str, initial_state: dict | None = None) -> WorkflowResult:
         """Execute the workflow from start node to 'end' node."""
         state = WorkflowState(
             current_task=task,
             shared_data=initial_state or {},
         )
 
-        await self._event_bus.emit({
-            "type": "workflow.started",
-            "workflow_id": self.workflow_id,
-            "agents": list(self._agents.keys()),
-            "task": task,
-        })
+        await self._event_bus.emit(
+            {
+                "type": "workflow.started",
+                "workflow_id": self.workflow_id,
+                "agents": list(self._agents.keys()),
+                "task": task,
+            }
+        )
 
         start_time = time.time()
         current_node: str | list[str] = self._start
@@ -98,19 +96,19 @@ class WorkflowOrchestrator:
                         f"Last agent: {current_node}"
                     )
                 if time.time() - start_time > self._timeout:
-                    raise TimeoutError(
-                        f"Workflow timeout ({self._timeout}s) exceeded."
-                    )
+                    raise TimeoutError(f"Workflow timeout ({self._timeout}s) exceeded.")
 
                 # --- Parallel fan-out branch ---
                 if isinstance(current_node, list):
                     branch_names = current_node
 
-                    await self._event_bus.emit({
-                        "type": "agent.parallel_start",
-                        "workflow_id": self.workflow_id,
-                        "agents": branch_names,
-                    })
+                    await self._event_bus.emit(
+                        {
+                            "type": "agent.parallel_start",
+                            "workflow_id": self.workflow_id,
+                            "agents": branch_names,
+                        }
+                    )
 
                     # Each branch gets an independent snapshot of shared_data.
                     branch_tasks = [
@@ -122,11 +120,13 @@ class WorkflowOrchestrator:
                     # Fan-in: merge results into main state.
                     join_node: str | list[str] | None = None
                     for branch_name, result in branch_results:
-                        state.messages.append({
-                            "agent": branch_name,
-                            "content": result.output,
-                            "timestamp": time.time(),
-                        })
+                        state.messages.append(
+                            {
+                                "agent": branch_name,
+                                "content": result.output,
+                                "timestamp": time.time(),
+                            }
+                        )
                         state.token_usage[branch_name] = result.token_usage
                         if result.state_updates:
                             state.shared_data.update(result.state_updates)
@@ -143,12 +143,14 @@ class WorkflowOrchestrator:
                     state.last_agent = branch_names[-1]
                     state.routing_key = "on_complete"
 
-                    await self._event_bus.emit({
-                        "type": "agent.parallel_complete",
-                        "workflow_id": self.workflow_id,
-                        "agents": branch_names,
-                        "joinNode": join_node,
-                    })
+                    await self._event_bus.emit(
+                        {
+                            "type": "agent.parallel_complete",
+                            "workflow_id": self.workflow_id,
+                            "agents": branch_names,
+                            "joinNode": join_node,
+                        }
+                    )
 
                     current_node = join_node if join_node is not None else "end"
 
@@ -164,11 +166,13 @@ class WorkflowOrchestrator:
                         workflow_id=self.workflow_id,
                     )
 
-                    state.messages.append({
-                        "agent": current_node,
-                        "content": result.output,
-                        "timestamp": time.time(),
-                    })
+                    state.messages.append(
+                        {
+                            "agent": current_node,
+                            "content": result.output,
+                            "timestamp": time.time(),
+                        }
+                    )
                     state.token_usage[current_node] = result.token_usage
                     state.last_agent = current_node
                     state.routing_key = result.routing_key
@@ -179,13 +183,15 @@ class WorkflowOrchestrator:
                     next_node = self._router.next_node(current_node, result.routing_key)
 
                     if next_node != "end":
-                        await self._event_bus.emit({
-                            "type": "agent.handoff",
-                            "workflow_id": self.workflow_id,
-                            "from": current_node,
-                            "to": next_node,
-                            "reason": result.routing_key,
-                        })
+                        await self._event_bus.emit(
+                            {
+                                "type": "agent.handoff",
+                                "workflow_id": self.workflow_id,
+                                "fromAgent": current_node,
+                                "toAgent": next_node,
+                                "reason": result.routing_key,
+                            }
+                        )
 
                     current_node = next_node
 
@@ -193,12 +199,14 @@ class WorkflowOrchestrator:
 
         except Exception as exc:
             failed = current_node if isinstance(current_node, str) else str(current_node)
-            await self._event_bus.emit({
-                "type": "workflow.error",
-                "workflow_id": self.workflow_id,
-                "error": str(exc),
-                "failedAgent": failed,
-            })
+            await self._event_bus.emit(
+                {
+                    "type": "workflow.error",
+                    "workflow_id": self.workflow_id,
+                    "error": str(exc),
+                    "failedAgent": failed,
+                }
+            )
             return WorkflowResult(
                 state=state,
                 success=False,
@@ -208,17 +216,18 @@ class WorkflowOrchestrator:
 
         total_duration = time.time() - start_time
         total_tokens = sum(
-            u.get("input", 0) + u.get("output", 0)
-            for u in state.token_usage.values()
+            u.get("input", 0) + u.get("output", 0) for u in state.token_usage.values()
         )
 
-        await self._event_bus.emit({
-            "type": "workflow.completed",
-            "workflow_id": self.workflow_id,
-            "result": state.messages[-1] if state.messages else {},
-            "totalTokens": total_tokens,
-            "duration": total_duration,
-        })
+        await self._event_bus.emit(
+            {
+                "type": "workflow.completed",
+                "workflow_id": self.workflow_id,
+                "result": state.messages[-1] if state.messages else {},
+                "totalTokens": total_tokens,
+                "duration": total_duration,
+            }
+        )
 
         return WorkflowResult(
             state=state,

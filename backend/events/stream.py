@@ -1,13 +1,13 @@
 """SSE fallback for environments without WebSocket support."""
+
 import asyncio
 import json
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+
 from .bus import EventBus
 
 
-async def event_stream(
-    bus: EventBus, workflow_id: str | None = None
-) -> AsyncIterator[str]:
+async def event_stream(bus: EventBus, workflow_id: str | None = None) -> AsyncIterator[str]:
     """Yield SSE-formatted strings from the event bus buffer.
 
     Tracks a buffer index so no events are skipped, even when workflow_id

@@ -1,15 +1,16 @@
 import asyncio
 import os
 from logging.config import fileConfig
+
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from dotenv import load_dotenv
 load_dotenv()
 
 # Import Base so all models are registered
-from backend.db.engine import Base
 import backend.db.models  # noqa: F401 — registers all ORM classes
+from backend.db.engine import Base
 
 config = context.config
 if config.config_file_name is not None:
@@ -19,7 +20,8 @@ target_metadata = Base.metadata
 
 
 def _prepare_url(raw: str) -> tuple[str, dict]:
-    from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+    from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
     raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
     raw = raw.replace("postgres://", "postgresql+asyncpg://", 1)
     parsed = urlparse(raw)

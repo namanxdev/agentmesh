@@ -1,4 +1,4 @@
 from .graph import WorkflowOrchestrator
-from .state import WorkflowState, WorkflowResult
+from .state import WorkflowResult, WorkflowState
 
 __all__ = ["WorkflowOrchestrator", "WorkflowState", "WorkflowResult"]

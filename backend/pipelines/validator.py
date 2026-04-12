@@ -1,4 +1,5 @@
 """Pipeline DAG validation and conversion utilities."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -87,9 +88,9 @@ def validate_pipeline(nodes: list[dict], edges: list[dict]) -> dict:
 
 def pipeline_to_workflow_config(
     definition: dict,
-    llm_provider: "BaseLLMProvider",
-    event_bus: "EventBus",
-    mcp_registry: "MCPRegistry | None" = None,
+    llm_provider: BaseLLMProvider,
+    event_bus: EventBus,
+    mcp_registry: MCPRegistry | None = None,
 ) -> dict:
     """
     Convert a frontend pipeline definition to WorkflowOrchestrator-compatible config.
@@ -98,8 +99,8 @@ def pipeline_to_workflow_config(
         {agent_registry, graph_config, task}
     """
     from backend.agents.base import AgentConfig
-    from backend.agents.registry import AgentRegistry
     from backend.agents.pipeline_nodes import MemoryAgent, TransformAgent
+    from backend.agents.registry import AgentRegistry
 
     # Kinds that participate in the execution graph (have their own graph node).
     EXECUTABLE_KINDS = {"llm_agent", "memory", "transform"}
@@ -117,7 +118,11 @@ def pipeline_to_workflow_config(
 
     # Extract task from input node
     input_nodes = [n for n in nodes if n["kind"] == "input"]
-    task = input_nodes[0]["config"].get("description", "Execute pipeline") if input_nodes else "Execute pipeline"
+    task = (
+        input_nodes[0]["config"].get("description", "Execute pipeline")
+        if input_nodes
+        else "Execute pipeline"
+    )
 
     # Build fresh AgentRegistry
     agent_registry = AgentRegistry(llm_provider=llm_provider, event_bus=event_bus)
@@ -273,7 +278,7 @@ def pipeline_to_workflow_config(
 
         elif kind == "memory":
             mem_agent = MemoryAgent(
-                name=cfg.get("key", nid),   # use key as the node's identity name
+                name=cfg.get("key", nid),  # use key as the node's identity name
                 key=cfg.get("key", "memory"),
                 memory_type=cfg.get("memory_type", "context"),
                 event_bus=event_bus,
@@ -282,7 +287,7 @@ def pipeline_to_workflow_config(
 
         elif kind == "transform":
             tr_agent = TransformAgent(
-                name=nid,                    # node id as identity (transforms are anonymous)
+                name=nid,  # node id as identity (transforms are anonymous)
                 transform_type=cfg.get("transform_type", "json_parse"),
                 expression=cfg.get("expression", ""),
                 event_bus=event_bus,
@@ -335,11 +340,14 @@ def pipeline_to_workflow_config(
                 # Resolve target name: look for any executable node with that name
                 target_node = next(
                     (
-                        nd for nd in nodes
+                        nd
+                        for nd in nodes
                         if nd["kind"] in EXECUTABLE_KINDS
-                        and (nd["config"].get("name", nd["id"]) == target_id
-                             or nd["config"].get("key", nd["id"]) == target_id
-                             or nd["id"] == target_id)
+                        and (
+                            nd["config"].get("name", nd["id"]) == target_id
+                            or nd["config"].get("key", nd["id"]) == target_id
+                            or nd["id"] == target_id
+                        )
                     ),
                     None,
                 )

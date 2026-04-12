@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+
 from pydantic import BaseModel, Field, model_validator
 
 
 class LLMResponse(BaseModel):
     """Response from any LLM provider."""
+
     text: str = ""
     tool_calls: list[dict] = Field(default_factory=list)
     has_tool_calls: bool = False
@@ -23,8 +24,8 @@ class BaseLLMProvider(ABC):
     async def generate(
         self,
         messages: list[dict],
-        tools: Optional[list[dict]] = None,
-        model: Optional[str] = None,
+        tools: list[dict] | None = None,
+        model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> LLMResponse:

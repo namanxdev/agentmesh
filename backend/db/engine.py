@@ -1,7 +1,8 @@
 import os
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 load_dotenv()
@@ -54,8 +55,8 @@ engine = create_async_engine(
     echo=False,
     pool_pre_ping=True,
     connect_args=_CONNECT_ARGS,
-    pool_timeout=6,       # seconds to wait for a pool slot
-    pool_recycle=1800,    # recycle connections every 30 min
+    pool_timeout=6,  # seconds to wait for a pool slot
+    pool_recycle=1800,  # recycle connections every 30 min
 )
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

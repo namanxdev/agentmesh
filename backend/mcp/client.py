@@ -1,8 +1,10 @@
 import time
+
 import fastmcp
-from typing import Optional
+
 from backend.events.bus import EventBus
-from .tools import namespace_tool, format_tool_for_llm
+
+from .tools import format_tool_for_llm
 
 
 def _build_transport(config: dict):
@@ -19,6 +21,7 @@ def _build_transport(config: dict):
 
     if transport_type == "stdio":
         from fastmcp.client.transports.stdio import StdioTransport
+
         return StdioTransport(
             command=config["command"],
             args=config.get("args", []),
@@ -28,9 +31,11 @@ def _build_transport(config: dict):
         url = config.get("url", "")
         if transport_type == "sse" or str(url).rstrip("/").endswith("/sse"):
             from fastmcp.client.transports.sse import SSETransport
+
             return SSETransport(url=url)
         else:
             from fastmcp.client.transports.streamable_http import StreamableHttpTransport
+
             return StreamableHttpTransport(url=url)
     else:
         raise ValueError(f"Unknown MCP transport type: {transport_type}")
@@ -76,42 +81,48 @@ class MCPClientWrapper:
     ) -> list:
         """Execute tool on MCP server; emit tool.called + tool.result events."""
         start = time.time()
-        await self._event_bus.emit({
-            "type": "tool.called",
-            "workflow_id": workflow_id,
-            "agentName": agent_name,
-            "server": self.server_name,
-            "tool": tool_name,
-            "args": args,
-        })
+        await self._event_bus.emit(
+            {
+                "type": "tool.called",
+                "workflow_id": workflow_id,
+                "agentName": agent_name,
+                "server": self.server_name,
+                "tool": tool_name,
+                "args": args,
+            }
+        )
 
         try:
             transport = _build_transport(self._transport_config)
             async with fastmcp.Client(transport) as client:
                 result = await client.call_tool(tool_name, args)
         except Exception as exc:
-            await self._event_bus.emit({
-                "type": "tool.error",
-                "workflow_id": workflow_id,
-                "agentName": agent_name,
-                "server": self.server_name,
-                "tool": tool_name,
-                "error": str(exc),
-            })
+            await self._event_bus.emit(
+                {
+                    "type": "tool.error",
+                    "workflow_id": workflow_id,
+                    "agentName": agent_name,
+                    "server": self.server_name,
+                    "tool": tool_name,
+                    "error": str(exc),
+                }
+            )
             raise
 
         duration_ms = (time.time() - start) * 1000
         content = [c.text if hasattr(c, "text") else str(c) for c in result.content]
 
-        await self._event_bus.emit({
-            "type": "tool.result",
-            "workflow_id": workflow_id,
-            "agentName": agent_name,
-            "server": self.server_name,
-            "tool": tool_name,
-            "result": content,
-            "duration_ms": duration_ms,
-        })
+        await self._event_bus.emit(
+            {
+                "type": "tool.result",
+                "workflow_id": workflow_id,
+                "agentName": agent_name,
+                "server": self.server_name,
+                "tool": tool_name,
+                "result": content,
+                "duration_ms": duration_ms,
+            }
+        )
 
         return content
 

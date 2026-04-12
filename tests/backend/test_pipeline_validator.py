@@ -479,6 +479,8 @@ class TestPipelineAPIEndpoints:
     @pytest.mark.asyncio
     async def test_run_pipeline_invalid_returns_422(self, app):
         from httpx import AsyncClient, ASGITransport
+        from backend.api.auth_middleware import get_current_user
+        app.dependency_overrides[get_current_user] = lambda: "user-test"
         # Cyclic pipeline
         payload = {
             "pipeline": {

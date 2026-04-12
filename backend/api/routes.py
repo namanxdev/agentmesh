@@ -1,27 +1,30 @@
-import os
-import uuid
-import time
-import hmac
 import hashlib
+import hmac
+import logging
+import os
 import secrets
-from typing import Optional
-from pydantic import BaseModel, Field
-from fastapi import FastAPI, WebSocket, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+import time
+import uuid
 
-from backend.events.bus import EventBus
+_log = logging.getLogger(__name__)
+
+from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket
+from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.agents.registry import AgentRegistry
-from backend.mcp.registry import MCPRegistry
-from backend.orchestrator.graph import WorkflowOrchestrator
-from backend.llm.base import BaseLLMProvider
+from backend.api.auth_middleware import get_current_user as get_current_user_dep
 from backend.api.middleware import add_middleware
 from backend.api.websocket import websocket_events_handler
-from backend.api.auth_middleware import get_current_user as get_current_user_dep
 from backend.db.engine import get_db
-
+from backend.events.bus import EventBus
+from backend.llm.base import BaseLLMProvider
+from backend.mcp.registry import MCPRegistry
+from backend.orchestrator.graph import WorkflowOrchestrator
 
 # -- Request / Response models ------------------------------------------------
+
 
 class WorkflowRunRequest(BaseModel):
     workflow_name: str
@@ -41,8 +44,8 @@ class PipelineEdgeModel(BaseModel):
     id: str
     source: str
     target: str
-    source_handle: Optional[str] = Field(None, alias="sourceHandle")
-    target_handle: Optional[str] = Field(None, alias="targetHandle")
+    source_handle: str | None = Field(None, alias="sourceHandle")
+    target_handle: str | None = Field(None, alias="targetHandle")
 
     model_config = {"populate_by_name": True}
 
@@ -57,11 +60,11 @@ class PipelineRunRequest(BaseModel):
     pipeline: PipelineDefinitionModel
     task: str
     initial_state: dict = {}
-    pipeline_id: Optional[str] = None
+    pipeline_id: str | None = None
 
 
 class SavePipelineRequest(BaseModel):
-    pipeline_id: Optional[str] = None
+    pipeline_id: str | None = None
     name: str
     definition: PipelineDefinitionModel
 
@@ -75,10 +78,11 @@ class CreateMCPServerRequest(BaseModel):
 
 class CreateTriggerRequest(BaseModel):
     trigger_type: str  # "webhook" | "cron"
-    cron_schedule: Optional[str] = None
+    cron_schedule: str | None = None
 
 
 # -- App factory --------------------------------------------------------------
+
 
 def create_app(
     event_bus: EventBus,
@@ -108,6 +112,7 @@ def create_app(
     add_middleware(app)
 
     from backend.api.keys import router as keys_router
+
     app.include_router(keys_router)
 
     # In-memory run tracking for GET /api/workflows/{workflow_id}
@@ -132,13 +137,12 @@ def create_app(
     async def run_workflow(request: WorkflowRunRequest):
         defn = workflow_definitions.get(request.workflow_name)
         if defn is None:
-            raise HTTPException(status_code=404, detail=f"Workflow '{request.workflow_name}' not found.")
+            raise HTTPException(
+                status_code=404, detail=f"Workflow '{request.workflow_name}' not found."
+            )
 
         workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
-        agents = {
-            name: agent_registry.get(name)
-            for name in defn["agents"]
-        }
+        agents = {name: agent_registry.get(name) for name in defn["agents"]}
 
         orchestrator = WorkflowOrchestrator(
             agents=agents,
@@ -163,13 +167,15 @@ def create_app(
                 task=request.task,
                 initial_state=request.initial_state,
             )
-            _runs[workflow_id].update({
-                "status": "completed" if result.success else "error",
-                "result": result.state.messages[-1] if result.state.messages else {},
-                "token_usage": result.state.token_usage,
-                "duration_seconds": result.total_duration,
-                "error": result.error,
-            })
+            _runs[workflow_id].update(
+                {
+                    "status": "completed" if result.success else "error",
+                    "result": result.state.messages[-1] if result.state.messages else {},
+                    "token_usage": result.state.token_usage,
+                    "duration_seconds": result.total_duration,
+                    "error": result.error,
+                }
+            )
 
         asyncio.create_task(_run())
 
@@ -194,18 +200,20 @@ def create_app(
     async def list_agents():
         agents = []
         for agent in agent_registry.list_all():
-            agents.append({
-                "name": agent.config.name,
-                "role": agent.config.role,
-                "status": agent.status.value,
-                "model": agent.config.model,
-                "mcp_servers": agent.config.mcp_servers,
-                "available_tools": [
-                    t["function"]["name"]
-                    for client in agent._mcp_clients.values()
-                    for t in client.get_tool_definitions()
-                ],
-            })
+            agents.append(
+                {
+                    "name": agent.config.name,
+                    "role": agent.config.role,
+                    "status": agent.status.value,
+                    "model": agent.config.model,
+                    "mcp_servers": agent.config.mcp_servers,
+                    "available_tools": [
+                        t["function"]["name"]
+                        for client in agent._mcp_clients.values()
+                        for t in client.get_tool_definitions()
+                    ],
+                }
+            )
         return {"agents": agents}
 
     @app.get("/api/agents/{agent_name}")
@@ -237,6 +245,7 @@ def create_app(
     ):
         import datetime as _datetime
         import json as _json
+
         new_id = str(uuid.uuid4())
         now = _datetime.datetime.now(_datetime.UTC)
         await db.execute(
@@ -307,6 +316,7 @@ def create_app(
     @app.post("/api/pipelines/validate")
     async def validate_pipeline_endpoint(definition: PipelineDefinitionModel):
         from backend.pipelines.validator import validate_pipeline
+
         nodes = [{"id": n.id, "kind": n.kind, "config": n.config} for n in definition.nodes]
         edges = [{"id": e.id, "source": e.source, "target": e.target} for e in definition.edges]
         return validate_pipeline(nodes, edges)
@@ -317,15 +327,30 @@ def create_app(
         user_id: str = Depends(get_current_user_dep),
         db: AsyncSession = Depends(get_db),
     ):
-        from backend.pipelines.validator import validate_pipeline, pipeline_to_workflow_config
-        from backend.crypto import decrypt
-        from backend.llm.multi import MultiProvider
         import asyncio
 
-        # Fetch and decrypt user's API keys
-        import logging as _logging
-        _log = _logging.getLogger(__name__)
+        from backend.crypto import decrypt
+        from backend.llm.multi import MultiProvider
+        from backend.pipelines.validator import pipeline_to_workflow_config, validate_pipeline
 
+        # Validate pipeline structure first — fail fast before touching the DB
+        defn = request.pipeline
+        nodes = [{"id": n.id, "kind": n.kind, "config": n.config} for n in defn.nodes]
+        edges = [
+            {
+                "id": e.id,
+                "source": e.source,
+                "target": e.target,
+                "source_handle": e.source_handle,
+                "target_handle": e.target_handle,
+            }
+            for e in defn.edges
+        ]
+        validation = validate_pipeline(nodes, edges)
+        if not validation["is_dag"]:
+            raise HTTPException(status_code=422, detail={"errors": validation["errors"]})
+
+        # Fetch and decrypt user's API keys
         result = await db.execute(
             text("SELECT provider, encrypted_key FROM api_keys WHERE user_id = :uid"),
             {"uid": user_id},
@@ -334,7 +359,10 @@ def create_app(
         if not rows:
             raise HTTPException(
                 status_code=403,
-                detail={"error": "no_keys", "message": "No API keys saved. Add your keys in Settings."},
+                detail={
+                    "error": "no_keys",
+                    "message": "No API keys saved. Add your keys in Settings.",
+                },
             )
 
         providers: dict[str, BaseLLMProvider] = {}
@@ -342,33 +370,33 @@ def create_app(
             try:
                 api_key = decrypt(row.encrypted_key)
             except Exception:
-                _log.warning("Failed to decrypt API key for provider '%s' (user %s)", row.provider, user_id)
+                _log.warning(
+                    "Failed to decrypt API key for provider '%s' (user %s)", row.provider, user_id
+                )
                 continue
             if row.provider == "gemini":
                 from backend.llm.gemini import GeminiProvider
+
                 providers["gemini"] = GeminiProvider(api_key=api_key)
             elif row.provider == "groq":
                 from backend.llm.groq import GroqProvider
+
                 providers["groq"] = GroqProvider(api_key=api_key)
             elif row.provider == "openai":
                 from backend.llm.openai_provider import OpenAIProvider
+
                 providers["openai"] = OpenAIProvider(api_key=api_key)
 
         if not providers:
             raise HTTPException(
                 status_code=403,
-                detail={"error": "no_keys", "message": "API keys could not be read. Please re-add your keys in Settings."},
+                detail={
+                    "error": "no_keys",
+                    "message": "API keys could not be read. Please re-add your keys in Settings.",
+                },
             )
 
         user_llm = MultiProvider(providers)
-
-        defn = request.pipeline
-        nodes = [{"id": n.id, "kind": n.kind, "config": n.config} for n in defn.nodes]
-        edges = [
-            {"id": e.id, "source": e.source, "target": e.target,
-             "source_handle": e.source_handle, "target_handle": e.target_handle}
-            for e in defn.edges
-        ]
 
         # Pre-validate that each llm_agent node's model has a matching saved key.
         # This surfaces "wrong provider" errors immediately rather than mid-execution.
@@ -387,20 +415,20 @@ def create_app(
                 family = _required_family(model)
                 if family not in providers:
                     agent_name = n["config"].get("name", n["id"])
-                    missing.append(f"'{agent_name}' needs a {family.capitalize()} key (model: {model})")
+                    missing.append(
+                        f"'{agent_name}' needs a {family.capitalize()} key (model: {model})"
+                    )
 
         if missing:
             raise HTTPException(
                 status_code=403,
                 detail={
                     "error": "missing_provider",
-                    "message": "Missing API keys for: " + "; ".join(missing) + ". Add them in Settings.",
+                    "message": "Missing API keys for: "
+                    + "; ".join(missing)
+                    + ". Add them in Settings.",
                 },
             )
-
-        validation = validate_pipeline(nodes, edges)
-        if not validation["is_dag"]:
-            raise HTTPException(status_code=422, detail={"errors": validation["errors"]})
 
         defn_dict = {
             "name": defn.name,
@@ -432,7 +460,9 @@ def create_app(
         }
 
         import datetime as _datetime
+
         from backend.db.engine import AsyncSessionLocal as _ASL
+
         run_db_id = str(uuid.uuid4())
         pid = request.pipeline_id
         try:
@@ -460,13 +490,15 @@ def create_app(
                 initial_state=request.initial_state,
             )
             status = "completed" if result.success else "error"
-            _runs[workflow_id].update({
-                "status": status,
-                "result": result.state.messages[-1] if result.state.messages else {},
-                "token_usage": result.state.token_usage,
-                "duration_seconds": result.total_duration,
-                "error": result.error,
-            })
+            _runs[workflow_id].update(
+                {
+                    "status": status,
+                    "result": result.state.messages[-1] if result.state.messages else {},
+                    "token_usage": result.state.token_usage,
+                    "duration_seconds": result.total_duration,
+                    "error": result.error,
+                }
+            )
             # Write final status, tokens, and duration back to DB
             if pid:
                 try:
@@ -504,6 +536,7 @@ def create_app(
     @app.get("/api/pipelines/templates")
     async def list_templates():
         from backend.pipelines.templates import PIPELINE_TEMPLATES
+
         return {"templates": PIPELINE_TEMPLATES}
 
     @app.post("/api/pipelines")
@@ -512,9 +545,10 @@ def create_app(
         user_id: str = Depends(get_current_user_dep),
         db: AsyncSession = Depends(get_db),
     ):
+        import datetime as _datetime
         import json as _json
         import uuid as _uuid
-        import datetime as _datetime
+
         now = _datetime.datetime.now(_datetime.UTC)
         defn = {
             "name": request.definition.name,
@@ -621,11 +655,9 @@ def create_app(
         db: AsyncSession = Depends(get_db),
     ):
         import json as _json
+
         result = await db.execute(
-            text(
-                "SELECT id, name, definition FROM pipelines"
-                " WHERE id=:id AND user_id=:uid"
-            ),
+            text("SELECT id, name, definition FROM pipelines" " WHERE id=:id AND user_id=:uid"),
             {"id": pipeline_id, "uid": user_id},
         )
         row = result.fetchone()
@@ -657,6 +689,7 @@ def create_app(
         db: AsyncSession = Depends(get_db),
     ):
         import datetime as _datetime
+
         # Verify pipeline belongs to user
         row = await db.execute(
             text("SELECT id FROM pipelines WHERE id=:pid AND user_id=:uid"),
@@ -759,9 +792,10 @@ def create_app(
         sig_header = raw_request.headers.get("x-hub-signature-256", "")
         if not sig_header:
             raise HTTPException(status_code=403, detail="Missing signature header")
-        expected = "sha256=" + hmac.new(
-            trigger_row.secret.encode(), body_bytes, hashlib.sha256
-        ).hexdigest()
+        expected = (
+            "sha256="
+            + hmac.new(trigger_row.secret.encode(), body_bytes, hashlib.sha256).hexdigest()
+        )
         if not hmac.compare_digest(sig_header, expected):
             raise HTTPException(status_code=403, detail="Invalid signature")
 
@@ -776,6 +810,7 @@ def create_app(
 
         # Parse request body for optional task
         import json as _json
+
         try:
             body_data = _json.loads(body_bytes) if body_bytes else {}
         except Exception as e:
@@ -792,7 +827,7 @@ def create_app(
 
         from backend.crypto import decrypt
         from backend.llm.multi import MultiProvider
-        from backend.pipelines.validator import validate_pipeline, pipeline_to_workflow_config
+        from backend.pipelines.validator import pipeline_to_workflow_config
 
         providers: dict = {}
         for krow in key_rows:
@@ -803,12 +838,15 @@ def create_app(
                 continue
             if krow.provider == "gemini":
                 from backend.llm.gemini import GeminiProvider
+
                 providers["gemini"] = GeminiProvider(api_key=api_key)
             elif krow.provider == "groq":
                 from backend.llm.groq import GroqProvider
+
                 providers["groq"] = GroqProvider(api_key=api_key)
             elif krow.provider == "openai":
                 from backend.llm.openai_provider import OpenAIProvider
+
                 providers["openai"] = OpenAIProvider(api_key=api_key)
 
         if not providers:
@@ -821,7 +859,11 @@ def create_app(
 
         if not pipeline_row.definition:
             raise HTTPException(status_code=404, detail="Pipeline definition is empty")
-        defn = pipeline_row.definition if isinstance(pipeline_row.definition, dict) else _json.loads(pipeline_row.definition)
+        defn = (
+            pipeline_row.definition
+            if isinstance(pipeline_row.definition, dict)
+            else _json.loads(pipeline_row.definition)
+        )
         nodes = defn.get("nodes", [])
         edges = defn.get("edges", [])
 
@@ -854,13 +896,15 @@ def create_app(
 
         async def _run():
             result = await orchestrator.run(task=task, initial_state={})
-            _runs[workflow_id].update({
-                "status": "completed" if result.success else "error",
-                "result": result.state.messages[-1] if result.state.messages else {},
-                "token_usage": result.state.token_usage,
-                "duration_seconds": result.total_duration,
-                "error": result.error,
-            })
+            _runs[workflow_id].update(
+                {
+                    "status": "completed" if result.success else "error",
+                    "result": result.state.messages[-1] if result.state.messages else {},
+                    "token_usage": result.state.token_usage,
+                    "duration_seconds": result.total_duration,
+                    "error": result.error,
+                }
+            )
 
         asyncio.create_task(_run())
 
@@ -883,9 +927,11 @@ def create_app(
 
 # -- Entrypoint ----------------------------------------------------------------
 
+
 def create_default_app() -> FastAPI:
     """Create app with real dependencies loaded from env vars."""
     from dotenv import load_dotenv
+
     load_dotenv()
 
     event_bus = EventBus()
@@ -894,9 +940,11 @@ def create_default_app() -> FastAPI:
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key:
         from backend.llm.gemini import GeminiProvider
+
         llm = GeminiProvider(api_key=gemini_key)
     else:
         from backend.llm.groq import GroqProvider
+
         llm = GroqProvider(api_key=os.getenv("GROQ_API_KEY", ""))
 
     agent_registry = AgentRegistry(llm_provider=llm, event_bus=event_bus)
@@ -911,6 +959,7 @@ def create_default_app() -> FastAPI:
 
     # Load demo workflow definitions
     from backend.workflows import DEMO_WORKFLOWS
+
     for agent_config in DEMO_WORKFLOWS.get("all_agents", []):
         agent_registry.register(agent_config)
 
