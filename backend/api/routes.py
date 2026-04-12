@@ -115,6 +115,11 @@ def create_app(
 
     app.include_router(keys_router)
 
+    @app.get("/")
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
+
     # In-memory run tracking for GET /api/workflows/{workflow_id}
     _runs: dict[str, dict] = {}
 
