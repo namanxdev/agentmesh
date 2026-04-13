@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
+import toast from "react-hot-toast";
 import { useUIStore } from "@/stores/uiStore";
 
 const WS_BASE = process.env.NEXT_PUBLIC_WS_URL ?? "ws://127.0.0.1:8000";
@@ -52,6 +53,7 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
       if (!enabled) return;
       if (reconnectCountRef.current >= 5) {
         setStatusRef.current("error");
+        toast.error("WebSocket connection failed after 5 retries. Check backend URL.");
         return;
       }
       const delay = Math.min(1000 * Math.pow(2, reconnectCountRef.current), 30_000);
@@ -60,7 +62,10 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
       reconnectTimerRef.current = setTimeout(() => connectRef.current(), delay);
     };
 
-    ws.onerror = () => setStatusRef.current("error");
+    ws.onerror = () => {
+      setStatusRef.current("error");
+      toast.error("WebSocket connection error");
+    };
   };
 
   const send = useCallback((command: object) => {

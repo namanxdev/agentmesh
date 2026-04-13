@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import toast from "react-hot-toast";
 import { ApiKeyCard } from "@/components/settings/ApiKeyCard";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { InputNodeConfig, LLMAgentConfig } from "@/types/pipeline";
-import { 
-  ArrowLeft, LogOut, Settings2, KeyRound, Server, Zap, 
-  Activity, Trash2, Plus, LayoutTemplate, TerminalSquare 
+import {
+  ArrowLeft, LogOut, Settings2, KeyRound, Server, Zap,
+  Activity, Trash2, Plus, LayoutTemplate, TerminalSquare
 } from "lucide-react";
 import { BorderBeam } from "@/components/ui/border-beam";
 import RetroGrid from "@/components/ui/retro-grid";
@@ -86,7 +87,10 @@ export default function SettingsPage() {
   const fetchKeys = useCallback(async () => {
     try {
       const res = await fetch("/api/keys");
-      if (!res.ok) return;
+      if (!res.ok) {
+        toast.error("Failed to load API keys");
+        return;
+      }
       const data = await res.json();
       const map: Record<string, string> = {};
       for (const k of data.keys as { provider: string; saved_at: string }[]) {
@@ -94,7 +98,7 @@ export default function SettingsPage() {
       }
       setSavedKeys(map);
     } catch {
-      // silent
+      toast.error("Network error loading API keys");
     } finally {
       setLoading(false);
     }
@@ -103,11 +107,14 @@ export default function SettingsPage() {
   const fetchMcpServers = useCallback(async () => {
     try {
       const res = await fetch("/api/mcp/user-servers");
-      if (!res.ok) return;
+      if (!res.ok) {
+        toast.error("Failed to load MCP servers");
+        return;
+      }
       const data = await res.json();
       setMcpServers(data.servers ?? []);
     } catch {
-      // silent
+      toast.error("Network error loading MCP servers");
     } finally {
       setMcpLoading(false);
     }
@@ -121,7 +128,9 @@ export default function SettingsPage() {
   const handleAddMcpServer = async () => {
     setMcpError("");
     if (!mcpName.trim() || !mcpUrl.trim()) {
-      setMcpError("Name and command/URL are required.");
+      const msg = "Name and command/URL are required.";
+      setMcpError(msg);
+      toast.error(msg);
       return;
     }
     setMcpAdding(true);
@@ -137,15 +146,20 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setMcpError(err.detail ?? "Failed to add server.");
+        const msg = err.detail ?? "Failed to add server.";
+        setMcpError(msg);
+        toast.error(msg);
         return;
       }
+      toast.success(`MCP server "${mcpName}" registered successfully`);
       setMcpName("");
       setMcpType("stdio");
       setMcpUrl("");
       await fetchMcpServers();
     } catch {
-      setMcpError("Network error.");
+      const msg = "Network error.";
+      setMcpError(msg);
+      toast.error(msg);
     } finally {
       setMcpAdding(false);
     }
@@ -153,10 +167,15 @@ export default function SettingsPage() {
 
   const handleDeleteMcpServer = async (id: string) => {
     try {
-      await fetch(`/api/mcp/user-servers/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/mcp/user-servers/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Failed to delete MCP server");
+        return;
+      }
+      toast.success("MCP server unregistered");
       setMcpServers((prev) => prev.filter((s) => s.id !== id));
     } catch {
-      // silent
+      toast.error("Network error deleting MCP server");
     }
   };
 
@@ -300,7 +319,14 @@ export default function SettingsPage() {
 
                       <div className="pt-2 flex justify-end">
                          <button
-                           onClick={savePipeline}
+                           onClick={async () => {
+                             try {
+                               await savePipeline();
+                               toast.success("Pipeline configuration saved");
+                             } catch {
+                               toast.error("Failed to save pipeline configuration");
+                             }
+                           }}
                            disabled={isSaving}
                            className="group flex items-center justify-center gap-2 px-6 py-3 w-full md:w-auto rounded-xl text-sm font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]"
                          >

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import type { NodeKind, PipelineDefinition } from "@/types/pipeline";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { NODE_COLORS, NODE_ICONS } from "./nodes/BaseNode";
@@ -89,7 +90,9 @@ export function NodePalette() {
           return attempt(retriesLeft - 1);
         }
         setTemplates([]);
-        setTemplateError(error instanceof Error ? error.message : "Unable to load templates");
+        const msg = error instanceof Error ? error.message : "Unable to load templates";
+        setTemplateError(msg);
+        toast.error(msg);
       } finally {
         if (!cancelled) setIsLoadingTemplates(false);
       }
@@ -162,7 +165,10 @@ export function NodePalette() {
               templates.map((template) => (
                 <div
                   key={template.id}
-                  onClick={() => loadTemplate(template.definition)}
+                  onClick={() => {
+                    loadTemplate(template.definition);
+                    toast.success(`Template "${template.name}" loaded`);
+                  }}
                   className="group relative flex flex-col gap-1 p-3.5 rounded-[16px] border border-white/[0.04] bg-white/[0.02] cursor-pointer hover:bg-indigo-500/10 hover:border-indigo-500/30 overflow-hidden transition-all duration-300"
                 >
                   <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-indigo-500/0 group-hover:via-indigo-500/50 to-transparent transition-all duration-500" />

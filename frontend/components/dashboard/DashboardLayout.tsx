@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence, useAnimation, useInView } from "framer-motion";
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check, Trash2, FolderOpen, Blocks, Bot, FileJson, Activity, Sparkles, TerminalSquare, LayoutTemplate } from "lucide-react";
 import { useAgentMeshEvents } from "@/hooks/useAgentMeshEvents";
@@ -385,16 +386,28 @@ export function DashboardLayout() {
                       </div>
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => {
-                            loadPipeline(p.id);
-                            togglePipelinesDrawer();
+                          onClick={async () => {
+                            try {
+                              await loadPipeline(p.id);
+                              toast.success(`Pipeline "${p.name}" loaded`);
+                              togglePipelinesDrawer();
+                            } catch {
+                              toast.error("Failed to load pipeline");
+                            }
                           }}
                           className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-500 text-white hover:bg-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]"
                         >
                           <Check className="w-4 h-4" /> Load
                         </button>
                         <button
-                          onClick={() => deleteSavedPipeline(p.id)}
+                          onClick={async () => {
+                            try {
+                              await deleteSavedPipeline(p.id);
+                              toast.success("Pipeline deleted");
+                            } catch {
+                              toast.error("Failed to delete pipeline");
+                            }
+                          }}
                           className="p-2.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20"
                           title="Delete"
                         >

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle } from "lucide-react";
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -46,12 +47,16 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
     try {
       const result = await validatePipeline();
       if (!result.is_dag) {
-        setError(result.errors[0] ?? "Pipeline is not a valid DAG");
+        const msg = result.errors[0] ?? "Pipeline is not a valid DAG";
+        setError(msg);
+        toast.error(msg);
         return;
       }
       setShowTaskInput(true);
     } catch {
-      setError("Validation failed");
+      const msg = "Validation failed";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -61,14 +66,18 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
     setNoKeys(null);
     try {
       await runPipeline(task.trim());
+      toast.success("Pipeline started successfully");
       setShowTaskInput(false);
       setTask("");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Run failed";
       if (msg.toLowerCase().includes("no_keys") || msg.toLowerCase().includes("no api key") || msg.toLowerCase().includes("missing api key") || msg.toLowerCase().includes("missing_provider") || msg.toLowerCase().includes("needs a")) {
-        setNoKeys(msg === "no_keys" ? "No API keys — Add in Settings →" : msg);
+        const displayMsg = msg === "no_keys" ? "No API keys — Add in Settings →" : msg;
+        setNoKeys(displayMsg);
+        toast.error(displayMsg);
       } else {
         setError(msg);
+        toast.error(msg);
       }
     }
   };
@@ -76,9 +85,17 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
   const handleValidate = async () => {
     setError(null);
     try {
-      await validatePipeline();
+      const result = await validatePipeline();
+      if (result.is_dag) {
+        toast.success("Pipeline validated successfully");
+      } else {
+        const msg = result.errors[0] ?? "Validation failed";
+        toast.error(msg);
+      }
     } catch {
-      setError("Validation failed");
+      const msg = "Validation failed";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -226,7 +243,14 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
             )}
 
             <button
-              onClick={savePipeline}
+              onClick={async () => {
+                try {
+                  await savePipeline();
+                  toast.success("Pipeline saved successfully");
+                } catch {
+                  toast.error("Failed to save pipeline");
+                }
+              }}
               disabled={isSaving || mode === "run"}
               title="Save Pipeline"
               className="group flex items-center justify-center w-10 md:w-auto gap-2 md:px-4 py-2 rounded-xl text-xs font-semibold text-neutral-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"

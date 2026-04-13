@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { KeyRound, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react";
 
 interface ApiKeyCardProps {
@@ -41,14 +42,22 @@ export function ApiKeyCard({
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.detail ?? "Save failed");
+        const msg = data.detail ?? "Save failed";
+        setError(msg);
+        toast.error(msg);
+        throw new Error(msg);
       }
+      toast.success(`${label} API key saved and encrypted`);
       setValue("");
       setSuccess(true);
       onSaved();
       setTimeout(() => setSuccess(false), 3000);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      const msg = e instanceof Error ? e.message : "Save failed";
+      setError(msg);
+      if (!msg.includes("Save failed")) {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -59,10 +68,20 @@ export function ApiKeyCard({
     setError(null);
     try {
       const res = await fetch(`/api/keys/${provider}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) {
+        const msg = "Delete failed";
+        setError(msg);
+        toast.error(msg);
+        throw new Error(msg);
+      }
+      toast.success(`${label} API key revoked`);
       onSaved();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Delete failed");
+      const msg = e instanceof Error ? e.message : "Delete failed";
+      setError(msg);
+      if (!msg.includes("Delete failed")) {
+        toast.error(msg);
+      }
     } finally {
       setDeleting(false);
     }
