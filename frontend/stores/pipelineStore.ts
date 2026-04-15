@@ -313,7 +313,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       } catch { /* use default */ }
       throw new Error(errorMsg);
     }
-    set({ mode: "build", isRunning: false });
+    set({ mode: "run", isRunning: false });
   },
 
   reset: () =>
