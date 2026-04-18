@@ -64,26 +64,36 @@ export function GitHubCTA() {
                 </div>
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline"
                   style={{
                     background: "var(--landing-ink)",
                     color: "var(--landing-paper)",
                     fontFamily: "var(--font-display)",
                     fontWeight: 800,
+                    transition: "transform 160ms cubic-bezier(0.16,1,0.3,1)",
                   }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ""; }}
+                  onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(0.97)"; }}
+                  onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
                 >
                   Open Mission Control
                 </Link>
                 <a
                   href="#tech-stack"
-                  className="inline-flex items-center gap-3 rounded-full border px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-3 rounded-full border px-6 py-4 text-sm no-underline"
                   style={{
                     borderColor: "rgba(23,18,15,0.12)",
                     background: "rgba(255,255,255,0.36)",
                     color: "var(--landing-ink)",
                     fontFamily: "var(--font-display)",
                     fontWeight: 700,
+                    transition: "transform 160ms cubic-bezier(0.16,1,0.3,1)",
                   }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ""; }}
+                  onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(0.97)"; }}
+                  onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
                 >
                   Read the stack
                 </a>

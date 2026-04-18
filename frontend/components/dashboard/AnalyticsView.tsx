@@ -5,6 +5,7 @@ import { usePipelineStore } from "@/stores/pipelineStore";
 import { BentoGrid, BentoCard } from "@/components/bento-grid";
 import { Play, CheckCircle2, Clock, Hash, AlertTriangle, Activity } from "lucide-react";
 import { motion } from "framer-motion";
+import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 
 interface PipelineRun {
   id: string;
@@ -73,8 +74,38 @@ export function AnalyticsView() {
           </p>
         </div>
       ) : loading ? (
-        <div className="flex items-center justify-center p-20">
-          <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+        /* Skeleton shimmer matching BentoCard layout */
+        <div className="flex flex-col gap-8 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="relative h-32 rounded-[24px] border border-white/10 bg-white/[0.03] overflow-hidden"
+              >
+                <div
+                  className="absolute inset-0 -translate-x-full"
+                  style={{
+                    background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)",
+                    animation: `shimmer 1.6s ease-in-out ${i * 0.15}s infinite`,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="h-64 rounded-[32px] border border-white/10 bg-white/[0.02] relative overflow-hidden">
+            <div
+              className="absolute inset-0 -translate-x-full"
+              style={{
+                background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)",
+                animation: "shimmer 1.6s ease-in-out 0.4s infinite",
+              }}
+            />
+          </div>
+          <style>{`
+            @keyframes shimmer {
+              to { transform: translateX(200%); }
+            }
+          `}</style>
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium">
@@ -87,45 +118,56 @@ export function AnalyticsView() {
           <BentoGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <BentoCard className="col-span-1 border border-white/10 bg-white/[0.03] backdrop-blur-md rounded-[24px]">
               <div className="flex flex-col h-full z-10 w-full justify-between">
-                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400 mb-4 block">Total Runs</span>
-                <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">{runs.length}</span>
-              </div>
-              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                 <Activity className="w-16 h-16 text-white" />
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="w-3.5 h-3.5 text-neutral-500" />
+                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400">Total Runs</span>
+                </div>
+                <AnimatedCounter target={runs.length} className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono" />
               </div>
             </BentoCard>
 
             <BentoCard className="col-span-1 border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md rounded-[24px]">
               <div className="flex flex-col h-full z-10 w-full justify-between">
-                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-emerald-500/80 mb-4 block">Completed</span>
-                <span className="text-4xl md:text-5xl font-bold text-emerald-400 tracking-tight">{completed.length}</span>
-              </div>
-              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                 <CheckCircle2 className="w-16 h-16 text-emerald-400" />
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70" />
+                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-emerald-500/80">Completed</span>
+                </div>
+                <AnimatedCounter target={completed.length} className="text-4xl md:text-5xl font-bold text-emerald-400 tracking-tight font-mono" />
               </div>
             </BentoCard>
 
             <BentoCard className="col-span-1 border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md rounded-[24px]">
               <div className="flex flex-col h-full z-10 w-full justify-between">
-                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-indigo-400/80 mb-4 block">Avg Duration</span>
-                <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                  {avgDuration !== null ? <>{avgDuration.toFixed(1)}<span className="text-2xl text-neutral-500">s</span></> : "—"}
-                </span>
-              </div>
-              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                 <Clock className="w-16 h-16 text-indigo-400" />
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="w-3.5 h-3.5 text-indigo-400/70" />
+                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-indigo-400/80">Avg Duration</span>
+                </div>
+                {avgDuration !== null ? (
+                  <div className="flex items-end gap-1">
+                    <AnimatedCounter
+                      target={Math.round(avgDuration * 10) / 10}
+                      duration={1.2}
+                      className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono"
+                    />
+                    <span className="text-xl text-neutral-500 mb-1 font-mono">s</span>
+                  </div>
+                ) : (
+                  <span className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono">—</span>
+                )}
               </div>
             </BentoCard>
 
             <BentoCard className="col-span-1 border border-fuchsia-500/20 bg-fuchsia-500/5 backdrop-blur-md rounded-[24px]">
               <div className="flex flex-col h-full z-10 w-full justify-between">
-                <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-fuchsia-400/80 mb-4 block">Avg Tokens</span>
-                <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                  {avgTokens !== null ? avgTokens.toLocaleString() : "—"}
-                </span>
-              </div>
-              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                 <Hash className="w-16 h-16 text-fuchsia-400" />
+                <div className="flex items-center gap-2 mb-4">
+                  <Hash className="w-3.5 h-3.5 text-fuchsia-400/70" />
+                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-fuchsia-400/80">Avg Tokens</span>
+                </div>
+                {avgTokens !== null ? (
+                  <AnimatedCounter target={avgTokens} className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono" />
+                ) : (
+                  <span className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono">—</span>
+                )}
               </div>
             </BentoCard>
           </BentoGrid>

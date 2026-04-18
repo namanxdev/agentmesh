@@ -101,14 +101,19 @@ export function HeroSection() {
           <motion.div variants={staggerItem} className="mt-10 flex flex-wrap justify-center items-center gap-4">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline"
               style={{
                 background: "var(--landing-ink)",
                 color: "var(--landing-paper)",
                 fontFamily: "var(--font-display)",
                 fontWeight: 700,
                 boxShadow: "0 20px 45px rgba(23, 18, 15, 0.18)",
+                transition: "transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms",
               }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 28px 56px rgba(23,18,15,0.24)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ""; (e.currentTarget as HTMLElement).style.boxShadow = "0 20px 45px rgba(23,18,15,0.18)"; }}
+              onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(0.97)"; }}
+              onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
             >
               Open Mission Control
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -123,12 +128,17 @@ export function HeroSection() {
             </Link>
             <a
               href="#features"
-              className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.45)] px-6 py-4 text-sm no-underline transition-transform duration-300 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.45)] px-6 py-4 text-sm no-underline"
               style={{
                 color: "var(--text-primary)",
                 fontFamily: "var(--font-display)",
                 fontWeight: 700,
+                transition: "transform 160ms cubic-bezier(0.16, 1, 0.3, 1)",
               }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ""; }}
+              onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(0.97)"; }}
+              onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
             >
               See the control logic
             </a>

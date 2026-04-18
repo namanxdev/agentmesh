@@ -94,10 +94,8 @@ export function HowItWorks() {
                   whileHover={{ x: 4 }}
                   className="relative landing-panel grid gap-5 rounded-[32px] p-5 sm:p-6 xl:grid-cols-[1fr_300px] transition-transform duration-300"
                 >
-                  {/* Progress Node Dot */}
-                  <div className="absolute -left-[35px] md:-left-[41px] top-8 h-4 w-4 rounded-full bg-[var(--landing-acid)] shadow-[0_0_8px_var(--landing-acid)] border-[3px] border-[#f7f0e6]">
-                    <span className="animate-ping absolute -inset-[2px] rounded-full opacity-90 delay-150 duration-1000" style={{ background: "var(--landing-acid)" }}></span>
-                  </div>
+                  {/* Progress Node Dot — static glow, no mass ping */}
+                  <div className="absolute -left-[35px] md:-left-[41px] top-8 h-4 w-4 rounded-full bg-[var(--landing-acid)] shadow-[0_0_10px_var(--landing-acid)] border-[3px] border-[#f7f0e6]" />
 
                   <div>
                     <h3

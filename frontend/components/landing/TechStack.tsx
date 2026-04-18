@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { staggerContainer, staggerItem } from "@/lib/motion";
+import { Orbit3D } from "@/components/ui/Orbit3D";
 
 const STACK_ITEMS = [
   "LangGraph",
@@ -41,27 +42,42 @@ export function TechStack() {
   return (
     <section id="tech-stack" className="border-b border-[color:var(--border-subtle)] py-20 sm:py-24">
       <div className="mx-auto max-w-[1400px] px-5 md:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
-          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-[880px]"
-        >
-          <p className="landing-kicker">03 / Tech stack</p>
-          <h2
-            className="mt-4 text-[clamp(3.5rem,7vw,6.5rem)] leading-[0.85] tracking-[-0.05em]"
-            style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-12">
+          <motion.div
+            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-[580px]"
           >
-            Built for production scale.
-          </h2>
-          <p
-            className="mt-6 max-w-[600px] text-lg leading-8"
-            style={{ color: "var(--text-secondary)" }}
+            <p className="landing-kicker">03 / Tech stack</p>
+            <h2
+              className="mt-4 text-[clamp(3.5rem,7vw,6.5rem)] leading-[0.85] tracking-[-0.05em]"
+              style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
+            >
+              Built for production scale.
+            </h2>
+            <p
+              className="mt-6 max-w-[520px] text-lg leading-8"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              We didn&apos;t invent a new proprietary runtime. AgentMesh is a pure
+              observability and control layer that wraps your existing multi-agent
+              stack in a deterministic fabric.
+            </p>
+          </motion.div>
+
+          {/* 3D Orbit — only visible on large screens */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.88 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            className="hidden lg:flex flex-shrink-0 items-center justify-center"
           >
-            We didn’t invent a new proprietary runtime. AgentMesh is a pure observability and control layer that wraps your existing multi-agent stack in a deterministic fabric.
-          </p>
-        </motion.div>
+            <Orbit3D size={360} />
+          </motion.div>
+        </div>
 
         <div className="mt-10 overflow-hidden rounded-[30px] border border-[color:var(--border-default)] bg-[rgba(255,255,255,0.36)] px-4 py-4">
           <div className="landing-marquee">
