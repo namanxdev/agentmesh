@@ -168,3 +168,5 @@ Thumbs.db
 
 # Git worktrees
 .worktrees/
+
+.firecrawl/

@@ -1,192 +1,165 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, useInView } from "framer-motion";
+
+function useAnimatedCounter(target: number, duration = 1200) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!inView) return;
+    let start = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) { setCount(target); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(timer);
+  }, [inView, target, duration]);
+
+  return { count, ref };
+}
+
+const ease = [0.16, 1, 0.3, 1] as const;
 
 export function GitHubCTA() {
-  const [copied, setCopied] = useState(false);
-  const startCommand = "cd frontend && npm run dev";
+  const [stars, setStars] = useState(124);
+  const { count, ref: counterRef } = useAnimatedCounter(stars);
 
-  const copyCommand = async () => {
-    await navigator.clipboard.writeText(startCommand);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
-  };
+  useEffect(() => {
+    fetch("https://api.github.com/repos/namanxdev/agentmesh")
+      .then((r) => r.json())
+      .then((d) => { if (d.stargazers_count) setStars(d.stargazers_count); })
+      .catch(() => {});
+  }, []);
 
   return (
-    <section id="launch" className="py-20 sm:py-24 relative z-10 bg-[linear-gradient(to_bottom,rgb(250,245,239),rgb(255,255,255))]">
-      <div className="mx-auto max-w-[1440px] px-5 md:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 80, filter: "blur(10px)", scale: 0.98 }}
-          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="overflow-hidden rounded-[40px] border p-6 sm:p-10 lg:p-14 shadow-sm hover:shadow-[0_40px_100px_rgba(215,255,112,0.15)] transition-all duration-700 hover:-translate-y-2 cursor-default"
+    <section
+      style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)" }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.9, ease }}
+        className="mx-auto max-w-[1400px] px-6 md:px-10 py-28 md:py-40"
+      >
+        {/* Kicker */}
+        <p
           style={{
-            borderColor: "rgba(23,18,15,0.12)",
-            background: "linear-gradient(180deg, rgba(215,255,112,0.95), rgba(215,255,112,0.85))",
+            fontFamily: "var(--font-mono)",
+            fontSize: "11px",
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            color: "rgba(240,244,255,0.3)",
+            marginBottom: "20px",
           }}
         >
-          <div className="flex flex-col gap-12">
-            <div className="flex flex-col items-center w-full">
-              <p className="landing-kicker text-center" style={{ color: "rgba(23,18,15,0.54)" }}>
-                04 / Open source
-              </p>
-              <motion.h2
-                initial={{ filter: "blur(8px)", opacity: 0, y: 20 }}
-                whileInView={{ filter: "blur(0px)", opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-4 w-full text-center text-[clamp(3.8rem,7vw,7rem)] leading-[0.85] tracking-[-0.06em]"
-                style={{ fontFamily: "var(--font-display)", fontWeight: 900, color: "var(--landing-ink)" }}
-              >
-                Own the orchestration.
-              </motion.h2>
-              <p
-                className="mt-6 max-w-[700px] text-lg leading-8 text-center"
-                style={{ color: "rgba(23,18,15,0.72)" }}
-              >
-                Built for teams scaling AI in production. Control execution flow, trace every tool call, and inject human safety gates without surrendering your architecture to black-box commercial platforms.
-              </p>
+          Open source · Free forever
+        </p>
 
-              <div className="mt-10 flex flex-wrap justify-center items-center gap-4">
-                <div
-                  className="rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
-                  style={{
-                    borderColor: "rgba(23,18,15,0.12)",
-                    background: "rgba(255,255,255,0.42)",
-                    color: "var(--landing-ink)",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  Self-hosted / MCP-native / typed events
-                </div>
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm no-underline"
-                  style={{
-                    background: "var(--landing-ink)",
-                    color: "var(--landing-paper)",
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 800,
-                    transition: "transform 160ms cubic-bezier(0.16,1,0.3,1)",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ""; }}
-                  onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(0.97)"; }}
-                  onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-                >
-                  Open Mission Control
-                </Link>
-                <a
-                  href="#tech-stack"
-                  className="inline-flex items-center gap-3 rounded-full border px-6 py-4 text-sm no-underline"
-                  style={{
-                    borderColor: "rgba(23,18,15,0.12)",
-                    background: "rgba(255,255,255,0.36)",
-                    color: "var(--landing-ink)",
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 700,
-                    transition: "transform 160ms cubic-bezier(0.16,1,0.3,1)",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = ""; }}
-                  onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(0.97)"; }}
-                  onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-                >
-                  Read the stack
-                </a>
-              </div>
+        {/* Headline */}
+        <h2
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 900,
+            fontSize: "clamp(4rem, 12vw, 12rem)",
+            lineHeight: 0.85,
+            letterSpacing: "-0.05em",
+            textTransform: "uppercase",
+            color: "#F0F4FF",
+            marginBottom: "48px",
+          }}
+        >
+          Build in<br />
+          <span style={{ color: "var(--accent-cyan)" }}>public.</span>
+        </h2>
+
+        {/* Star count + CTAs row */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+          <p
+            style={{
+              fontSize: "16px",
+              lineHeight: 1.75,
+              color: "rgba(240,244,255,0.45)",
+              maxWidth: "420px",
+            }}
+          >
+            AgentMesh is fully open source. Star it, fork it, break it, and build the next
+            generation of multi-agent workflows on top of it.
+          </p>
+
+          <div className="flex flex-col gap-5">
+            {/* Star count */}
+            <div className="flex items-baseline gap-3">
+              <span
+                ref={counterRef}
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 900,
+                  fontSize: "clamp(2.5rem, 5vw, 4rem)",
+                  letterSpacing: "-0.04em",
+                  color: "var(--accent-cyan)",
+                  lineHeight: 1,
+                }}
+              >
+                {count.toLocaleString()}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  letterSpacing: "0.24em",
+                  textTransform: "uppercase",
+                  color: "rgba(240,244,255,0.3)",
+                }}
+              >
+                GitHub stars
+              </span>
             </div>
 
-            <div className="grid gap-4 w-full max-w-[1080px] mx-auto text-left">
-              <div className="rounded-[30px] border border-[rgba(23,18,15,0.12)] bg-[rgba(255,255,255,0.36)] p-5 sm:p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.54)" }}>
-                      Start locally
-                    </p>
-                    <p
-                      className="mt-3 text-[1.5rem] leading-tight tracking-[-0.04em]"
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 800,
-                        color: "var(--landing-ink)",
-                      }}
-                    >
-                      Local entry point
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={copyCommand}
-                    className="rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.24em]"
-                    style={{
-                      background: copied ? "var(--landing-ink)" : "rgba(23,18,15,0.06)",
-                      color: copied ? "var(--landing-paper)" : "var(--landing-ink)",
-                      fontFamily: "var(--font-mono)",
-                      border: "1px solid rgba(23,18,15,0.12)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {copied ? "Copied" : "Copy"}
-                  </button>
-                </div>
-
-                <div
-                  className="mt-5 rounded-[24px] border border-[rgba(23,18,15,0.1)] bg-[rgba(23,18,15,0.92)] p-4"
-                  style={{ fontFamily: "var(--font-mono)", color: "#f7f0e8" }}
-                >
-                  <span style={{ color: "var(--landing-acid)" }}>$</span> {startCommand}
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {[
-                    "Complete execution provenance.",
-                    "Native multi-agent parallelization.",
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="rounded-[20px] border border-[rgba(23,18,15,0.1)] bg-[rgba(255,255,255,0.34)] px-4 py-3 text-[13px] font-medium leading-6"
-                      style={{ color: "rgba(23,18,15,0.85)" }}
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                {[
-                  { label: "Aesthetic", value: "editorial" },
-                  { label: "Runtime", value: "observable" },
-                  { label: "Source", value: "open" },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-[24px] border border-[rgba(23,18,15,0.12)] bg-[rgba(255,255,255,0.32)] p-4"
-                  >
-                    <p className="landing-kicker" style={{ color: "rgba(23,18,15,0.54)" }}>
-                      {item.label}
-                    </p>
-                    <p
-                      className="mt-3 text-2xl tracking-[-0.05em]"
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 800,
-                        color: "var(--landing-ink)",
-                      }}
-                    >
-                      {item.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
+            {/* CTAs */}
+            <div className="flex items-center gap-8">
+              <a
+                href="https://github.com/namanxdev/agentmesh"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="no-underline inline-flex items-center gap-2"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "var(--accent-cyan)",
+                  transition: "opacity 0.2s",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                </svg>
+                Star on GitHub ↗
+              </a>
+              <a
+                href="#how-it-works"
+                className="no-underline"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "rgba(240,244,255,0.3)",
+                  transition: "color 0.2s",
+                }}
+              >
+                Read the Docs →
+              </a>
             </div>
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
     </section>
   );
 }

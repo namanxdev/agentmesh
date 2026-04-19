@@ -1,137 +1,185 @@
 "use client";
 
-import { motion, useScroll } from "framer-motion";
-import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { staggerContainer, staggerItem } from "@/lib/motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 
 const STEPS = [
   {
-    id: "01",
-    title: "Build",
-    description: "Set up your agentic blocks and tools on the visual canvas. Define roles explicitly before execution begins.",
-    code: "nodes.add({ type: 'llm', role: 'synthesizer' })",
+    num: "01",
+    title: "Define",
+    description:
+      "Declare agents in Python — roles, prompts, MCP servers, handoff rules. One config describes the whole mesh.",
+    code: `agent = Agent(
+  role="researcher",
+  mcp=["github", "web"],
+  handoff_to=["reviewer"]
+)`,
+    accent: "#00E5FF",
   },
   {
-    id: "02",
+    num: "02",
     title: "Connect",
-    description: "Wire agents and tools together with defined handoffs. Inject human approval gates exactly where risk occurs.",
-    code: "edges.add({ source: 'router', target: 'approval' })",
+    description:
+      "Each agent connects to any MCP server automatically. Filesystem, GitHub, web — plug in any tool without adapters.",
+    code: `mesh.connect(
+  mcp_servers=[
+    "github", "filesystem"
+  ]
+)`,
+    accent: "#7C3AED",
   },
   {
-    id: "03",
-    title: "Run",
-    description: "Deploy the pipeline in Mission Control and see the live orchestration of complex token movement.",
-    code: "mesh.execute(pipeline_id, { stream: true })",
-  },
-  {
-    id: "04",
-    title: "Watch",
-    description: "Observe the real-time event bus. Every API call, parallel branch, and system failure is traced instantly.",
-    code: "Stream: [Agent Start] -> [Tool Search] ...",
+    num: "03",
+    title: "Direct",
+    description:
+      "Launch and watch it run. Every step streams live to Mission Control — routes, handoffs, tool calls, human reviews.",
+    code: `mesh.run(
+  workflow,
+  mission_control=True
+)`,
+    accent: "#00E5FF",
   },
 ];
 
+const ease = [0.16, 1, 0.3, 1] as const;
+
 export function HowItWorks() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start center", "end center"]
-  });
-
   return (
-    <section id="how-it-works" ref={containerRef} className="border-b border-[color:var(--border-subtle)] py-20 sm:py-24 lg:py-32 bg-[linear-gradient(to_bottom,rgb(255,250,244),rgb(250,245,239))]">
-      <div className="mx-auto max-w-[1400px] px-5 md:px-8 relative z-10">
-        <div className="grid gap-x-8 gap-y-14 lg:grid-cols-12 lg:items-start">
-          <ScrollReveal className="lg:col-span-5 lg:sticky lg:top-28">
-            <p className="landing-kicker">02 / Control logic</p>
-            <h2
-              className="mt-4 max-w-[520px] text-[clamp(2.8rem,6vw,5rem)] leading-[0.95] tracking-[-0.04em]"
-              style={{ fontFamily: "var(--font-display)", fontWeight: 900 }}
-            >
-              From prompt to observable run.
-            </h2>
-            <p
-              className="mt-5 max-w-[430px] text-base leading-7"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Move past generic chatbots. AgentMesh enables step-by-step direction over 
-              specialized workers and tools—safeguarding production outcomes with an uncompromised audit trail.
-            </p>
+    <section
+      id="how-it-works"
+      style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.07)" }}
+    >
+      {/* Section header */}
+      <div className="mx-auto max-w-[1400px] px-6 md:px-10 pt-24 pb-16">
+        <p
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "11px",
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            color: "rgba(240,244,255,0.3)",
+            marginBottom: "18px",
+          }}
+        >
+          <span style={{ color: "var(--accent-cyan)" }}>03</span> — Workflow
+        </p>
+        <h2
+          style={{
+            fontFamily: "var(--font-display)",
+            fontWeight: 900,
+            fontSize: "clamp(3.5rem, 8vw, 7.5rem)",
+            lineHeight: 0.88,
+            letterSpacing: "-0.045em",
+            textTransform: "uppercase",
+            color: "#F0F4FF",
+          }}
+        >
+          Three steps.<br />
+          <span style={{ color: "rgba(240,244,255,0.22)" }}>That's it.</span>
+        </h2>
+      </div>
 
-            <div className="mt-8 space-y-3">
-              {["Roles stay explicit", "Tools stay namespaced", "Events stay typed"].map((item) => (
-                <div
-                  key={item}
-                  className="landing-chip text-[11px] uppercase tracking-[0.28em]"
-                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
-                >
-                  {item}
-                </div>
-              ))}
+      {/* Steps — full-width rows, no cards */}
+      <div className="mx-auto max-w-[1400px]">
+        {STEPS.map((step, i) => (
+          <motion.div
+            key={step.num}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.7, ease, delay: i * 0.08 }}
+            className="grid md:grid-cols-[120px_1fr_1fr] gap-6 md:gap-10 px-6 md:px-10 py-12 md:py-14 items-start"
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            {/* Step number */}
+            <div className="flex items-center md:items-start md:pt-1">
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  letterSpacing: "0.28em",
+                  textTransform: "uppercase",
+                  color: step.accent,
+                }}
+              >
+                {step.num}
+              </span>
             </div>
-          </ScrollReveal>
 
-          <div className="lg:col-start-6 lg:col-span-7 relative pl-10 md:pl-12 py-4">
-            {/* Scrubbable Scroll Progress Connector Line */}
-            <div className="absolute left-[12px] md:left-[14px] top-12 bottom-12 w-[2px] bg-[rgba(23,18,15,0.06)]" />
-            <motion.div
-              className="absolute left-[12px] md:left-[14px] top-12 bottom-12 w-[2px] origin-top bg-[var(--landing-acid)] shadow-[0_0_15px_var(--landing-acid)]"
-              style={{ scaleY: scrollYProgress }}
-            />
+            {/* Title + description */}
+            <div>
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 900,
+                  fontSize: "clamp(2rem, 3.5vw, 3rem)",
+                  lineHeight: 1.0,
+                  letterSpacing: "-0.04em",
+                  textTransform: "uppercase",
+                  color: "#F0F4FF",
+                  marginBottom: "16px",
+                }}
+              >
+                {step.title}
+              </h3>
+              <p
+                style={{
+                  fontSize: "15px",
+                  lineHeight: 1.75,
+                  color: "rgba(240,244,255,0.48)",
+                  maxWidth: "380px",
+                }}
+              >
+                {step.description}
+              </p>
+            </div>
 
-            <motion.div
-              variants={staggerContainer}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true, margin: "-80px" }}
-              className="space-y-6"
+            {/* Code block */}
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{
+                background: "rgba(0,0,0,0.35)",
+                border: `1px solid ${step.accent}22`,
+              }}
             >
-              {STEPS.map((step, index) => (
-                <motion.article
-                  key={step.id}
-                  variants={staggerItem}
-                  whileHover={{ x: 4 }}
-                  className="relative landing-panel grid gap-5 rounded-[32px] p-5 sm:p-6 xl:grid-cols-[1fr_300px] transition-transform duration-300"
+              <div
+                className="flex items-center gap-2 px-4 py-3"
+                style={{ borderBottom: `1px solid ${step.accent}15` }}
+              >
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#FF5F57" }} />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#FFBD2E" }} />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#28CA41" }} />
+                <span
+                  className="ml-auto"
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "10px",
+                    color: "rgba(240,244,255,0.2)",
+                    letterSpacing: "0.1em",
+                  }}
                 >
-                  {/* Progress Node Dot — static glow, no mass ping */}
-                  <div className="absolute -left-[35px] md:-left-[41px] top-8 h-4 w-4 rounded-full bg-[var(--landing-acid)] shadow-[0_0_10px_var(--landing-acid)] border-[3px] border-[#f7f0e6]" />
+                  agentmesh.py
+                </span>
+              </div>
+              <pre
+                className="px-5 py-4 overflow-x-auto"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "13px",
+                  lineHeight: 1.7,
+                  color: step.accent,
+                  margin: 0,
+                }}
+              >
+                <code>{step.code}</code>
+              </pre>
+            </div>
+          </motion.div>
+        ))}
 
-                  <div>
-                    <h3
-                      className="text-[1.8rem] leading-none tracking-[-0.05em]"
-                      style={{ fontFamily: "var(--font-display)", fontWeight: 800 }}
-                    >
-                      <span className="opacity-30 mr-3">{step.id}</span>
-                      {step.title}
-                    </h3>
-                    <p
-                      className="mt-4 max-w-[500px] text-[15px] leading-7"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {step.description}
-                    </p>
-                  </div>
-
-                  <div
-                    className="rounded-[24px] border border-[color:var(--border-subtle)] p-4 flex flex-col justify-center"
-                    style={{
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.56), rgba(255,250,244,0.84))",
-                    }}
-                  >
-                    <pre
-                      className="overflow-x-auto whitespace-pre-wrap text-[12px] leading-5"
-                      style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}
-                    >
-                      {step.code}
-                    </pre>
-                  </div>
-                </motion.article>
-              ))}
-            </motion.div>
-          </div>
-        </div>
+        {/* Bottom border */}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
       </div>
     </section>
   );
