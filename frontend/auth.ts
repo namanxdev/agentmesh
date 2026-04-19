@@ -17,11 +17,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.sub = profile.sub ?? token.sub;
         // Auth.js normalized Profile uses `image`; raw Google OAuth profile uses `picture`.
         // We check both plus the normalized user object to cover all cases.
-        token.picture =
+        const picture =
           (profile as unknown as { picture?: string }).picture ??
-          profile.image ??
-          user?.image ??
-          token.picture;
+          (profile.image as string | null | undefined) ??
+          (user?.image as string | null | undefined) ??
+          (token.picture as string | null | undefined);
+        token.picture = picture ?? undefined;
       }
 
       return token;
