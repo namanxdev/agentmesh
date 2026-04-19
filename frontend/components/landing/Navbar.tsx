@@ -32,7 +32,7 @@ export function Navbar({ initialSession }: NavbarProps) {
     <motion.nav
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+      transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] as [number, number, number, number], delay: 0.1 }}
       className="fixed inset-x-0 top-0 z-50 transition-colors duration-700"
       style={{
         borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
@@ -80,22 +80,39 @@ export function Navbar({ initialSession }: NavbarProps) {
             </a>
           ))}
 
-          {/* CTA — text with arrow, no pill */}
+          {/* CTA / DP  */}
           {user ? (
-            <Link
-              href="/dashboard"
-              className="no-underline transition-colors duration-200 hover:text-[var(--accent-cyan)]"
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "11px",
-                fontWeight: 500,
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: "var(--accent-cyan)",
-              }}
-            >
-              Open App ↗
-            </Link>
+            <div className="flex items-center gap-6">
+              <Link
+                href="/dashboard"
+                className="no-underline transition-colors duration-200 hover:text-[var(--accent-cyan)] hidden md:block"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "var(--accent-cyan)",
+                }}
+              >
+                Dashboard
+              </Link>
+              
+              <Link href="/settings" className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full ring-1 ring-white/10 transition-all hover:ring-white/30 bg-white/5">
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.image}
+                    alt={user.name || "User Avatar"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[10px] font-bold text-white uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+                    {user?.name?.[0] || "U"}
+                  </span>
+                )}
+              </Link>
+            </div>
           ) : (
             <Link
               href="/login"
