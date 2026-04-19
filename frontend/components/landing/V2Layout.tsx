@@ -451,8 +451,8 @@ export function V2Layout({ session }: { session: Session | null }) {
       <Preloader />
       <Navbar initialSession={session} />
       <Hero title="Deploy Autonomous Agents in Seconds" subtitle="AgentMesh provides native Multi-Agent Orchestration via the Model Context Protocol." ctaLabel="Access the Pipeline" />
-      <StickyFeatures />
-      <LinearWorkflow />
+      <div id="features"><StickyFeatures /></div>
+      <div id="how-it-works"><LinearWorkflow /></div>
       <BespokeTestimonials />
       <AgentMeshFooter />
     </div>
