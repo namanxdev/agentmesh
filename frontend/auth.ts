@@ -12,10 +12,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, account, profile }) {
+    async jwt({ token, user, account, profile }) {
       if (account && profile) {
         token.sub = profile.sub ?? token.sub;
-        token.picture = (profile.picture as string | undefined) ?? token.picture;
+        // Auth.js normalized Profile uses `image`; raw Google OAuth profile uses `picture`.
+        // We check both plus the normalized user object to cover all cases.
+        token.picture =
+          (profile as unknown as { picture?: string }).picture ??
+          profile.image ??
+          user?.image ??
+          token.picture;
       }
 
       return token;
