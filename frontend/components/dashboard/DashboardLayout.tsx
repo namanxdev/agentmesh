@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { motion, AnimatePresence, useAnimation, useInView } from "framer-motion";
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check, Trash2, FolderOpen, Blocks, Bot, FileJson, Activity, Sparkles, TerminalSquare, LayoutTemplate } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Trash2, FolderOpen, Blocks, Bot, FileJson, Activity, TerminalSquare, LayoutTemplate, Monitor } from "lucide-react";
 import { useAgentMeshEvents } from "@/hooks/useAgentMeshEvents";
 import { usePipelineStore } from "@/stores/pipelineStore";
 
@@ -19,15 +19,8 @@ import RetroGrid from "@/components/ui/retro-grid";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { AnimatedTooltip } from "@/components/ui/animated-tooltip";
 import { Spotlight } from "@/components/ui/spotlight";
-import { TracingBeam } from "@/components/ui/tracing-beam";
 
 type AppTab = "canvas" | "analytics";
-
-const GrainOverlay = () => (
-  <div className="pointer-events-none absolute inset-0 z-50 mix-blend-overlay opacity-[0.03]"
-       style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}>
-  </div>
-);
 
 // --- Components ---
 
@@ -59,17 +52,25 @@ export function DashboardLayout() {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(true);
   const [bottomCollapsed, setBottomCollapsed] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    setMode("build");
-  }, [setMode]);
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
-    if (mode === "run") {
+    setMode(isMobile ? "run" : "build");
+  }, [isMobile, setMode]);
+
+  useEffect(() => {
+    if (mode === "run" && !isMobile) {
       setRightCollapsed(false);
       setBottomCollapsed(false);
     }
-  }, [mode]);
+  }, [mode, isMobile]);
 
   const agentNames = nodes
     .filter((n) => n.data?.kind === "llm_agent")
@@ -103,8 +104,9 @@ export function DashboardLayout() {
         {/* Workspace section */}
         {isBuild ? (
           <div className="relative flex flex-1 overflow-hidden gap-6 min-h-0 max-w-[1920px] w-full mx-auto">
-            
+
             {/* LEFT PANEL */}
+            {!isMobile && (
             <motion.div
               layout
               initial={false}
@@ -163,14 +165,13 @@ export function DashboardLayout() {
                       </button>
                     </div>
                     <div className="flex-1 overflow-y-auto w-full custom-scrollbar bg-black/20">
-                      <TracingBeam className="pt-4 px-10">
-                        {mode === "build" ? <NodePalette /> : <AgentSidebar agentNames={agentNames} />}
-                      </TracingBeam>
+                      {mode === "build" ? <NodePalette /> : <AgentSidebar agentNames={agentNames} />}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
+            )}
 
             {/* CENTER CANVAS & BOTTOM PANEL */}
             <div className="flex flex-1 flex-col min-w-0 overflow-hidden relative rounded-[24px] gap-6">
@@ -184,6 +185,7 @@ export function DashboardLayout() {
                 <div className="absolute inset-0 pointer-events-none rounded-[24px] shadow-[inset_0_0_40px_rgba(0,0,0,0.8)]" />
 
                 {/* Event stream toggler */}
+                {!isMobile && (
                 <AnimatePresence>
                   {bottomCollapsed && (
                     <motion.div
@@ -202,9 +204,11 @@ export function DashboardLayout() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                )}
               </div>
 
               {/* Bottom Panel */}
+              {!isMobile && (
               <AnimatePresence initial={false}>
                 {!bottomCollapsed && (
                   <motion.div
@@ -216,7 +220,7 @@ export function DashboardLayout() {
                   >
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
                     <BorderBeam size={400} duration={10} delay={1} colorFrom="#10b981" colorTo="#3b82f6" />
-                    
+
                     <div className="px-6 py-3 border-b border-white/[0.06] flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <TerminalSquare className="w-4 h-4 text-emerald-400" />
@@ -237,14 +241,33 @@ export function DashboardLayout() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              )}
+
+              {/* Mobile editing disabled banner */}
+              {isMobile && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute bottom-4 left-4 right-4 z-30"
+                >
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-xl shadow-2xl">
+                    <Monitor className="w-5 h-5 text-indigo-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-white">Desktop Editing Only</p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">Pipeline editing is only enabled on larger screens. Viewing is still available.</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
 
             {/* RIGHT PANEL */}
+            {!isMobile && (
             <motion.div
               layout
               initial={false}
               animate={{
-                width: rightCollapsed ? 64 : 400,
+                width: rightCollapsed ? 64 : 520,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
               className="group relative h-full flex flex-col bg-[#0a0a0a]/80 border border-white/[0.08] backdrop-blur-[40px] rounded-[24px] shadow-2xl overflow-hidden z-20 flex-shrink-0 ring-1 ring-black/20"
@@ -277,7 +300,7 @@ export function DashboardLayout() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.1 } }}
-                    className="flex flex-col w-[400px] h-full"
+                    className="flex flex-col w-[520px] h-full"
                   >
                     <div className="px-6 pt-5 pb-3 border-b border-white/[0.06] flex items-center justify-between">
                       <button 
@@ -295,15 +318,14 @@ export function DashboardLayout() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto w-full custom-scrollbar bg-black/20">
-                      <TracingBeam className="pt-4 px-10">
-                        {mode === "build" ? <NodeConfigInspector /> : <ToolCallInspector />}
-                      </TracingBeam>
+                    <div className="flex-1 overflow-hidden w-full custom-scrollbar bg-black/20">
+                      {mode === "build" ? <NodeConfigInspector /> : <ToolCallInspector />}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
+            )}
 
           </div>
         ) : (

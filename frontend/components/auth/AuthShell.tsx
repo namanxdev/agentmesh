@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface AuthShellProps {
   pageLabel: string;
@@ -34,6 +35,18 @@ export function AuthShell({
   return (
     <main className="auth-shell flex items-center justify-center px-5 py-10 md:px-8">
       <div className="grid w-full max-w-[1400px] gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+        {/* Global Back Button */}
+        <div className="lg:col-span-2 flex items-center">
+          <Link
+            href="/"
+            className="group flex items-center gap-2.5 text-xs font-mono uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+          >
+            <span className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/15 bg-white/[0.08] group-hover:bg-white/15 group-hover:border-white/30 transition-all shadow-sm">
+              <ArrowLeft className="w-4 h-4 text-white/80 group-hover:text-white group-hover:-translate-x-0.5 transition-transform" />
+            </span>
+            <span className="font-semibold">Back</span>
+          </Link>
+        </div>
         <section className="space-y-8">
           <div className="dashboard-chip w-fit text-[11px] uppercase tracking-[0.28em]" style={{ color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--accent-secondary)" }} />

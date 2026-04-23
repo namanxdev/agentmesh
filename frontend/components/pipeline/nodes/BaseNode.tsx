@@ -385,6 +385,7 @@ export const BaseNode = memo(function BaseNode({
           }}
           title="Delete node"
           aria-label={`Delete ${label}`}
+          className="opacity-60 hover:opacity-100 transition-all"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -392,23 +393,23 @@ export const BaseNode = memo(function BaseNode({
             width: 20,
             height: 20,
             borderRadius: 6,
-            background: "transparent",
+            background: "rgba(255,255,255,0.05)",
             color: "var(--text-tertiary)",
             fontSize: 10,
             cursor: "pointer",
-            border: "none",
-            opacity: 0,
+            border: "1px solid rgba(255,255,255,0.08)",
             transition: "all 150ms ease",
           }}
           onMouseEnter={(e) => {
-             e.currentTarget.style.background = "rgba(255,0,0,0.1)";
+             e.currentTarget.style.background = "rgba(239,68,68,0.15)";
              e.currentTarget.style.color = "#ef4444";
+             e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
           }}
           onMouseLeave={(e) => {
-             e.currentTarget.style.background = "transparent";
+             e.currentTarget.style.background = "rgba(255,255,255,0.05)";
              e.currentTarget.style.color = "var(--text-tertiary)";
+             e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
           }}
-          className="group-hover:opacity-100"
         >
           ✕
         </button>

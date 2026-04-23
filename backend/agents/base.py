@@ -149,7 +149,7 @@ class Agent:
                 "type": "agent.completed",
                 "workflow_id": workflow_id,
                 "agentName": self.config.name,
-                "output": response.text[:2000],
+                "output": response.text,
                 "tokenUsage": total_usage,
             }
         )

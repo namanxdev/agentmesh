@@ -87,8 +87,14 @@ export default function SettingsPage() {
   const fetchKeys = useCallback(async () => {
     try {
       const res = await fetch("/api/keys");
+      if (res.status === 401 || res.status === 403) {
+        window.location.href = "/login";
+        return;
+      }
       if (!res.ok) {
-        toast.error("Failed to load API keys");
+        const data = await res.json().catch(() => null);
+        const msg = data?.detail ?? `Failed to load API keys (${res.status})`;
+        toast.error(msg);
         return;
       }
       const data = await res.json();
@@ -107,8 +113,14 @@ export default function SettingsPage() {
   const fetchMcpServers = useCallback(async () => {
     try {
       const res = await fetch("/api/mcp/user-servers");
+      if (res.status === 401 || res.status === 403) {
+        window.location.href = "/login";
+        return;
+      }
       if (!res.ok) {
-        toast.error("Failed to load MCP servers");
+        const data = await res.json().catch(() => null);
+        const msg = data?.detail ?? `Failed to load MCP servers (${res.status})`;
+        toast.error(msg);
         return;
       }
       const data = await res.json();

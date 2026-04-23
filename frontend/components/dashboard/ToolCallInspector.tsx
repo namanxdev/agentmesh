@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useEventStore } from "@/stores/eventStore";
 import { useUIStore } from "@/stores/uiStore";
 import type { ToolCalledEvent, ToolResultEvent, ToolErrorEvent } from "@/types/events";
 import type { AgentRuntimeState } from "@/stores/eventStore";
 import type { InspectorTab } from "@/stores/uiStore";
+import { Maximize2, Minimize2, Copy, Check, FileText } from "lucide-react";
 
 interface ToolCall {
   call: ToolCalledEvent;
@@ -145,62 +148,203 @@ export function ToolCallInspector() {
         ))}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
+      <div style={{ flex: 1, overflow: "hidden" }}>
         {inspectorTab === "output" ? (
           <OutputPanel lastOutput={lastOutput} />
         ) : null}
         {inspectorTab === "tools" ? (
-          <ToolsPanel calls={calls} expandedId={expandedId} setExpandedId={setExpandedId} />
+          <div style={{ padding: 10 }}>
+            <ToolsPanel calls={calls} expandedId={expandedId} setExpandedId={setExpandedId} />
+          </div>
         ) : null}
         {inspectorTab === "agent" ? (
-          <AgentPanel selectedAgent={selectedAgent} agentStates={agentStates} />
+          <div style={{ padding: 10 }}>
+            <AgentPanel selectedAgent={selectedAgent} agentStates={agentStates} />
+          </div>
         ) : null}
         {inspectorTab === "tokens" ? (
-          <TokensPanel agentStates={agentStates} totalTokens={totalTokens} />
+          <div style={{ padding: 10 }}>
+            <TokensPanel agentStates={agentStates} totalTokens={totalTokens} />
+          </div>
         ) : null}
       </div>
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Linear-inspired Output Panel                                        */
+/* ------------------------------------------------------------------ */
+
 function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    if (!lastOutput) return;
+    navigator.clipboard.writeText(lastOutput);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [lastOutput]);
+
   if (!lastOutput) {
     return (
-      <p
-        style={{
-          color: "var(--text-tertiary)",
-          fontSize: 12,
-          textAlign: "center",
-          padding: "32px 16px",
-          fontFamily: "var(--font-mono)",
-          margin: 0,
-        }}
-      >
-        No output yet — run a pipeline to see results here
-      </p>
+      <div className="flex flex-col items-center justify-center h-full min-h-[200px] px-6 text-center gap-4">
+        <div className="w-12 h-12 rounded-2xl border border-dashed border-white/10 flex items-center justify-center bg-white/[0.02]">
+          <FileText className="w-5 h-5 text-neutral-600" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-neutral-400">No output yet</p>
+          <p className="text-xs text-neutral-600 font-mono mt-1">Run a pipeline to see results</p>
+        </div>
+      </div>
     );
   }
 
+  const wordCount = lastOutput.trim().split(/\s+/).length;
+  const charCount = lastOutput.length;
+
   return (
-    <div style={{ padding: 8 }}>
-      <pre
-        style={{
-          color: "var(--text-primary)",
-          fontSize: 12,
-          fontFamily: "var(--font-mono)",
-          lineHeight: 1.7,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          margin: 0,
-          padding: "14px 16px",
-          borderRadius: 16,
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        {lastOutput}
-      </pre>
-    </div>
+    <>
+      {/* ── Inline (sidebar) view ── */}
+      <div className="flex flex-col h-full">
+        {/* mini toolbar */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05] bg-white/[0.015] shrink-0">
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
+            {wordCount.toLocaleString()} words · {charCount.toLocaleString()} chars
+          </span>
+          <div className="flex items-center gap-1">
+            <IconBtn
+              onClick={handleCopy}
+              label={copied ? "Copied" : "Copy"}
+              icon={copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            />
+            <IconBtn
+              onClick={() => setIsExpanded(true)}
+              label="Expand"
+              icon={<Maximize2 className="w-3 h-3" />}
+            />
+          </div>
+        </div>
+
+        {/* content — fills remaining height */}
+        <div className="flex-1 overflow-hidden min-h-0">
+          <div className="h-full overflow-y-auto custom-scrollbar sidebar-view">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lastOutput}</ReactMarkdown>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Expanded (full-screen) view ── */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] isolate"
+          >
+            {/* backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#050505]/95 backdrop-blur-2xl"
+              onClick={() => setIsExpanded(false)}
+            />
+
+            {/* document frame */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="relative h-full flex flex-col z-10"
+            >
+              {/* header */}
+              <header className="shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.05] bg-[#0a0a0a]/50 backdrop-blur-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-white tracking-tight">Output</h2>
+                    <p className="text-[10px] text-neutral-500 font-mono mt-0.5">
+                      {wordCount.toLocaleString()} words · {charCount.toLocaleString()} chars
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <ActionBtn onClick={handleCopy}>
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" /> Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" /> Copy
+                      </>
+                    )}
+                  </ActionBtn>
+                  <ActionBtn onClick={() => setIsExpanded(false)}>
+                    <Minimize2 className="w-3.5 h-3.5" /> Close
+                  </ActionBtn>
+                </div>
+              </header>
+
+              {/* document body */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar flex justify-center">
+                <article className="document-view w-full max-w-3xl py-12 px-8 md:px-12">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {lastOutput}
+                  </ReactMarkdown>
+                </article>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+/* ── helper components ── */
+function IconBtn({
+  onClick,
+  label,
+  icon,
+}: {
+  onClick: () => void;
+  label: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-wider text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all"
+      title={label}
+    >
+      {icon}
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+}
+
+function ActionBtn({
+  onClick,
+  children,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-all border border-white/5 hover:border-white/10"
+    >
+      {children}
+    </button>
   );
 }
 
