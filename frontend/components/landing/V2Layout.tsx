@@ -160,7 +160,7 @@ function HeroSection() {
                 initial={{ y: "100%", opacity: 0 }}
                 animate={{ y: "0%", opacity: 1 }}
                 transition={{ delay: 2.2, duration: 1.2, ease: [0.77, 0, 0.175, 1] as [number, number, number, number] }}
-                className={`text-[clamp(2.5rem,10vw,4.5rem)] md:text-[clamp(3.5rem,7vw,5.5rem)] lg:text-[clamp(2.5rem,4vw,5rem)] xl:text-[min(4vw,5.5rem)] font-black leading-[0.8] tracking-[-0.04em] text-[#eeeeee] uppercase whitespace-nowrap ${syne.className}`}
+                className={`text-[clamp(2.5rem,10vw,4.5rem)] md:text-[clamp(3.5rem,7vw,5.5rem)] lg:text-[clamp(2.5rem,4vw,5rem)] xl:text-[min(4vw,5.5rem)] font-black leading-[0.9] tracking-[-0.04em] text-[#eeeeee] uppercase ${syne.className}`}
               >
                 ORCHESTRATE <br className="hidden md:block" />
                 THE <br className="hidden md:block" />
@@ -282,31 +282,31 @@ function StickyFeatures() {
         <motion.div style={{ x: scrollX }} className="flex h-full w-[300vw]">
           
           {/* Panel 1 */}
-          <div className="flex h-full w-screen items-center justify-between border-r border-[#ffffff10] px-[6vw] lg:px-[10vw]">
-            <div className="w-[45%] flex flex-col justify-center min-w-0 z-10">
-              <h2 className={`text-[clamp(3.5rem,8vw,7rem)] lg:text-[clamp(3.5rem,6vw,90px)] xl:text-[110px] font-black uppercase leading-[0.8] tracking-[-0.05em] text-white break-words hyphens-auto ${syne.className}`}>
+          <div className="flex h-full w-screen flex-col sm:flex-row items-center justify-center sm:justify-between border-r border-[#ffffff10] px-[6vw] lg:px-[10vw] gap-6 sm:gap-0 py-20 sm:py-0">
+            <div className="w-full sm:w-[45%] flex flex-col justify-center min-w-0 z-10">
+              <h2 className={`text-[clamp(2.8rem,10vw,7rem)] sm:text-[clamp(2rem,7vw,7rem)] lg:text-[clamp(3.5rem,6vw,90px)] xl:text-[110px] font-black uppercase leading-[0.9] tracking-[-0.05em] text-white whitespace-nowrap ${syne.className}`}>
                 OBSERVE.
               </h2>
-              <p className="mt-8 font-mono text-[10px] sm:text-xs lg:text-sm tracking-[0.2em] text-white/50 leading-relaxed uppercase">
+              <p className="mt-6 sm:mt-8 font-mono text-[10px] sm:text-xs lg:text-sm tracking-[0.2em] text-white/50 leading-relaxed uppercase">
                 Real-time observability <br /> Event streams mapped
               </p>
             </div>
-            <div className="w-[45%] aspect-[4/3] max-h-[65vh] flex items-center justify-end z-0">
+            <div className="w-full sm:w-[45%] h-[38vh] sm:h-auto sm:aspect-[4/3] sm:max-h-[65vh] flex items-center justify-center sm:justify-end z-0">
                <LiveMeshGrid />
             </div>
           </div>
 
           {/* Panel 2 */}
-          <div className="flex h-full w-screen items-center justify-between border-r border-[#ffffff10] px-[6vw] lg:px-[10vw]">
-            <div className="w-[45%] flex flex-col justify-center min-w-0 z-10">
-              <h2 className={`text-[clamp(3.5rem,8vw,7rem)] lg:text-[clamp(3.5rem,6vw,90px)] xl:text-[110px] font-black uppercase leading-[0.8] tracking-[-0.05em] text-white break-words hyphens-auto ${syne.className}`}>
+          <div className="flex h-full w-screen flex-col sm:flex-row items-center justify-center sm:justify-between border-r border-[#ffffff10] px-[6vw] lg:px-[10vw] gap-6 sm:gap-0 py-20 sm:py-0">
+            <div className="w-full sm:w-[45%] flex flex-col justify-center min-w-0 z-10">
+              <h2 className={`text-[clamp(2.8rem,10vw,7rem)] sm:text-[clamp(2rem,7vw,7rem)] lg:text-[clamp(3.5rem,6vw,90px)] xl:text-[110px] font-black uppercase leading-[0.9] tracking-[-0.05em] text-white whitespace-nowrap ${syne.className}`}>
                 DIRECT.
               </h2>
-              <p className="mt-8 font-mono text-[10px] sm:text-xs lg:text-sm tracking-[0.2em] text-white/50 leading-relaxed uppercase">
+              <p className="mt-6 sm:mt-8 font-mono text-[10px] sm:text-xs lg:text-sm tracking-[0.2em] text-white/50 leading-relaxed uppercase">
                 Instant agent handoffs <br /> Neural mesh execution
               </p>
             </div>
-            <div className="w-[45%] aspect-[4/3] max-h-[65vh] flex items-center justify-end z-0">
+            <div className="w-full sm:w-[45%] h-[38vh] sm:h-auto sm:aspect-[4/3] sm:max-h-[65vh] flex items-center justify-center sm:justify-end z-0">
                <div className="relative h-full w-full border border-white/[0.08] bg-black/40 backdrop-blur-3xl shadow-[0_0_80px_-20px_rgba(255,255,255,0.15)] overflow-hidden rounded-2xl flex items-center justify-center transform hover:-translate-y-2 transition-all duration-700 ease-out">
                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none z-10"></div>
                  <OrchestratorHUD />
@@ -357,7 +357,7 @@ function BrutalistStatement() {
     <div ref={ref} className="flex min-h-[70vh] w-full items-center justify-center bg-[#04060E] px-[4vw]">
       <motion.h2 
         style={{ opacity, y }}
-        className={`text-center text-[7vw] font-black uppercase leading-[0.85] tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-400 to-neutral-900 ${syne.className}`}
+        className={`text-center text-[clamp(2rem,7vw,5.5rem)] font-black uppercase leading-[0.9] tracking-[-0.04em] text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-400 to-neutral-900 ${syne.className}`}
       >
         EVERY DECISION VISIBLE. <br />
         EVERY PIPELINE YOURS.
@@ -377,7 +377,7 @@ function HowItWorks() {
           <div className="relative border-r border-[#ffffff10] pr-[4vw] pt-24">
             <div className="sticky top-32">
                <span className="font-mono text-xs text-white/40 tracking-widest">HOW IT WORKS</span>
-               <div className={`mt-12 text-[10vw] font-black text-white/10 tracking-[-0.04em] leading-[0.8] mix-blend-overlay hover:opacity-100 transition-opacity duration-700 cursor-default ${syne.className}`}>
+               <div className={`mt-12 text-[clamp(3rem,10vw,9rem)] font-black text-white/10 tracking-[-0.04em] leading-[0.9] mix-blend-overlay hover:opacity-100 transition-opacity duration-700 cursor-default ${syne.className}`}>
                   01 <br/> 02 <br/> 03
                </div>
             </div>
@@ -450,7 +450,7 @@ export function V2Layout({ session }: { session: Session | null }) {
     <div className="bg-[#04060E] selection:bg-white selection:text-black">
       <Preloader />
       <Navbar initialSession={session} />
-      <Hero title="Deploy Autonomous Agents in Seconds" subtitle="AgentMesh provides native Multi-Agent Orchestration via the Model Context Protocol." ctaLabel="Access the Pipeline" />
+      <Hero title="Deploy Autonomous Agents in Seconds" subtitle="AgentMesh provides native Multi-Agent Orchestration via the Model Context Protocol." ctaLabel="Access the Pipeline" ctaHref="/dashboard" />
       <div id="features"><StickyFeatures /></div>
       <div id="how-it-works"><LinearWorkflow /></div>
       <BespokeTestimonials />

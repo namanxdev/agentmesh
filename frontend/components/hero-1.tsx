@@ -88,8 +88,8 @@ export function Hero({
           initial="hidden"
           animate="visible"
           variants={fadeUpVariants}
-          className="text-balance bg-gradient-to-br from-white from-30% to-white/40 
-          bg-clip-text py-2 text-5xl font-semibold leading-tight tracking-tighter 
+          className="text-balance bg-gradient-to-br from-white from-30% to-white/40
+          bg-clip-text py-2 text-5xl font-semibold leading-[1.05] tracking-tighter
           text-transparent sm:text-6xl md:text-7xl lg:text-8xl"
         >
           {title}

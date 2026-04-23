@@ -84,7 +84,7 @@ export const AgentMeshFooter = ({
           </div>
           
           <div className="relative z-10 w-full max-w-4xl flex flex-col items-center">
-            <h2 className={`text-[clamp(2.5rem,6vw,6rem)] font-black text-white tracking-tight uppercase leading-[0.9] ${syne.className}`}>
+            <h2 className={`text-[clamp(2.5rem,6vw,6rem)] font-black text-white tracking-tight uppercase leading-[0.95] ${syne.className}`}>
               READY TO <br /> ORCHESTRATE?
             </h2>
             <p className="mt-8 text-neutral-400 text-sm md:text-base max-w-xl text-center font-medium leading-relaxed">
@@ -157,7 +157,7 @@ export const AgentMeshFooter = ({
         
         <div className="relative w-full overflow-hidden text-center flex items-center justify-center">
            <h1 
-             className={`text-[19vw] lg:text-[16vw] leading-[0.7] font-black text-[#ffffff02] uppercase tracking-[-0.04em] text-center w-full transition-colors duration-1000 group-hover:text-[#00f2fe]/5 ${syne.className}`}
+             className={`text-[19vw] lg:text-[16vw] leading-[0.85] font-black text-[#ffffff02] uppercase tracking-[-0.04em] text-center w-full transition-colors duration-1000 group-hover:text-[#00f2fe]/5 ${syne.className}`}
            >
              AGENTMESH
            </h1>

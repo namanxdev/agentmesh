@@ -42,7 +42,7 @@ export default function BespokeTestimonials() {
         
         {/* Left Side: Massive Typography */}
         <div className="col-span-1 lg:col-span-7 flex flex-col justify-center">
-          <h2 className={`text-[clamp(4rem,8vw,8rem)] leading-[0.85] font-black uppercase text-white tracking-tighter ${syne.className}`}>
+          <h2 className={`text-[clamp(4rem,8vw,8rem)] leading-[0.9] font-black uppercase text-white tracking-tighter ${syne.className}`}>
             GREAT WORK<br />
             CAN&apos;T HAPPEN<br />
             WITHOUT<br />
