@@ -5,7 +5,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle } from "lucide-react";
+import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle, ArrowLeft } from "lucide-react";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useUIStore } from "@/stores/uiStore";
 import { MagicButton } from "@/components/ui/magic-button";
@@ -110,6 +110,9 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
     <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 w-full text-sm font-sans z-50 relative bg-black/20 backdrop-blur-xl border-b border-white/5">
       {/* Left Area: Logo & Name Segment */}
       <div className="flex items-center gap-4 lg:gap-6 min-w-0 w-full lg:w-auto">
+        <Link href="/" className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all shrink-0" title="Back to Home">
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
         <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/10 shadow-inner">
           <div className="grid grid-cols-2 gap-1 opacity-80">
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />

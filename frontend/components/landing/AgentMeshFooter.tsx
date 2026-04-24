@@ -75,7 +75,7 @@ export const AgentMeshFooter = ({
         </div>
 
         {/* Top CTA Section */}
-        <div className="flex flex-col relative overflow-hidden rounded-[2rem] bg-white/[0.02] border border-white/[0.05] p-10 md:p-20 mt-12 mb-20 items-center text-center">
+        <div className="flex flex-col relative overflow-hidden rounded-[2rem] bg-white/[0.02] border border-white/[0.05] p-6 sm:p-10 md:p-20 mt-12 mb-20 items-center text-center">
           {/* Subtle Glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-full bg-[#00f2fe]/10 blur-[100px] pointer-events-none z-0" />
           
@@ -84,7 +84,7 @@ export const AgentMeshFooter = ({
           </div>
           
           <div className="relative z-10 w-full max-w-4xl flex flex-col items-center">
-            <h2 className={`text-[clamp(2.5rem,6vw,6rem)] font-black text-white tracking-tight uppercase leading-[0.95] ${syne.className}`}>
+            <h2 className={`text-[clamp(1.75rem,8vw,6rem)] sm:text-[clamp(2.5rem,6vw,6rem)] font-black text-white tracking-tight uppercase leading-[0.95] ${syne.className} break-words break-all sm:break-normal max-w-full`}>
               READY TO <br /> ORCHESTRATE?
             </h2>
             <p className="mt-8 text-neutral-400 text-sm md:text-base max-w-xl text-center font-medium leading-relaxed">
@@ -114,32 +114,32 @@ export const AgentMeshFooter = ({
           <div className="flex flex-col gap-6">
             <h4 className={`text-white font-black text-sm tracking-wide uppercase opacity-90 mb-2 ${syne.className}`}>Platform</h4>
             <Link href="/dashboard" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Mission Control</Link>
-            <Link href="/agents" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Agents</Link>
-            <Link href="/events" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Live Events</Link>
-            <Link href="/pipelines" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Pipelines</Link>
+            <Link href="/dashboard" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Agents</Link>
+            <Link href="/dashboard" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Live Events</Link>
+            <Link href="/dashboard" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Pipelines</Link>
           </div>
           <div className="flex flex-col gap-6">
             <h4 className={`text-white font-black text-sm tracking-wide uppercase opacity-90 mb-2 ${syne.className}`}>Resources</h4>
-            <Link href="/docs" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Documentation</Link>
-            <Link href="/mcp" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">MCP Integration</Link>
-            <Link href="/api" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">API Reference</Link>
-            <Link href="/design" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Design System</Link>
+            <a href="https://github.com/namanxdev/agentmesh#readme" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Documentation</a>
+            <a href="https://github.com/namanxdev/agentmesh" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">MCP Integration</a>
+            <a href="https://github.com/namanxdev/agentmesh/releases" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Changelog</a>
+            <a href="https://github.com/namanxdev/agentmesh/issues" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Report an Issue</a>
           </div>
           <div className="flex flex-col gap-6">
-            <h4 className={`text-white font-black text-sm tracking-wide uppercase opacity-90 mb-2 ${syne.className}`}>Company</h4>
-            <Link href="#" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">About</Link>
-            <Link href="#" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Blog</Link>
-            <Link href="#" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Careers</Link>
-            <Link href="#" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Contact</Link>
+            <h4 className={`text-white font-black text-sm tracking-wide uppercase opacity-90 mb-2 ${syne.className}`}>Our Products</h4>
+            <Link href="/" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">AgentMesh</Link>
+            <a href="https://mcp-hub-pi.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">MCPHub ↗</a>
+            <a href="https://github.com/namanxdev" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">GitHub Profile</a>
+            <a href="mailto:namanguptabhopal@gmail.com" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Contact</a>
           </div>
           <div className="flex flex-col gap-6">
             <h4 className={`text-white font-black text-sm tracking-wide uppercase opacity-90 mb-2 ${syne.className}`}>Legal</h4>
             <Link href="#" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Privacy Policy</Link>
             <Link href="#" className="text-white/50 hover:text-white text-[13px] font-medium transition-colors w-fit">Terms of Service</Link>
-            
+
             <div className="mt-8 flex gap-3">
               {/* x.com (twitter) */}
-              <a href="#" target="_blank" rel="noopener noreferrer" className="size-10 rounded-full bg-white/[0.03] flex items-center justify-center border border-white/10 hover:bg-white/10 hover:border-white/30 cursor-pointer transition-all">
+              <a href="https://x.com/Naman_411" target="_blank" rel="noopener noreferrer" className="size-10 rounded-full bg-white/[0.03] flex items-center justify-center border border-white/10 hover:bg-white/10 hover:border-white/30 cursor-pointer transition-all">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/70"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
               </a>
               {/* github */}

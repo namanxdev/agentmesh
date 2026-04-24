@@ -12,6 +12,7 @@ const outfit = Outfit({
   weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -27,6 +28,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "AgentMesh — MCP-Native Multi-Agent Orchestrator",
   description: "Orchestrate AI agents across MCP servers with real-time Mission Control dashboard.",
+  icons: {
+    icon: "/agentmesh_logo.png",
+  },
 };
 
 export default function RootLayout({

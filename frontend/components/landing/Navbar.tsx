@@ -10,6 +10,7 @@ import { Menu, X } from "lucide-react";
 const NAV_LINKS = [
   { href: "#features", label: "Features" },
   { href: "#how-it-works", label: "How it works" },
+  { href: "#products", label: "Products" },
   { href: "https://github.com/namanxdev/agentmesh", label: "GitHub", external: true },
 ];
 

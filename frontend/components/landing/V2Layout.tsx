@@ -428,6 +428,72 @@ function HowItWorks() {
   );
 }
 
+const PRODUCTS = [
+  {
+    name: "AgentMesh",
+    tagline: "Multi-Agent Orchestration",
+    description: "Orchestrate AI agents across MCP servers with real-time observability and human-in-the-loop control.",
+    href: "/",
+    external: false,
+    badge: "Live",
+  },
+  {
+    name: "MCPHub",
+    tagline: "MCP Server Discovery",
+    description: "Discover, browse, and connect to Model Context Protocol servers from a single unified hub.",
+    href: "https://mcp-hub-pi.vercel.app/",
+    external: true,
+    badge: "New",
+  },
+];
+
+function ProductsSection() {
+  return (
+    <div className="relative w-full bg-[#04060E] px-[6vw] py-32 border-t border-white/[0.05]">
+      <div className="mx-auto max-w-screen-xl">
+        <div className="mb-16">
+          <span className="font-mono text-xs text-white/40 tracking-widest uppercase">Our Products</span>
+          <h2 className={`mt-4 text-[clamp(2rem,5vw,4rem)] font-black uppercase leading-[0.9] tracking-[-0.04em] text-white ${syne.className}`}>
+            Built for the <br /><span className="text-white/30">AI-native era.</span>
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {PRODUCTS.map((product) => (
+            <a
+              key={product.name}
+              href={product.href}
+              target={product.external ? "_blank" : undefined}
+              rel={product.external ? "noopener noreferrer" : undefined}
+              className="group relative flex flex-col justify-between rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-300 no-underline overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-white/30">{product.tagline}</span>
+                  <span className="font-mono text-[9px] tracking-[0.2em] uppercase px-2 py-1 rounded-full border border-[#00f2fe]/30 text-[#00f2fe]/70 bg-[#00f2fe]/5">
+                    {product.badge}
+                  </span>
+                </div>
+                <h3 className={`text-3xl font-black uppercase tracking-tight text-white mb-3 ${syne.className}`}>
+                  {product.name}
+                </h3>
+                <p className="text-sm text-white/40 leading-relaxed max-w-sm">{product.description}</p>
+              </div>
+              <div className="mt-8 flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] uppercase text-white/30 group-hover:text-white/60 transition-colors">
+                <span>{product.external ? "Visit site" : "Open platform"}</span>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="transition-transform duration-200 group-hover:translate-x-0.5">
+                  <path d="M3.5 8H12.5M8.5 4L12.5 8L8.5 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 import type { Session } from "next-auth";
 
 export function V2Layout({ session }: { session: Session | null }) {
@@ -454,6 +520,7 @@ export function V2Layout({ session }: { session: Session | null }) {
       <div id="features"><StickyFeatures /></div>
       <div id="how-it-works"><LinearWorkflow /></div>
       <BespokeTestimonials />
+      <div id="products"><ProductsSection /></div>
       <AgentMeshFooter />
     </div>
   );
