@@ -106,6 +106,10 @@ export const NODE_CONTENT_STYLES = {
     fontWeight: 600,
     letterSpacing: "0.06em",
     textTransform: "uppercase",
+    maxWidth: "100%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   } satisfies CSSProperties,
   metricGrid: {
     display: "grid",
@@ -149,6 +153,9 @@ export const NODE_CONTENT_STYLES = {
     color: "var(--text-secondary)",
     fontSize: 9,
     lineHeight: 1.4,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    overflowWrap: "anywhere",
   } satisfies CSSProperties,
   routeList: {
     display: "flex",
@@ -227,7 +234,7 @@ export function getHandleLabelStyle(accentColor: string): CSSProperties {
   };
 }
 
-export function getTextareaStyle(accentColor: string): CSSProperties {
+export function getTextareaStyle(): CSSProperties {
   return {
     width: "100%",
     minHeight: 60,
@@ -282,7 +289,6 @@ export const BaseNode = memo(function BaseNode({
   const deleteNode = usePipelineStore((s) => s.deleteNode);
   const selectNode = usePipelineStore((s) => s.selectNode);
   const accentColor = NODE_COLORS[kind];
-  const meta = NODE_META[kind];
   const borderColor = withAlpha(accentColor, selected ? 0.6 : 0.15);
 
   return (

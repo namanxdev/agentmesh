@@ -37,13 +37,24 @@ export const useEventStore = create<EventStore>((set) => ({
   addEvent: (event) =>
     set((state) => {
       if (state.events.some((e) => e.id === event.id)) return state;
+
+      // Clear prior events when a new workflow starts so the stream
+      // shows only the current run (no cross-run noise).
+      const baseEvents =
+        event.type === "workflow.started" ? [] : state.events;
+      const baseAgents =
+        event.type === "workflow.started" ? {} : state.agentStates;
+
       const next: Partial<EventStore> = {
-        events: [...state.events, event],
+        events: [...baseEvents, event],
+        agentStates: baseAgents,
       };
 
       if (event.type === "workflow.started") {
         next.workflowStatus = "running";
         next.workflowId = event.workflow_id;
+        next.totalTokens = 0;
+        next.lastOutput = null;
       } else if (event.type === "workflow.completed") {
         next.workflowStatus = "completed";
         next.totalTokens = event.totalTokens;

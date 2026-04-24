@@ -30,13 +30,22 @@ export function AnalyticsView() {
 
   useEffect(() => {
     if (!currentPipelineId) return;
-    setLoading(true);
-    setError(null);
-    fetch(`/api/pipelines/${currentPipelineId}/runs`)
-      .then((r) => r.json())
-      .then((d) => setRuns(d.runs ?? []))
-      .catch(() => setError("Failed to load run history"))
-      .finally(() => setLoading(false));
+    let isMounted = true;
+    const fetchRuns = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const r = await fetch(`/api/pipelines/${currentPipelineId}/runs`);
+        const d = await r.json();
+        if (isMounted) setRuns(d.runs ?? []);
+      } catch {
+        if (isMounted) setError("Failed to load run history");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchRuns();
+    return () => { isMounted = false; };
   }, [currentPipelineId]);
 
   const completed = runs.filter((r) => r.status === "completed");

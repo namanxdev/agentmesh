@@ -24,7 +24,14 @@ type AppTab = "canvas" | "analytics";
 
 // --- Components ---
 
-const PanelButton = ({ onClick, children, className = "", title }: any) => (
+interface PanelButtonProps {
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+  title: string;
+}
+
+const PanelButton = ({ onClick, children, className = "", title }: PanelButtonProps) => (
   <AnimatedTooltip items={[{ id: 1, name: title }]}>
     <button
       onClick={onClick}
@@ -48,6 +55,8 @@ export function DashboardLayout() {
   const deleteSavedPipeline = usePipelineStore((s) => s.deleteSavedPipeline);
   const togglePipelinesDrawer = usePipelineStore((s) => s.togglePipelinesDrawer);
 
+  const isRunning = usePipelineStore((s) => s.isRunning);
+
   const [activeTab, setActiveTab] = useState<AppTab>("canvas");
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(true);
@@ -66,11 +75,15 @@ export function DashboardLayout() {
   }, [isMobile, setMode]);
 
   useEffect(() => {
-    if (mode === "run" && !isMobile) {
-      setRightCollapsed(false);
-      setBottomCollapsed(false);
+    let timeoutId: ReturnType<typeof setTimeout>;
+    if (isRunning && !isMobile) {
+      timeoutId = setTimeout(() => {
+        setRightCollapsed(false);
+        setBottomCollapsed(false);
+      }, 0);
     }
-  }, [mode, isMobile]);
+    return () => clearTimeout(timeoutId);
+  }, [isRunning, isMobile]);
 
   const agentNames = nodes
     .filter((n) => n.data?.kind === "llm_agent")
@@ -94,10 +107,11 @@ export function DashboardLayout() {
       {/* Main Container */}
       <div className="relative z-10 flex flex-col w-full h-full p-6 pt-4 gap-6">
         
-        {/* Header section (Glassmorphism + BorderBeam) */}
-        <div className="relative flex-shrink-0 bg-[#0a0a0a]/60 border border-white/10 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] shadow-black/40 rounded-[24px] overflow-hidden isolate ring-1 ring-white/5 mx-auto w-full max-w-[1920px]">
-          <BorderBeam size={800} duration={15} colorFrom="#ec4899" colorTo="#8b5cf6" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        {/* Header section (Awwwards/Minimalist Premium) */}
+        <div className="relative flex-shrink-0 mx-auto w-full max-w-7xl mt-4 z-50">
+          {/* Subtle diffusion shadow container, separating shadow from border */}
+          <div className="absolute inset-0 bg-[#070707]/80 backdrop-blur-[40px] rounded-[20px] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.4)] border border-white/[0.05] will-change-transform transform-gpu overflow-visible" />
+          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           <PipelineHeader activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
 
@@ -164,7 +178,7 @@ export function DashboardLayout() {
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto w-full custom-scrollbar bg-black/20">
+                    <div className="flex-1 min-h-0 overflow-hidden w-full bg-black/20">
                       {mode === "build" ? <NodePalette /> : <AgentSidebar agentNames={agentNames} />}
                     </div>
                   </motion.div>
@@ -267,7 +281,7 @@ export function DashboardLayout() {
               layout
               initial={false}
               animate={{
-                width: rightCollapsed ? 64 : 520,
+                width: rightCollapsed ? 64 : 340,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
               className="group relative h-full flex flex-col bg-[#0a0a0a]/80 border border-white/[0.08] backdrop-blur-[40px] rounded-[24px] shadow-2xl overflow-hidden z-20 flex-shrink-0 ring-1 ring-black/20"
@@ -300,7 +314,7 @@ export function DashboardLayout() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.1 } }}
-                    className="flex flex-col w-[520px] h-full"
+                    className="flex flex-col w-[340px] h-full"
                   >
                     <div className="px-6 pt-5 pb-3 border-b border-white/[0.06] flex items-center justify-between">
                       <button 

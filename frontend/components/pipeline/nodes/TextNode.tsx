@@ -98,7 +98,7 @@ export const TextNode = memo(function TextNode({
           onChange={handleChange}
           placeholder="Write prompt text with {{variables}}..."
           className="pipeline-node__textarea nodrag"
-          style={getTextareaStyle(color)}
+          style={getTextareaStyle()}
         />
       </div>
 

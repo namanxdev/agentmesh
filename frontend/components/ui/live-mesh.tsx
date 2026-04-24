@@ -10,7 +10,7 @@ export function LiveMeshGrid({ className }: { className?: string }) {
 
   useEffect(() => {
     // Generate a fixed symmetrical grid to keep it neat (Linear style)
-    const newNodes = [];
+    const newNodes: { id: number; x: number; y: number }[] = [];
     const cols = 6;
     const rows = 4;
     for (let c = 0; c < cols; c++) {
@@ -25,7 +25,7 @@ export function LiveMeshGrid({ className }: { className?: string }) {
     }
     
     // Connect nearest neighbors 
-    const newEdges = [];
+    const newEdges: { id: string; source: number; target: number }[] = [];
     for (let i = 0; i < newNodes.length; i++) {
         for (let j = i + 1; j < newNodes.length; j++) {
             const dx = newNodes[i].x - newNodes[j].x;
@@ -37,8 +37,11 @@ export function LiveMeshGrid({ className }: { className?: string }) {
         }
     }
     
-    setNodes(newNodes);
-    setEdges(newEdges);
+    // Defer state update to avoid cascading render error
+    setTimeout(() => {
+      setNodes(newNodes);
+      setEdges(newEdges);
+    }, 0);
   }, []);
 
   return (
@@ -61,13 +64,15 @@ export function LiveMeshGrid({ className }: { className?: string }) {
         </defs>
         
         {/* Render Edges */}
-        {edges.map((edge, index) => {
+        {edges.map((edge) => {
           const source = nodes[edge.source];
           const target = nodes[edge.target];
           if (!source || !target) return null;
           
-          const delay = Math.random() * 4;
-          const duration = 1.5 + Math.random() * 2;
+          // Generate deterministic "random" based on edge id
+          const idHash = edge.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+          const delay = (idHash % 40) / 10;
+          const duration = 1.5 + (idHash % 20) / 10;
 
           return (
             <g key={edge.id}>
@@ -102,31 +107,37 @@ export function LiveMeshGrid({ className }: { className?: string }) {
         })}
         
         {/* Render Nodes */}
-        {nodes.map(node => (
-          <g key={`node-${node.id}`}>
-            <circle
-              cx={`${node.x}%`}
-              cy={`${node.y}%`}
-              r="0.5"
-              fill="rgba(56,189,248,0.5)"
-            />
-            {/* Blinking node core */}
-            <motion.circle
-              cx={`${node.x}%`}
-              cy={`${node.y}%`}
-              r="1.2"
-              fill="#0ea5e9"
-              filter="url(#mesh-glow)"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: [0, 0.8, 0], scale: [0.5, 1.5, 0.5] }}
-              transition={{
-                duration: 2 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 3
-              }}
-            />
-          </g>
-        ))}
+        {nodes.map(node => {
+          const idHash = node.id;
+          const duration = 2 + (idHash % 20) / 10;
+          const delay = (idHash % 30) / 10;
+
+          return (
+            <g key={`node-${node.id}`}>
+              <circle
+                cx={`${node.x}%`}
+                cy={`${node.y}%`}
+                r="0.5"
+                fill="rgba(56,189,248,0.5)"
+              />
+              {/* Blinking node core */}
+              <motion.circle
+                cx={`${node.x}%`}
+                cy={`${node.y}%`}
+                r="1.2"
+                fill="#0ea5e9"
+                filter="url(#mesh-glow)"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: [0, 0.8, 0], scale: [0.5, 1.5, 0.5] }}
+                transition={{
+                  duration: duration,
+                  repeat: Infinity,
+                  delay: delay
+                }}
+              />
+            </g>
+          );
+        })}
       </svg>
     </div>
   );

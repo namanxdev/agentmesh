@@ -17,56 +17,64 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
 
   // Keep latest callback without re-running effect
   const onMessageRef = useRef(onMessage);
-  onMessageRef.current = onMessage;
-
+  
   const setStatus = useUIStore((s) => s.setConnectionStatus);
   const setStatusRef = useRef(setStatus);
-  setStatusRef.current = setStatus;
 
   // connectRef allows the closure inside ws.onclose to call connect without stale ref
   const connectRef = useRef<() => void>(null!);
 
-  connectRef.current = () => {
-    if (!enabled) return;
-    setStatusRef.current("connecting");
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
-    const ws = new WebSocket(`${WS_BASE}/ws/events`);
-    wsRef.current = ws;
+  useEffect(() => {
+    setStatusRef.current = setStatus;
+  }, [setStatus]);
 
-    ws.onopen = () => {
-      reconnectCountRef.current = 0;
-      setStatusRef.current("connected");
-    };
-
-    ws.onmessage = (msg) => {
-      try {
-        const data = JSON.parse(msg.data as string);
-        if ((data as { type?: string }).type === "pong") return;
-        onMessageRef.current(data);
-      } catch {
-        // ignore malformed JSON
-      }
-    };
-
-    ws.onclose = () => {
-      setStatusRef.current("disconnected");
+  useEffect(() => {
+    connectRef.current = () => {
       if (!enabled) return;
-      if (reconnectCountRef.current >= 5) {
-        setStatusRef.current("error");
-        toast.error("WebSocket connection failed after 5 retries. Check backend URL.");
-        return;
-      }
-      const delay = Math.min(1000 * Math.pow(2, reconnectCountRef.current), 30_000);
-      reconnectCountRef.current += 1;
-      setStatusRef.current("reconnecting");
-      reconnectTimerRef.current = setTimeout(() => connectRef.current(), delay);
-    };
+      setStatusRef.current("connecting");
 
-    ws.onerror = () => {
-      setStatusRef.current("error");
-      toast.error("WebSocket connection error");
+      const ws = new WebSocket(`${WS_BASE}/ws/events`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        reconnectCountRef.current = 0;
+        setStatusRef.current("connected");
+      };
+
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data as string);
+          if ((data as { type?: string }).type === "pong") return;
+          onMessageRef.current(data);
+        } catch {
+          // ignore malformed JSON
+        }
+      };
+
+      ws.onclose = () => {
+        setStatusRef.current("disconnected");
+        if (!enabled) return;
+        if (reconnectCountRef.current >= 5) {
+          setStatusRef.current("error");
+          toast.error("WebSocket connection failed after 5 retries. Check backend URL.");
+          return;
+        }
+        const delay = Math.min(1000 * Math.pow(2, reconnectCountRef.current), 30_000);
+        reconnectCountRef.current += 1;
+        setStatusRef.current("reconnecting");
+        reconnectTimerRef.current = setTimeout(() => connectRef.current(), delay);
+      };
+
+      ws.onerror = () => {
+        setStatusRef.current("error");
+        toast.error("WebSocket connection error");
+      };
     };
-  };
+  }, [enabled]);
 
   const send = useCallback((command: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
