@@ -83,8 +83,8 @@ export const AgentMeshFooter = ({
              <FooterCube />
           </div>
           
-          <div className="relative z-10 w-full max-w-4xl flex flex-col items-center">
-            <h2 className={`text-[clamp(1.75rem,8vw,6rem)] sm:text-[clamp(2.5rem,6vw,6rem)] font-black text-white tracking-tight uppercase leading-[0.95] ${syne.className} break-words break-all sm:break-normal max-w-full`}>
+          <div className="relative z-10 w-full flex flex-col items-center">
+            <h2 className={`text-[clamp(1.75rem,8vw,6rem)] sm:text-[clamp(2.5rem,6vw,6rem)] font-black text-white tracking-tight uppercase leading-[0.95] ${syne.className} break-words break-all sm:break-normal`}>
               READY TO <br /> ORCHESTRATE?
             </h2>
             <p className="mt-8 text-neutral-400 text-sm md:text-base max-w-xl text-center font-medium leading-relaxed">

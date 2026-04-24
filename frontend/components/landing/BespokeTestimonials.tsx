@@ -38,23 +38,20 @@ export default function BespokeTestimonials() {
       <div className="absolute top-1/2 left-1/4 w-[40vw] h-[40vw] -translate-x-1/2 -translate-y-1/2 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute top-1/3 right-1/4 w-[30vw] h-[30vw] translate-x-1/2 -translate-y-1/2 bg-purple-500/10 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto w-full px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
+      <div className="max-w-7xl mx-auto w-full px-6 lg:px-12 flex flex-col items-center text-center relative z-10">
         
-        {/* Left Side: Massive Typography */}
-        <div className="col-span-1 lg:col-span-7 flex flex-col justify-center">
-          <h2 className={`text-[clamp(4rem,8vw,8rem)] leading-[0.9] font-black uppercase text-white tracking-tighter ${syne.className}`}>
+        {/* Massive Typography */}
+        <div className="flex flex-col items-center justify-center">
+          <h2 className={`text-[clamp(3.5rem,7vw,7rem)] leading-[0.9] font-black uppercase text-white tracking-tighter max-w-5xl ${syne.className}`}>
             GREAT WORK<br />
             CAN&apos;T HAPPEN<br />
-            WITHOUT<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
-              TEAM AI.
-            </span>
+            WITHOUT <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">TEAM AI.</span>
           </h2>
         </div>
 
-        {/* Right Side: Descriptive Text */}
-        <div className="col-span-1 lg:col-span-5 flex flex-col justify-center">
-          <p className="text-neutral-400 text-lg md:text-xl xl:text-2xl leading-relaxed tracking-tight max-w-lg font-medium">
+        {/* Descriptive Text */}
+        <div className="flex flex-col items-center justify-center mt-12">
+          <p className="text-neutral-400 text-lg md:text-xl leading-relaxed tracking-tight max-w-2xl font-medium">
             We work as one team with our agents. Through continuous integration pipelines, we uncover context and translate it into multi-agent workflows that reflect your mission. Our mesh combines declarative logic with raw autonomous intelligence to create work that connects elegantly and drives production.
           </p>
         </div>
@@ -67,7 +64,7 @@ export default function BespokeTestimonials() {
         {/* Card 1 - Left Center */}
         <motion.div 
           style={{ y: y1, rotateZ: rotate1, rotateX: 5, rotateY: -10 }}
-          className="absolute left-[5%] md:left-[15%] top-[60%] w-[320px] bg-[#0A0A0C]/80 backdrop-blur-xl border border-white/10 p-8 shadow-2xl flex flex-col gap-6 rounded-sm"
+          className="absolute left-[2%] md:left-[8%] xl:left-[12%] top-[55%] w-[320px] bg-[#0A0A0C]/80 backdrop-blur-xl border border-white/10 p-8 shadow-2xl flex flex-col gap-6 rounded-sm"
         >
           <div className="flex items-center gap-3 text-white">
             <Workflow className="w-8 h-8" />
@@ -85,7 +82,7 @@ export default function BespokeTestimonials() {
         {/* Card 2 - Center Right */}
         <motion.div 
           style={{ y: y2, rotateZ: rotate2, rotateX: -5, rotateY: 15 }}
-          className="absolute right-[5%] md:right-[20%] top-[25%] w-[340px] bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.15] p-8 shadow-2xl flex flex-col gap-6 rounded-sm"
+          className="absolute right-[2%] md:right-[10%] xl:right-[15%] top-[20%] w-[340px] bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.15] p-8 shadow-2xl flex flex-col gap-6 rounded-sm"
         >
           <div className="flex items-center gap-3 text-white">
             <BrainCircuit className="w-8 h-8 text-blue-400" />
@@ -103,7 +100,7 @@ export default function BespokeTestimonials() {
         {/* Card 3 - Bottom Right */}
         <motion.div 
           style={{ y: y3, rotateZ: rotate3, rotateX: 2, rotateY: -5 }}
-          className="absolute right-[2%] md:right-[5%] top-[70%] w-[300px] bg-[#111115] border border-white/5 p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col gap-6 rounded-sm"
+          className="absolute right-[5%] md:right-[12%] xl:right-[18%] top-[70%] w-[300px] bg-[#111115] border border-white/5 p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] flex flex-col gap-6 rounded-sm"
         >
           <div className="flex items-center gap-3 text-white">
             <Cpu className="w-8 h-8 text-indigo-400" />
