@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   title: "AgentMesh — MCP-Native Multi-Agent Orchestrator",
   description: "Orchestrate AI agents across MCP servers with real-time Mission Control dashboard.",
   icons: {
-    icon: "/agentmesh_logo.png",
+    icon: "/agentmesh_logo.png?v=2",
   },
 };
 
