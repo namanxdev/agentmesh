@@ -139,15 +139,82 @@ def create_app(
         }
 
     @app.post("/api/workflows/run")
-    async def run_workflow(request: WorkflowRunRequest):
+    async def run_workflow(
+        request: WorkflowRunRequest,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
         defn = workflow_definitions.get(request.workflow_name)
         if defn is None:
             raise HTTPException(
                 status_code=404, detail=f"Workflow '{request.workflow_name}' not found."
             )
 
+        # Fetch and decrypt the user's own API keys
+        from backend.crypto import decrypt
+        from backend.llm.multi import MultiProvider
+
+        result = await db.execute(
+            text("SELECT provider, encrypted_key FROM api_keys WHERE user_id = :uid"),
+            {"uid": user_id},
+        )
+        rows = result.fetchall()
+        if not rows:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "no_keys",
+                    "message": "No API keys saved. Add your keys in Settings.",
+                },
+            )
+
+        providers: dict[str, BaseLLMProvider] = {}
+        for row in rows:
+            try:
+                api_key = decrypt(row.encrypted_key)
+            except Exception:
+                _log.warning("workflow run: failed to decrypt key for provider '%s' (user %s)", row.provider, user_id)
+                continue
+            _log.info("workflow run: loaded %s key from DB for user %s (prefix: %s...)", row.provider, user_id, api_key[:8])
+            if row.provider == "gemini":
+                from backend.llm.gemini import GeminiProvider
+                providers["gemini"] = GeminiProvider(api_key=api_key)
+            elif row.provider == "groq":
+                from backend.llm.groq import GroqProvider
+                providers["groq"] = GroqProvider(api_key=api_key)
+            elif row.provider == "openai":
+                from backend.llm.openai_provider import OpenAIProvider
+                providers["openai"] = OpenAIProvider(api_key=api_key)
+
+        if not providers:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "no_keys",
+                    "message": "API keys could not be read. Please re-add your keys in Settings.",
+                },
+            )
+
+        user_llm = MultiProvider(providers)
+
+        # Build fresh per-request agents using the user's provider
+        from backend.agents.base import Agent
+
+        agent_configs = {a.config.name: a.config for a in agent_registry.list_all()}
+        agents: dict[str, Agent] = {}
+        for name in defn["agents"]:
+            config = agent_configs.get(name)
+            if config is None:
+                raise HTTPException(status_code=500, detail=f"Agent config '{name}' not found.")
+            agent = Agent(config=config, llm_provider=user_llm, event_bus=event_bus)
+            for server_name in config.mcp_servers:
+                try:
+                    agent.register_mcp_client(server_name, mcp_registry.get_client(server_name))
+                except KeyError:
+                    pass
+            agents[name] = agent
+
         workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
-        agents = {name: agent_registry.get(name) for name in defn["agents"]}
 
         orchestrator = WorkflowOrchestrator(
             agents=agents,

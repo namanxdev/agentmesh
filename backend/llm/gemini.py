@@ -1,7 +1,14 @@
+import asyncio
+import random
+
 from google import genai
 from google.genai import types
 
 from .base import BaseLLMProvider, LLMResponse
+
+# Base delays between retries on 429. Jitter added at runtime to prevent
+# synchronized retries across concurrent agents in a workflow.
+_RETRY_DELAYS = [8, 20, 45, 60]
 
 
 class GeminiProvider(BaseLLMProvider):
@@ -18,16 +25,28 @@ class GeminiProvider(BaseLLMProvider):
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> LLMResponse:
-        response = await self._client.aio.models.generate_content(
-            model=model,
-            contents=self._format_messages(messages),
-            config=types.GenerateContentConfig(
-                temperature=temperature,
-                max_output_tokens=max_tokens,
-                tools=self._format_tools(tools) if tools else None,
-            ),
-        )
-        return self._parse_response(response)
+        last_exc = None
+        for attempt, delay in enumerate([0] + _RETRY_DELAYS):
+            if delay:
+                await asyncio.sleep(delay + random.uniform(0, delay * 0.3))
+            try:
+                response = await self._client.aio.models.generate_content(
+                    model=model,
+                    contents=self._format_messages(messages),
+                    config=types.GenerateContentConfig(
+                        temperature=temperature,
+                        max_output_tokens=max_tokens,
+                        tools=self._format_tools(tools) if tools else None,
+                    ),
+                )
+                return self._parse_response(response)
+            except Exception as exc:
+                # Retry on quota/rate-limit errors (429 RESOURCE_EXHAUSTED)
+                if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
+                    last_exc = exc
+                    continue
+                raise
+        raise last_exc
 
     def _format_messages(self, messages: list[dict]) -> list[types.Content]:
         result = []
