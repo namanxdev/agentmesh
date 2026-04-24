@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { CheckCircle2, Circle, Clock, MessageSquare, MoreHorizontal, User, Zap } from "lucide-react";
+import { Circle, Clock, MessageSquare, MoreHorizontal, Zap } from "lucide-react";
 
 export default function LinearWorkflow() {
   const containerRef = useRef<HTMLDivElement>(null);

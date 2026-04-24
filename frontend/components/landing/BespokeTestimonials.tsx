@@ -3,7 +3,7 @@
 import React, { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { Syne } from "next/font/google";
-import { BrainCircuit, Cpu, ShieldAlert, Sparkles, Workflow } from "lucide-react";
+import { BrainCircuit, Cpu, Workflow } from "lucide-react";
 
 const syne = Syne({ subsets: ["latin"], weight: ["800"] });
 
@@ -71,7 +71,7 @@ export default function BespokeTestimonials() {
             <span className="font-black text-xl tracking-tight">ORCHESTRATOR</span>
           </div>
           <p className="text-sm text-neutral-300 leading-relaxed font-medium">
-            "AgentMesh does such incredible and thoughtful routing. I have been coordinating agents for years and have never been more impressed with a pipeline runner."
+            &quot;AgentMesh does such incredible and thoughtful routing. I have been coordinating agents for years and have never been more impressed with a pipeline runner.&quot;
           </p>
           <div className="mt-4 flex flex-col">
             <span className="text-xs font-bold text-neutral-500 tracking-wider uppercase">ARCHITECT NODE</span>
@@ -89,7 +89,7 @@ export default function BespokeTestimonials() {
             <span className="font-black text-xl tracking-tight">SYNAPSE</span>
           </div>
           <p className="text-sm text-neutral-300 leading-relaxed font-medium">
-            "I've been very impressed with how the mesh has worked quickly to immerse itself into the narrative of our complicated suite of products and solutions. Their willingness to collaborate in agent-space has allowed us to explore innovative execution..."
+            &quot;I&apos;ve been very impressed with how the mesh has worked quickly to immerse itself into the narrative of our complicated suite of products and solutions. Their willingness to collaborate in agent-space has allowed us to explore innovative execution...&quot;
           </p>
           <div className="mt-4 flex flex-col">
             <span className="text-xs font-bold text-neutral-500 tracking-wider uppercase">BUILDER AGENT</span>
@@ -107,7 +107,7 @@ export default function BespokeTestimonials() {
             <span className="font-black text-xl tracking-tight">RUNTIME</span>
           </div>
           <p className="text-sm text-neutral-300 leading-relaxed font-medium">
-            "The entire network provides exceptional value. AgentMesh is shaping our architecture's dedication to quality and pushing for experiences that makes the codebase feel like we have a full creative engineering team again."
+            &quot;The entire network provides exceptional value. AgentMesh is shaping our architecture&apos;s dedication to quality and pushing for experiences that makes the codebase feel like we have a full creative engineering team again.&quot;
           </p>
           <div className="mt-4 flex flex-col">
             <span className="text-xs font-bold text-neutral-500 tracking-wider uppercase">SYSTEM RUNTIME</span>

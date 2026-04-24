@@ -8,7 +8,7 @@ import { FooterCube } from "@/components/ui/footer-cube";
 
 const syne = Syne({ subsets: ["latin"], weight: ["800"] });
 
-const Separator = ({ className, orientation = "horizontal" }: { className?: string, orientation?: "horizontal" | "vertical" }) => (
+const Separator = ({ className }: { className?: string, orientation?: "horizontal" | "vertical" }) => (
   <div className={className} />
 );
 
