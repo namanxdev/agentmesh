@@ -102,7 +102,15 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
             </div>
 
             <button
-              onClick={async () => { await listPipelines(); togglePipelinesDrawer(); setIsOpen(false); }}
+              onClick={async () => {
+                try {
+                  await listPipelines();
+                  togglePipelinesDrawer();
+                  setIsOpen(false);
+                } catch {
+                  toast.error("Failed to load pipelines");
+                }
+              }}
               className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-white/[0.04] transition-all duration-200 z-10 hover:-translate-y-[1px] active:translate-y-0"
             >
               <FolderOpen className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />

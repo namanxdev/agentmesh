@@ -1,6 +1,7 @@
 import logging
 import time
 import uuid
+from collections import deque
 
 from fastapi import WebSocket
 
@@ -12,16 +13,22 @@ class EventBus:
 
     def __init__(self, buffer_size: int = 100):
         self._subscribers: list[WebSocket] = []
-        self._event_buffer: list[dict] = []
+        self._event_buffer: deque[dict] = deque(maxlen=buffer_size)
         self._buffer_size = buffer_size
+
+    async def replay(self, ws: WebSocket):
+        """Send the buffered events to a single socket."""
+        # Iterate over a snapshot so a concurrent emit mid-replay can't mutate
+        # the deque during iteration.
+        for event in list(self._event_buffer):
+            await ws.send_json(event)
 
     async def subscribe(self, ws: WebSocket):
         """Accept connection and replay buffered events."""
         await ws.accept()
         self._subscribers.append(ws)
         try:
-            for event in self._event_buffer:
-                await ws.send_json(event)
+            await self.replay(ws)
         except Exception as e:
             _log.warning("Error replaying events to new subscriber: %s", e)
             if ws in self._subscribers:
@@ -38,8 +45,6 @@ class EventBus:
         event.setdefault("timestamp", time.time())
 
         self._event_buffer.append(event)
-        if len(self._event_buffer) > self._buffer_size:
-            self._event_buffer.pop(0)
 
         disconnected = []
         for ws in self._subscribers:

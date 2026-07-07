@@ -357,41 +357,37 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
       if (!res.ok) throw new Error("Save failed");
       const data = await res.json();
       set({ currentPipelineId: data.id, isSaving: false });
-    } catch {
+    } catch (err) {
       set({ isSaving: false });
+      throw err;
     }
   },
 
   listPipelines: async () => {
-    try {
-      const res = await fetch("/api/pipelines");
-      if (!res.ok) return;
-      const data = await res.json();
-      set({ savedPipelines: data.pipelines ?? [] });
-    } catch {}
+    const res = await fetch("/api/pipelines");
+    if (!res.ok) throw new Error(`Failed to list pipelines: ${res.statusText}`);
+    const data = await res.json();
+    set({ savedPipelines: data.pipelines ?? [] });
   },
 
   loadPipeline: async (id: string) => {
-    try {
-      const res = await fetch(`/api/pipelines/${id}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const def = data.definition;
-      set({
-        nodes: normalizePipelineNodes(def.nodes ?? []),
-        edges: normalizePipelineEdges(def.edges ?? []),
-        pipelineName: data.name ?? def.name ?? "Pipeline",
-        currentPipelineId: id,
-        showPipelinesDrawer: false,
-        mode: "build",
-      });
-    } catch {}
+    const res = await fetch(`/api/pipelines/${id}`);
+    if (!res.ok) throw new Error(`Failed to load pipeline: ${res.statusText}`);
+    const data = await res.json();
+    const def = data.definition;
+    set({
+      nodes: normalizePipelineNodes(def.nodes ?? []),
+      edges: normalizePipelineEdges(def.edges ?? []),
+      pipelineName: data.name ?? def.name ?? "Pipeline",
+      currentPipelineId: id,
+      showPipelinesDrawer: false,
+      mode: "build",
+    });
   },
 
   deleteSavedPipeline: async (id: string) => {
-    try {
-      await fetch(`/api/pipelines/${id}`, { method: "DELETE" });
-      set((s) => ({ savedPipelines: s.savedPipelines.filter((p) => p.id !== id) }));
-    } catch {}
+    const res = await fetch(`/api/pipelines/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`Failed to delete pipeline: ${res.statusText}`);
+    set((s) => ({ savedPipelines: s.savedPipelines.filter((p) => p.id !== id) }));
   },
 }));

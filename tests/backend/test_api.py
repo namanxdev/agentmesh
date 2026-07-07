@@ -54,12 +54,21 @@ async def test_get_mcp_servers_empty(app):
 
 @pytest.mark.asyncio
 async def test_run_unknown_workflow_returns_404(app):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        resp = await client.post("/api/workflows/run", json={
-            "workflow_name": "nonexistent",
-            "task": "do something",
-        })
-    assert resp.status_code == 404
+    # The /api/workflows/run endpoint requires authentication.  Override the
+    # dependency so this test can reach the workflow-existence check (which
+    # should 404) without a real database connection.
+    from backend.api.auth_middleware import get_current_user as _auth_dep
+
+    app.dependency_overrides[_auth_dep] = lambda: "test_user_id"
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            resp = await client.post("/api/workflows/run", json={
+                "workflow_name": "nonexistent",
+                "task": "do something",
+            })
+        assert resp.status_code == 404
+    finally:
+        app.dependency_overrides.pop(_auth_dep, None)
 
 
 @pytest.mark.asyncio

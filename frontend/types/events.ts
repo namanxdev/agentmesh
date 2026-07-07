@@ -48,8 +48,8 @@ export interface AgentCompletedEvent extends BaseEvent {
 
 export interface AgentHandoffEvent extends BaseEvent {
   type: "agent.handoff";
-  from: string;
-  to: string;
+  fromAgent: string;
+  toAgent: string;
   reason: string;
 }
 

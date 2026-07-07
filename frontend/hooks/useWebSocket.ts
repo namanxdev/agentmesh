@@ -14,6 +14,11 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectCountRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // True once the effect cleanup has intentionally closed the socket; prevents
+  // the async onclose handler from scheduling a zombie reconnect after unmount.
+  const disposedRef = useRef(false);
+  // Ensures the "connection lost" toast fires only once per disconnect burst.
+  const reconnectNotifiedRef = useRef(false);
 
   // Keep latest callback without re-running effect
   const onMessageRef = useRef(onMessage);
@@ -42,6 +47,7 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
 
       ws.onopen = () => {
         reconnectCountRef.current = 0;
+        reconnectNotifiedRef.current = false;
         setStatusRef.current("connected");
       };
 
@@ -56,6 +62,10 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
       };
 
       ws.onclose = () => {
+        // Unmount cleanup already ran, or a newer socket has superseded this one
+        // (e.g. React StrictMode dev remount): do not touch global status or
+        // schedule a reconnect from this stale socket.
+        if (disposedRef.current || wsRef.current !== ws) return;
         setStatusRef.current("disconnected");
         if (!enabled) return;
         if (reconnectCountRef.current >= 5) {
@@ -63,16 +73,19 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
           toast.error("WebSocket connection failed after 5 retries. Check backend URL.");
           return;
         }
+        if (!reconnectNotifiedRef.current) {
+          reconnectNotifiedRef.current = true;
+          toast.error("Connection lost, reconnecting…", { id: "ws-reconnect" });
+        }
         const delay = Math.min(1000 * Math.pow(2, reconnectCountRef.current), 30_000);
         reconnectCountRef.current += 1;
         setStatusRef.current("reconnecting");
         reconnectTimerRef.current = setTimeout(() => connectRef.current(), delay);
       };
 
-      ws.onerror = () => {
-        setStatusRef.current("error");
-        toast.error("WebSocket connection error");
-      };
+      // onclose always follows onerror and handles status/retry; keep onerror
+      // silent to avoid toast spam and status churn on every failed attempt.
+      ws.onerror = () => {};
     };
   }, [enabled]);
 
@@ -84,11 +97,16 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
 
   useEffect(() => {
     if (!enabled) return;
+    // Fresh (re)mount — allow onclose to manage status/reconnect again.
+    disposedRef.current = false;
     connectRef.current();
 
     const pingId = setInterval(() => send({ command: "ping" }), 30_000);
 
     return () => {
+      // Mark disposed before closing so the async onclose bails out instead of
+      // scheduling a zombie reconnect after unmount.
+      disposedRef.current = true;
       clearInterval(pingId);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       wsRef.current?.close();

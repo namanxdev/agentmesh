@@ -32,7 +32,7 @@ function describeEvent(event: AgentMeshEvent, agentNames: string[]): EventDispla
     case "agent.completed":
       return { label: `${event.agentName} completed`, agentIndex: idx(event.agentName), color: "var(--accent-secondary)" };
     case "agent.handoff":
-      return { label: `${event.from} -> ${event.to} (${event.reason})`, agentIndex: idx(event.from), color: "var(--accent-primary)" };
+      return { label: `${event.fromAgent} -> ${event.toAgent} (${event.reason})`, agentIndex: idx(event.fromAgent), color: "var(--accent-primary)" };
     case "tool.called":
       return { label: `${event.agentName}: ${event.server}.${event.tool}`, agentIndex: idx(event.agentName), color: "var(--status-warning)" };
     case "tool.result":

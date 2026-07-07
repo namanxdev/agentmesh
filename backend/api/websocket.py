@@ -36,8 +36,7 @@ async def websocket_events_handler(ws: WebSocket, event_bus: EventBus):
                 await ws.send_json({"type": "pong"})
             elif cmd == "replay":
                 # Re-send entire buffer
-                for event in event_bus._event_buffer:
-                    await ws.send_json(event)
+                await event_bus.replay(ws)
             # subscribe/unsubscribe are no-ops for MVP (all events broadcast)
 
     except WebSocketDisconnect:

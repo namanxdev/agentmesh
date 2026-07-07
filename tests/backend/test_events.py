@@ -81,6 +81,29 @@ async def test_bus_replays_buffer_on_subscribe():
 
 
 @pytest.mark.asyncio
+async def test_bus_buffer_respects_maxlen():
+    bus = EventBus(buffer_size=3)
+    for i in range(5):
+        await bus.emit({"type": "test", "workflow_id": "wf_1", "i": i})
+    # Only the last 3 events are retained (oldest dropped).
+    assert len(bus._event_buffer) == 3
+    assert [e["i"] for e in bus._event_buffer] == [2, 3, 4]
+
+
+@pytest.mark.asyncio
+async def test_bus_replay_sends_buffer_to_single_socket():
+    bus = EventBus()
+    await bus.emit({"type": "workflow.started", "workflow_id": "wf_1"})
+    await bus.emit({"type": "workflow.completed", "workflow_id": "wf_1"})
+
+    ws = MagicMock()
+    ws.send_json = AsyncMock()
+    await bus.replay(ws)
+
+    assert ws.send_json.call_count == 2
+
+
+@pytest.mark.asyncio
 async def test_bus_removes_disconnected_ws():
     bus = EventBus()
     ws = MagicMock()
