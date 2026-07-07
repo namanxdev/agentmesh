@@ -38,11 +38,33 @@ export function useWebSocket({ onMessage, enabled = true }: UseWebSocketOptions)
   }, [setStatus]);
 
   useEffect(() => {
-    connectRef.current = () => {
+    connectRef.current = async () => {
       if (!enabled) return;
       setStatusRef.current("connecting");
 
-      const ws = new WebSocket(`${WS_BASE}/ws/events`);
+      // Mint a single-use auth ticket via the authenticated Next proxy so the
+      // direct-to-backend socket can be scoped to this user. Tickets are
+      // single-use, so every (re)connect fetches a fresh one. Never block the
+      // connection on ticket failure (dev / logged-out fallback).
+      let ticket: string | null = null;
+      try {
+        const res = await fetch("/api/ws-ticket", { method: "POST" });
+        if (res.ok) {
+          const data = (await res.json()) as { ticket?: string };
+          ticket = data.ticket ?? null;
+        }
+      } catch {
+        // ignore — connect without a ticket
+      }
+
+      // The await above yields to the event loop; if cleanup ran while we were
+      // fetching, bail before constructing a zombie socket after unmount.
+      if (disposedRef.current) return;
+
+      const url = ticket
+        ? `${WS_BASE}/ws/events?ticket=${encodeURIComponent(ticket)}`
+        : `${WS_BASE}/ws/events`;
+      const ws = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {

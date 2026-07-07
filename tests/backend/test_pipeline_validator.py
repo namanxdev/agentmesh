@@ -1,10 +1,10 @@
 import os
+
 import pytest
 
 os.environ["AGENTMESH_ENV"] = "test"
 
-from backend.pipelines.validator import validate_pipeline, pipeline_to_workflow_config
-
+from backend.pipelines.validator import pipeline_to_workflow_config, validate_pipeline
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -277,6 +277,7 @@ class TestPipelineToWorkflowConfig:
 
     def _make_registry_and_bus(self):
         from unittest.mock import MagicMock
+
         from backend.events.bus import EventBus
         mock_llm = MagicMock()
         event_bus = EventBus()
@@ -422,9 +423,10 @@ class TestPipelineAPIEndpoints:
     @pytest.fixture
     def app(self):
         from unittest.mock import MagicMock
+
+        from backend.agents.registry import AgentRegistry
         from backend.api.routes import create_app
         from backend.events.bus import EventBus
-        from backend.agents.registry import AgentRegistry
         from backend.mcp.registry import MCPRegistry
 
         event_bus = EventBus()
@@ -442,7 +444,7 @@ class TestPipelineAPIEndpoints:
 
     @pytest.mark.asyncio
     async def test_validate_valid_pipeline(self, app):
-        from httpx import AsyncClient, ASGITransport
+        from httpx import ASGITransport, AsyncClient
         payload = {
             "name": "test",
             "nodes": [
@@ -460,7 +462,7 @@ class TestPipelineAPIEndpoints:
 
     @pytest.mark.asyncio
     async def test_validate_invalid_pipeline_returns_errors(self, app):
-        from httpx import AsyncClient, ASGITransport
+        from httpx import ASGITransport, AsyncClient
         # No input node, no output node
         payload = {
             "name": "bad",
@@ -478,7 +480,8 @@ class TestPipelineAPIEndpoints:
 
     @pytest.mark.asyncio
     async def test_run_pipeline_invalid_returns_422(self, app):
-        from httpx import AsyncClient, ASGITransport
+        from httpx import ASGITransport, AsyncClient
+
         from backend.api.auth_middleware import get_current_user
         app.dependency_overrides[get_current_user] = lambda: "user-test"
         # Cyclic pipeline

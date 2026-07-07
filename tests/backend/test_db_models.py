@@ -1,14 +1,13 @@
 """Tests that the DB models and engine module import correctly."""
-import pytest
 
 
 def test_engine_module_imports():
-    from backend.db.engine import engine, get_db, Base
+    from backend.db.engine import engine
     assert engine is not None
 
 
 def test_models_import():
-    from backend.db.models import User, ApiKey, MCPServer, Pipeline, PipelineRun
+    from backend.db.models import ApiKey, MCPServer, Pipeline, PipelineRun, User
     assert User.__tablename__ == "users"
     assert ApiKey.__tablename__ == "api_keys"
     assert MCPServer.__tablename__ == "mcp_servers"

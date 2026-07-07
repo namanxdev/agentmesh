@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from backend.llm.base import LLMResponse, BaseLLMProvider
+
+import pytest
+
+from backend.llm.base import BaseLLMProvider, LLMResponse
 
 
 def test_llm_response_no_tool_calls():

@@ -5,6 +5,7 @@ export interface BaseEvent {
   type: string;
   timestamp: number;
   workflow_id: string;
+  seq?: number;
 }
 
 export interface WorkflowStartedEvent extends BaseEvent {

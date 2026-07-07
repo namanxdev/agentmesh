@@ -1,8 +1,11 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from backend.events.models import (
-    AgentActivatedEvent, AgentCompletedEvent, ToolCalledEvent,
-    TokenUsageEvent, WorkflowStartedEvent, WorkflowCompletedEvent,
+    AgentActivatedEvent,
+    ToolCalledEvent,
+    WorkflowCompletedEvent,
 )
 
 
@@ -112,3 +115,86 @@ async def test_bus_removes_disconnected_ws():
     await bus.subscribe(ws)
     await bus.emit({"type": "test", "workflow_id": "wf_1"})
     assert ws not in bus._subscribers
+
+
+def _fake_ws():
+    ws = MagicMock()
+    ws.accept = AsyncMock()
+    ws.send_json = AsyncMock()
+    return ws
+
+
+@pytest.mark.asyncio
+async def test_bus_scopes_owned_events_to_owner():
+    """A bound workflow's events reach only its owner; unowned events broadcast."""
+    bus = EventBus()
+    ws_a = _fake_ws()
+    ws_b = _fake_ws()
+    await bus.subscribe(ws_a, "A")
+    await bus.subscribe(ws_b, "B")
+
+    bus.bind_workflow("wf1", "A")
+
+    # Owned by A → only A receives it.
+    await bus.emit({"type": "agent.activated", "workflow_id": "wf1"})
+    assert ws_a.send_json.call_count == 1
+    assert ws_b.send_json.call_count == 0
+
+    # Unowned / system event → everyone receives it.
+    await bus.emit({"type": "system.notice", "workflow_id": "wf_free"})
+    assert ws_a.send_json.call_count == 2
+    assert ws_b.send_json.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_bus_anonymous_subscriber_sees_only_unowned_events():
+    """A subscriber with user_id None never sees owned-workflow events."""
+    bus = EventBus()
+    ws = _fake_ws()
+    await bus.subscribe(ws, None)
+
+    bus.bind_workflow("wf1", "A")
+    await bus.emit({"type": "agent.activated", "workflow_id": "wf1"})
+    assert ws.send_json.call_count == 0  # owned by A, hidden from anonymous
+
+    await bus.emit({"type": "system.notice", "workflow_id": "wf_free"})
+    assert ws.send_json.call_count == 1  # unowned, visible
+
+
+@pytest.mark.asyncio
+async def test_bus_replay_respects_user_scoping():
+    """replay() applies the same owner-visibility filter as emit()."""
+    bus = EventBus()
+    bus.bind_workflow("wf1", "A")
+    await bus.emit({"type": "agent.activated", "workflow_id": "wf1"})    # owned by A
+    await bus.emit({"type": "system.notice", "workflow_id": "wf_free"})  # unowned
+
+    ws_a = _fake_ws()
+    await bus.replay(ws_a, "A")
+    assert ws_a.send_json.call_count == 2  # owner sees both
+
+    ws_b = _fake_ws()
+    await bus.replay(ws_b, "B")
+    assert ws_b.send_json.call_count == 1  # only the unowned event
+
+    ws_n = _fake_ws()
+    await bus.replay(ws_n, None)
+    assert ws_n.send_json.call_count == 1  # anonymous: only the unowned event
+
+
+@pytest.mark.asyncio
+async def test_bus_stamps_per_workflow_sequence_numbers():
+    """emit() stamps a per-workflow monotonic seq starting at 1, independent
+    per workflow_id."""
+    bus = EventBus()
+    await bus.emit({"type": "a", "workflow_id": "wf1"})
+    await bus.emit({"type": "b", "workflow_id": "wf1"})
+    await bus.emit({"type": "c", "workflow_id": "wf2"})
+    await bus.emit({"type": "d", "workflow_id": "wf1"})
+
+    seqs: dict[str, list[int]] = {}
+    for e in bus._event_buffer:
+        seqs.setdefault(e["workflow_id"], []).append(e["seq"])
+
+    assert seqs["wf1"] == [1, 2, 3]
+    assert seqs["wf2"] == [1]

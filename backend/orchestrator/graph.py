@@ -8,6 +8,19 @@ from .handoff import HandoffRouter
 from .state import WorkflowResult, WorkflowState
 
 
+class ParallelBranchError(RuntimeError):
+    """Raised when one or more parallel branches fail.
+
+    Carries the names of the agents whose branch raised so the workflow error
+    event can report the real failing agent(s) rather than a stringified list
+    of the whole parallel branch.
+    """
+
+    def __init__(self, message: str, failed_agents: list[str]):
+        super().__init__(message)
+        self.failed_agents = failed_agents
+
+
 class WorkflowOrchestrator:
     """
     Runs a multi-agent workflow as a sequential state machine, with optional
@@ -49,6 +62,9 @@ class WorkflowOrchestrator:
         self.workflow_id = workflow_id or f"wf_{uuid.uuid4().hex[:8]}"
         self._max_iterations = max_iterations
         self._timeout = timeout_seconds
+        # Tracks the node currently being processed so run()'s except handler can
+        # report the failing agent even though the loop lives in _execute().
+        self._current_node: str | list[str] = self._start
 
     async def _run_agent(
         self,
@@ -68,6 +84,149 @@ class WorkflowOrchestrator:
         )
         return agent_name, result
 
+    async def _execute(self, state: WorkflowState, start_time: float) -> None:
+        """Drive the state machine from the start node to 'end', mutating `state`.
+
+        Extracted from run() so the whole loop can be wrapped in
+        asyncio.wait_for() — that gives a hard wall-clock timeout which also
+        cancels in-flight provider retry backoffs (asyncio.sleep) instead of
+        only being checked between iterations.
+        """
+        current_node: str | list[str] = self._start
+        iterations = 0
+
+        while current_node != "end":
+            self._current_node = current_node
+            if iterations >= self._max_iterations:
+                raise RuntimeError(
+                    f"Max iterations ({self._max_iterations}) exceeded. "
+                    f"Last agent: {current_node}"
+                )
+            # Cheap per-iteration guard; the hard limit is enforced by
+            # asyncio.wait_for() in run(), which also interrupts mid-agent sleeps.
+            if time.time() - start_time > self._timeout:
+                raise TimeoutError(f"Workflow timeout ({self._timeout}s) exceeded.")
+
+            # --- Parallel fan-out branch ---
+            if isinstance(current_node, list):
+                branch_names = current_node
+
+                await self._event_bus.emit(
+                    {
+                        "type": "agent.parallel_start",
+                        "workflow_id": self.workflow_id,
+                        "agents": branch_names,
+                    }
+                )
+
+                # Each branch gets an independent snapshot of shared_data.
+                # return_exceptions keeps every sibling running to completion
+                # even when one raises, so no orphaned tasks emit events after
+                # the workflow has already reported an error.
+                branch_tasks = [
+                    self._run_agent(name, state, state.shared_data.copy())
+                    for name in branch_names
+                ]
+                results = await asyncio.gather(*branch_tasks, return_exceptions=True)
+
+                # Fan-in: merge successful branches; collect failures to report.
+                # gather preserves order, so pair each result with its branch.
+                join_node: str | list[str] | None = None
+                failed_agents: list[str] = []
+                failure_details: list[str] = []
+                for branch_name, outcome in zip(branch_names, results):
+                    if isinstance(outcome, Exception):
+                        failed_agents.append(branch_name)
+                        failure_details.append(
+                            f"{branch_name} ({type(outcome).__name__}: {outcome})"
+                        )
+                        continue
+
+                    _, result = outcome
+                    state.messages.append(
+                        {
+                            "agent": branch_name,
+                            "content": result.output,
+                            "timestamp": time.time(),
+                        }
+                    )
+                    state.token_usage[branch_name] = result.token_usage
+                    if result.state_updates:
+                        state.shared_data.update(result.state_updates)
+
+                    # Determine join node from the first successful branch's
+                    # next_node.  All branches in a well-formed parallel section
+                    # should point to the same join node.
+                    candidate = self._router.next_node(branch_name, result.routing_key)
+                    if join_node is None:
+                        join_node = candidate
+
+                if failed_agents:
+                    # Skip agent.parallel_complete — workflow.error covers it.
+                    raise ParallelBranchError(
+                        "Parallel agent(s) failed: " + ", ".join(failure_details),
+                        failed_agents,
+                    )
+
+                if not branch_names:
+                    raise ValueError("Parallel branch cannot be empty")
+                state.last_agent = branch_names[-1]
+                state.routing_key = "on_complete"
+
+                await self._event_bus.emit(
+                    {
+                        "type": "agent.parallel_complete",
+                        "workflow_id": self.workflow_id,
+                        "agents": branch_names,
+                        "joinNode": join_node,
+                    }
+                )
+
+                current_node = join_node if join_node is not None else "end"
+
+            # --- Sequential branch (existing behaviour, unchanged) ---
+            else:
+                agent = self._agents.get(current_node)
+                if agent is None:
+                    raise KeyError(f"Agent '{current_node}' not found in workflow.")
+
+                result = await agent.process(
+                    task=state.current_task,
+                    state=state.shared_data,
+                    workflow_id=self.workflow_id,
+                )
+
+                state.messages.append(
+                    {
+                        "agent": current_node,
+                        "content": result.output,
+                        "timestamp": time.time(),
+                    }
+                )
+                state.token_usage[current_node] = result.token_usage
+                state.last_agent = current_node
+                state.routing_key = result.routing_key
+
+                if result.state_updates:
+                    state.shared_data.update(result.state_updates)
+
+                next_node = self._router.next_node(current_node, result.routing_key)
+
+                if next_node != "end":
+                    await self._event_bus.emit(
+                        {
+                            "type": "agent.handoff",
+                            "workflow_id": self.workflow_id,
+                            "fromAgent": current_node,
+                            "toAgent": next_node,
+                            "reason": result.routing_key,
+                        }
+                    )
+
+                current_node = next_node
+
+            iterations += 1
+
     async def run(self, task: str, initial_state: dict | None = None) -> WorkflowResult:
         """Execute the workflow from start node to 'end' node."""
         state = WorkflowState(
@@ -85,120 +244,44 @@ class WorkflowOrchestrator:
         )
 
         start_time = time.time()
-        current_node: str | list[str] = self._start
-        iterations = 0
+        self._current_node = self._start
 
         try:
-            while current_node != "end":
-                if iterations >= self._max_iterations:
-                    raise RuntimeError(
-                        f"Max iterations ({self._max_iterations}) exceeded. "
-                        f"Last agent: {current_node}"
-                    )
-                if time.time() - start_time > self._timeout:
-                    raise TimeoutError(f"Workflow timeout ({self._timeout}s) exceeded.")
+            # Hard wall-clock timeout: wait_for cancels _execute (and any
+            # in-flight retry backoff sleep) once self._timeout elapses.
+            await asyncio.wait_for(self._execute(state, start_time), timeout=self._timeout)
 
-                # --- Parallel fan-out branch ---
-                if isinstance(current_node, list):
-                    branch_names = current_node
-
-                    await self._event_bus.emit(
-                        {
-                            "type": "agent.parallel_start",
-                            "workflow_id": self.workflow_id,
-                            "agents": branch_names,
-                        }
-                    )
-
-                    # Each branch gets an independent snapshot of shared_data.
-                    branch_tasks = [
-                        self._run_agent(name, state, state.shared_data.copy())
-                        for name in branch_names
-                    ]
-                    branch_results = await asyncio.gather(*branch_tasks)
-
-                    # Fan-in: merge results into main state.
-                    join_node: str | list[str] | None = None
-                    for branch_name, result in branch_results:
-                        state.messages.append(
-                            {
-                                "agent": branch_name,
-                                "content": result.output,
-                                "timestamp": time.time(),
-                            }
-                        )
-                        state.token_usage[branch_name] = result.token_usage
-                        if result.state_updates:
-                            state.shared_data.update(result.state_updates)
-
-                        # Determine join node from the first branch's next_node.
-                        # All branches in a well-formed parallel section should
-                        # point to the same join node.
-                        candidate = self._router.next_node(branch_name, result.routing_key)
-                        if join_node is None:
-                            join_node = candidate
-
-                    if not branch_names:
-                        raise ValueError("Parallel branch cannot be empty")
-                    state.last_agent = branch_names[-1]
-                    state.routing_key = "on_complete"
-
-                    await self._event_bus.emit(
-                        {
-                            "type": "agent.parallel_complete",
-                            "workflow_id": self.workflow_id,
-                            "agents": branch_names,
-                            "joinNode": join_node,
-                        }
-                    )
-
-                    current_node = join_node if join_node is not None else "end"
-
-                # --- Sequential branch (existing behaviour, unchanged) ---
-                else:
-                    agent = self._agents.get(current_node)
-                    if agent is None:
-                        raise KeyError(f"Agent '{current_node}' not found in workflow.")
-
-                    result = await agent.process(
-                        task=state.current_task,
-                        state=state.shared_data,
-                        workflow_id=self.workflow_id,
-                    )
-
-                    state.messages.append(
-                        {
-                            "agent": current_node,
-                            "content": result.output,
-                            "timestamp": time.time(),
-                        }
-                    )
-                    state.token_usage[current_node] = result.token_usage
-                    state.last_agent = current_node
-                    state.routing_key = result.routing_key
-
-                    if result.state_updates:
-                        state.shared_data.update(result.state_updates)
-
-                    next_node = self._router.next_node(current_node, result.routing_key)
-
-                    if next_node != "end":
-                        await self._event_bus.emit(
-                            {
-                                "type": "agent.handoff",
-                                "workflow_id": self.workflow_id,
-                                "fromAgent": current_node,
-                                "toAgent": next_node,
-                                "reason": result.routing_key,
-                            }
-                        )
-
-                    current_node = next_node
-
-                iterations += 1
+        except TimeoutError:
+            # asyncio.TimeoutError is TimeoutError on 3.11+; both the wait_for
+            # cancellation and our per-iteration check land here.  str() of an
+            # asyncio TimeoutError is empty, so use an explicit message.  The
+            # last active node is the best-known culprit for the timeout.
+            error_msg = f"Workflow timeout ({self._timeout}s) exceeded."
+            failed = state.last_agent or self._start
+            await self._event_bus.emit(
+                {
+                    "type": "workflow.error",
+                    "workflow_id": self.workflow_id,
+                    "error": error_msg,
+                    "failedAgent": failed,
+                }
+            )
+            return WorkflowResult(
+                state=state,
+                success=False,
+                error=error_msg,
+                total_duration=time.time() - start_time,
+            )
 
         except Exception as exc:
-            failed = current_node if isinstance(current_node, str) else str(current_node)
+            if isinstance(exc, ParallelBranchError):
+                failed = ", ".join(exc.failed_agents)
+            else:
+                failed = (
+                    self._current_node
+                    if isinstance(self._current_node, str)
+                    else str(self._current_node)
+                )
             await self._event_bus.emit(
                 {
                     "type": "workflow.error",

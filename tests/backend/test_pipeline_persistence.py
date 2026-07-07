@@ -1,12 +1,13 @@
 """Tests for pipeline save/load/list/delete, templates, and run history routes."""
 import os
+
 import pytest
 
 os.environ["AGENTMESH_ENV"] = "test"
 
 from unittest.mock import AsyncMock, MagicMock
-from httpx import AsyncClient, ASGITransport
 
+from httpx import ASGITransport, AsyncClient
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -14,9 +15,9 @@ from httpx import AsyncClient, ASGITransport
 
 @pytest.fixture
 def app():
+    from backend.agents.registry import AgentRegistry
     from backend.api.routes import create_app
     from backend.events.bus import EventBus
-    from backend.agents.registry import AgentRegistry
     from backend.mcp.registry import MCPRegistry
 
     event_bus = EventBus()

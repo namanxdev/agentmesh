@@ -123,6 +123,12 @@ def create_app(
     # In-memory run tracking for GET /api/workflows/{workflow_id}
     _runs: dict[str, dict] = {}
 
+    # In-memory single-use WebSocket auth tickets: ticket -> (user_id, expires_at).
+    # The direct-to-backend WebSocket can't carry BFF identity headers, so the
+    # authenticated client mints a short-lived ticket here and presents it on
+    # connect to scope its event stream.
+    _ws_tickets: dict[str, tuple[str, float]] = {}
+
     # -- Workflow endpoints ----------------------------------------------------
 
     @app.get("/api/workflows")
@@ -215,6 +221,7 @@ def create_app(
             agents[name] = agent
 
         workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
+        event_bus.bind_workflow(workflow_id, user_id)
 
         orchestrator = WorkflowOrchestrator(
             agents=agents,
@@ -514,6 +521,7 @@ def create_app(
         task = request.task or config["task"]
 
         workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
+        event_bus.bind_workflow(workflow_id, user_id)
         agents = {a.config.name: agent_reg.get(a.config.name) for a in agent_reg.list_all()}
 
         orchestrator = WorkflowOrchestrator(
@@ -949,6 +957,7 @@ def create_app(
         graph_cfg = config["graph_config"]
 
         workflow_id = f"wf_{uuid.uuid4().hex[:8]}"
+        event_bus.bind_workflow(workflow_id, trigger_row.user_id)
         agents = {a.config.name: agent_reg.get(a.config.name) for a in agent_reg.list_all()}
 
         orchestrator = WorkflowOrchestrator(
@@ -988,11 +997,31 @@ def create_app(
     async def get_me(user_id: str = Depends(get_current_user_dep)):
         return {"user_id": user_id}
 
+    @app.post("/api/ws-ticket")
+    async def create_ws_ticket(user_id: str = Depends(get_current_user_dep)):
+        """Mint a short-lived, single-use ticket the browser presents when
+        opening the (identity-less) WebSocket, so its events can be scoped."""
+        now = time.time()
+        # Prune expired tickets so the store can't grow unbounded.
+        for expired in [t for t, (_, exp) in _ws_tickets.items() if exp <= now]:
+            del _ws_tickets[expired]
+        ticket = secrets.token_urlsafe(32)
+        _ws_tickets[ticket] = (user_id, now + 60.0)
+        return {"ticket": ticket}
+
     # -- WebSocket endpoint ----------------------------------------------------
 
     @app.websocket("/ws/events")
     async def ws_events(ws: WebSocket):
-        await websocket_events_handler(ws, event_bus)
+        # Resolve the optional single-use ticket to a user_id.  No ticket (or an
+        # expired/unknown one) still connects but only ever sees unowned events.
+        ticket = ws.query_params.get("ticket")
+        user_id: str | None = None
+        if ticket:
+            entry = _ws_tickets.pop(ticket, None)  # single-use
+            if entry is not None and entry[1] > time.time():
+                user_id = entry[0]
+        await websocket_events_handler(ws, event_bus, user_id)
 
     return app
 

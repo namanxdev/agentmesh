@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
-from backend.agents.base import AgentConfig, AgentStatus, AgentResult
+
+import pytest
+
+from backend.agents.base import AgentConfig, AgentResult, AgentStatus
 
 
 def test_agent_config_defaults():
@@ -126,7 +128,6 @@ async def test_agent_process_handles_tool_calls():
 
 
 from backend.agents.registry import AgentRegistry
-from backend.agents.base import AgentConfig, Agent, AgentStatus
 
 
 def test_agent_registry_register_and_get():

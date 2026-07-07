@@ -1,19 +1,21 @@
 import os
+
 import pytest
+
 os.environ["AGENTMESH_ENV"] = "test"  # prevent module-level create_default_app() call
 
-from httpx import AsyncClient, ASGITransport
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
+
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture
 def app():
     """Create a test FastAPI app with mocked dependencies."""
+    from backend.agents.registry import AgentRegistry
     from backend.api.routes import create_app
     from backend.events.bus import EventBus
-    from backend.agents.registry import AgentRegistry
     from backend.mcp.registry import MCPRegistry
-    from backend.orchestrator.state import WorkflowState, WorkflowResult
 
     event_bus = EventBus()
     mock_llm = MagicMock()

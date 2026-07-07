@@ -1,5 +1,6 @@
 import pytest
-from backend.orchestrator.state import WorkflowState, WorkflowResult
+
+from backend.orchestrator.state import WorkflowResult, WorkflowState
 
 
 def test_workflow_state_defaults():
@@ -55,8 +56,9 @@ def test_handoff_router_missing_node_raises():
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
+
+from backend.agents.base import AgentConfig, AgentResult
 from backend.orchestrator.graph import WorkflowOrchestrator
-from backend.agents.base import AgentConfig, AgentResult, AgentStatus
 
 
 @pytest.mark.asyncio
@@ -320,6 +322,97 @@ async def test_orchestrator_error_emits_workflow_error_event():
 
     result = await orch.run(task="will error")
     assert result.success is False
+
+    event_types = [c[0][0]["type"] for c in mock_bus.emit.call_args_list]
+    assert "workflow.error" in event_types
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_parallel_branch_failure_reports_failing_agent():
+    """One parallel branch fails, one succeeds: both run to completion, the
+    workflow fails naming the real failing agent (not a stringified list), and
+    the successful branch's output/tokens are merged into state."""
+    good = MagicMock()
+    good.config = AgentConfig(name="B", role="R", system_prompt="S")
+    good.process = AsyncMock(return_value=AgentResult(
+        output="B done", routing_key="on_complete",
+        token_usage={"input": 10, "output": 5},
+    ))
+
+    bad = MagicMock()
+    bad.config = AgentConfig(name="C", role="R", system_prompt="S")
+    bad.process = AsyncMock(side_effect=ValueError("boom"))
+
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    orch = WorkflowOrchestrator(
+        agents={"B": good, "C": bad},
+        graph_config={
+            "start": ["B", "C"],
+            "B": {"on_complete": "end"},
+            "C": {"on_complete": "end"},
+        },
+        event_bus=mock_bus,
+        workflow_id="wf_parallel_fail",
+    )
+
+    result = await orch.run(task="fan out")
+
+    # Both branches ran to completion — no orphaned/cancelled sibling.
+    assert good.process.await_count == 1
+    assert bad.process.await_count == 1
+
+    # Workflow failed, naming the actual failing agent — not "['C']".
+    assert result.success is False
+    error_events = [
+        c[0][0] for c in mock_bus.emit.call_args_list if c[0][0]["type"] == "workflow.error"
+    ]
+    assert len(error_events) == 1
+    assert error_events[0]["failedAgent"] == "C"
+
+    # Successful branch B is merged into state.
+    assert result.state.token_usage["B"] == {"input": 10, "output": 5}
+    assert any(m["agent"] == "B" and "B done" in m["content"] for m in result.state.messages)
+
+    # parallel_complete is skipped when a branch fails (workflow.error covers it).
+    emitted = [c[0][0]["type"] for c in mock_bus.emit.call_args_list]
+    assert "agent.parallel_complete" not in emitted
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_hard_timeout_interrupts_long_agent():
+    """A hard wall-clock timeout cancels an agent mid-sleep and fails the run
+    promptly, well before the agent's own delay would elapse."""
+    import time as _time
+
+    async def slow_process(task, state, workflow_id=""):
+        await asyncio.sleep(5)
+        return AgentResult(output="done", routing_key="on_complete")
+
+    agent = MagicMock()
+    agent.config = AgentConfig(name="Slow", role="R", system_prompt="S")
+    agent.process = slow_process
+
+    mock_bus = MagicMock()
+    mock_bus.emit = AsyncMock()
+
+    orch = WorkflowOrchestrator(
+        agents={"Slow": agent},
+        graph_config={"start": "Slow", "Slow": {"on_complete": "end"}},
+        event_bus=mock_bus,
+        workflow_id="wf_hard_timeout",
+        timeout_seconds=0.1,
+    )
+
+    started = _time.monotonic()
+    result = await orch.run(task="too slow")
+    elapsed = _time.monotonic() - started
+
+    assert result.success is False
+    assert "timeout" in result.error.lower()
+    # Returned well before the agent's 5s sleep would have finished.
+    assert elapsed < 4.0
 
     event_types = [c[0][0]["type"] for c in mock_bus.emit.call_args_list]
     assert "workflow.error" in event_types

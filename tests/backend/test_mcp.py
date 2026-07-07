@@ -1,7 +1,8 @@
-import pytest
-import time
 from unittest.mock import AsyncMock, MagicMock, patch
-from backend.mcp.tools import namespace_tool, format_tool_for_llm, parse_tool_name
+
+import pytest
+
+from backend.mcp.tools import format_tool_for_llm, namespace_tool, parse_tool_name
 
 
 def test_namespace_tool():
@@ -85,7 +86,7 @@ async def test_mcp_client_call_tool_emits_events():
             event_bus=event_bus,
         )
         wrapper._client = mock_client
-        result = await wrapper.call_tool(
+        await wrapper.call_tool(
             agent_name="Fetcher", tool_name="read_file", args={"path": "main.py"},
             workflow_id="wf_1"
         )
