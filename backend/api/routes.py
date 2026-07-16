@@ -220,6 +220,11 @@ def create_app(
     # connect to scope its event stream.
     _ws_tickets: dict[str, tuple[str, float]] = {}
 
+    # Strong references to fire-and-forget run tasks.  asyncio only holds a weak
+    # reference to tasks, so without this set a task can be GC'd mid-run and its
+    # exception silently swallowed.  Each task removes itself on completion.
+    _background_tasks: set = set()
+
     # -- Workflow endpoints ----------------------------------------------------
 
     @app.get("/api/workflows")
@@ -335,21 +340,36 @@ def create_app(
         _tcc_obs.current_user_id.set(user_id)
 
         async def _run():
-            result = await orchestrator.run(
-                task=request.task,
-                initial_state=request.initial_state,
-            )
-            _runs[workflow_id].update(
-                {
-                    "status": "completed" if result.success else "error",
-                    "result": result.state.messages[-1] if result.state.messages else {},
-                    "token_usage": result.state.token_usage,
-                    "duration_seconds": result.total_duration,
-                    "error": result.error,
-                }
-            )
+            try:
+                result = await orchestrator.run(
+                    task=request.task,
+                    initial_state=request.initial_state,
+                )
+                _runs[workflow_id].update(
+                    {
+                        "status": "completed" if result.success else "error",
+                        "result": result.state.messages[-1] if result.state.messages else {},
+                        "token_usage": result.state.token_usage,
+                        "duration_seconds": result.total_duration,
+                        "error": result.error,
+                    }
+                )
+            except Exception as exc:
+                err_msg = f"{type(exc).__name__}: {exc}"
+                _log.exception("Workflow run %s raised an unhandled exception", workflow_id)
+                _runs[workflow_id].update({"status": "error", "error": err_msg})
+                await event_bus.emit(
+                    {
+                        "type": "workflow.error",
+                        "workflow_id": workflow_id,
+                        "error": err_msg,
+                        "failedAgent": "orchestrator",
+                    }
+                )
 
-        asyncio.create_task(_run())
+        task = asyncio.create_task(_run())
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
         return {
             "workflow_id": workflow_id,
@@ -572,6 +592,8 @@ def create_app(
 
         # Pre-validate that each llm_agent node's model has a matching saved key.
         # This surfaces "wrong provider" errors immediately rather than mid-execution.
+        _PROVIDER_DISPLAY = {"gemini": "Gemini", "openai": "OpenAI", "groq": "Groq"}
+
         def _required_family(model: str) -> str:
             m = model.lower()
             if m.startswith("gemini"):
@@ -587,8 +609,9 @@ def create_app(
                 family = _required_family(model)
                 if family not in providers:
                     agent_name = n["config"].get("name", n["id"])
+                    display = _PROVIDER_DISPLAY.get(family, family.capitalize())
                     missing.append(
-                        f"'{agent_name}' needs a {family.capitalize()} key (model: {model})"
+                        f"'{agent_name}' needs a {display} key (model: {model})"
                     )
 
         if missing:
@@ -666,43 +689,73 @@ def create_app(
         _tcc_obs.current_user_id.set(user_id)
 
         async def _run():
-            result = await orchestrator.run(
-                task=task,
-                initial_state=request.initial_state,
-            )
-            status = "completed" if result.success else "error"
-            _runs[workflow_id].update(
-                {
-                    "status": status,
-                    "result": result.state.messages[-1] if result.state.messages else {},
-                    "token_usage": result.state.token_usage,
-                    "duration_seconds": result.total_duration,
-                    "error": result.error,
-                }
-            )
-            # Write final status, tokens, and duration back to DB
-            if pid:
-                try:
-                    async with _ASL() as run_db:
-                        await run_db.execute(
-                            text(
-                                "UPDATE pipeline_runs"
-                                " SET status=:status, total_tokens=:tokens,"
-                                " duration_seconds=:dur"
-                                " WHERE id=:rid"
-                            ),
-                            {
-                                "status": status,
-                                "tokens": result.total_tokens,
-                                "dur": result.total_duration,
-                                "rid": run_db_id,
-                            },
-                        )
-                        await run_db.commit()
-                except Exception as e:
-                    _log.warning("Non-critical error updating pipeline run status: %s", e)
+            try:
+                result = await orchestrator.run(
+                    task=task,
+                    initial_state=request.initial_state,
+                )
+                status = "completed" if result.success else "error"
+                _runs[workflow_id].update(
+                    {
+                        "status": status,
+                        "result": result.state.messages[-1] if result.state.messages else {},
+                        "token_usage": result.state.token_usage,
+                        "duration_seconds": result.total_duration,
+                        "error": result.error,
+                    }
+                )
+                # Write final status, tokens, and duration back to DB
+                if pid:
+                    try:
+                        async with _ASL() as run_db:
+                            await run_db.execute(
+                                text(
+                                    "UPDATE pipeline_runs"
+                                    " SET status=:status, total_tokens=:tokens,"
+                                    " duration_seconds=:dur"
+                                    " WHERE id=:rid"
+                                ),
+                                {
+                                    "status": status,
+                                    "tokens": result.total_tokens,
+                                    "dur": result.total_duration,
+                                    "rid": run_db_id,
+                                },
+                            )
+                            await run_db.commit()
+                    except Exception as e:
+                        _log.warning("Non-critical error updating pipeline run status: %s", e)
+            except Exception as exc:
+                err_msg = f"{type(exc).__name__}: {exc}"
+                _log.exception("Pipeline run %s raised an unhandled exception", workflow_id)
+                _runs[workflow_id].update({"status": "error", "error": err_msg})
+                await event_bus.emit(
+                    {
+                        "type": "workflow.error",
+                        "workflow_id": workflow_id,
+                        "error": err_msg,
+                        "failedAgent": "orchestrator",
+                    }
+                )
+                if pid:
+                    try:
+                        async with _ASL() as run_db:
+                            await run_db.execute(
+                                text(
+                                    "UPDATE pipeline_runs SET status='error'"
+                                    " WHERE id=:rid"
+                                ),
+                                {"rid": run_db_id},
+                            )
+                            await run_db.commit()
+                    except Exception as e:
+                        _log.warning("Non-critical error marking pipeline run as error: %s", e)
+            finally:
+                await run_mcp_registry.disconnect_all()
 
-        asyncio.create_task(_run())
+        bg_task = asyncio.create_task(_run())
+        _background_tasks.add(bg_task)
+        bg_task.add_done_callback(_background_tasks.discard)
 
         return {
             "workflow_id": workflow_id,
@@ -1086,18 +1139,35 @@ def create_app(
         _tcc_obs.current_user_id.set(trigger_row.user_id)
 
         async def _run():
-            result = await orchestrator.run(task=task, initial_state={})
-            _runs[workflow_id].update(
-                {
-                    "status": "completed" if result.success else "error",
-                    "result": result.state.messages[-1] if result.state.messages else {},
-                    "token_usage": result.state.token_usage,
-                    "duration_seconds": result.total_duration,
-                    "error": result.error,
-                }
-            )
+            try:
+                result = await orchestrator.run(task=task, initial_state={})
+                _runs[workflow_id].update(
+                    {
+                        "status": "completed" if result.success else "error",
+                        "result": result.state.messages[-1] if result.state.messages else {},
+                        "token_usage": result.state.token_usage,
+                        "duration_seconds": result.total_duration,
+                        "error": result.error,
+                    }
+                )
+            except Exception as exc:
+                err_msg = f"{type(exc).__name__}: {exc}"
+                _log.exception("Webhook run %s raised an unhandled exception", workflow_id)
+                _runs[workflow_id].update({"status": "error", "error": err_msg})
+                await event_bus.emit(
+                    {
+                        "type": "workflow.error",
+                        "workflow_id": workflow_id,
+                        "error": err_msg,
+                        "failedAgent": "orchestrator",
+                    }
+                )
+            finally:
+                await run_mcp_registry.disconnect_all()
 
-        asyncio.create_task(_run())
+        wh_task = asyncio.create_task(_run())
+        _background_tasks.add(wh_task)
+        wh_task.add_done_callback(_background_tasks.discard)
 
         return {"workflow_id": workflow_id, "status": "started"}
 

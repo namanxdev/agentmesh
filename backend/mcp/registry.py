@@ -74,6 +74,23 @@ class MCPRegistry:
         )
         logger.info("MCP: startup complete")
 
+    async def disconnect_all(self) -> None:
+        """Release all registered clients.
+
+        MCPClientWrapper uses per-call transports (no persistent connection is
+        held open after ``connect()`` completes its tool-discovery handshake).
+        This method resets the connected flag on every client so stale references
+        can't be re-used, and clears the internal maps so the registry can be
+        safely garbage-collected after a run finishes.
+        """
+        count = len(self._clients)
+        for client in self._clients.values():
+            client._connected = False
+            client._tool_definitions = []
+        self._clients.clear()
+        self._configs.clear()
+        logger.debug("MCP: registry disconnected (%d clients released)", count)
+
     def get_server_info(self) -> dict:
         """Return status info for all registered servers (for REST API)."""
         return {

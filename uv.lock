@@ -15,6 +15,7 @@ dependencies = [
     { name = "alembic" },
     { name = "anyio" },
     { name = "asyncpg" },
+    { name = "contextcompany" },
     { name = "cryptography" },
     { name = "fastapi" },
     { name = "fastmcp" },
@@ -44,6 +45,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
     { name = "anyio", specifier = ">=4.0.0" },
     { name = "asyncpg", specifier = ">=0.29" },
+    { name = "contextcompany", specifier = ">=1.9.0" },
     { name = "cryptography", specifier = ">=42.0" },
     { name = "fastapi", specifier = ">=0.110.0" },
     { name = "fastmcp", specifier = ">=1.0.0" },
@@ -430,6 +432,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697, upload-time = "2022-10-25T02:36:22.414Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
+]
+
+[[package]]
+name = "contextcompany"
+version = "1.9.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/50/da/95505e1f0bb9696bf05fe2aa541da965b3f0e1c90be7835d933ba8c6471f/contextcompany-1.9.1.tar.gz", hash = "sha256:3d11fea2f1ad06c07aaadaf9525f7fc5c28fbf56e6cb68dfe5f477d074ec65c8", size = 20721, upload-time = "2026-07-16T00:42:49.403Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/f5/f8893d76a271a0e3a34b362b1d807238a644580713ed54c95339fb9d9688/contextcompany-1.9.1-py3-none-any.whl", hash = "sha256:2d181550550aada2a16c27c494a3ca842f64c46e536dc99fd4c17cb04e952daa", size = 28368, upload-time = "2026-07-16T00:42:48.369Z" },
 ]
 
 [[package]]
