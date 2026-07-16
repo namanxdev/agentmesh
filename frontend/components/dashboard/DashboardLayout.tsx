@@ -188,7 +188,7 @@ export function DashboardLayout() {
                     </PanelButton>
                     <div className="flex flex-col items-center gap-4 text-neutral-500">
                       <Blocks className="w-5 h-5 opacity-50" />
-                      <div className="w-px h-12 bg-gradient-to-b from-white/10 to-transparent" />
+                      <div className="w-px h-12 bg-neutral-800" />
                       <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-mono tracking-[0.3em] font-medium text-neutral-400/70 whitespace-nowrap">
                         {mode === "build" ? "COMPONENTS" : "AGENTS"}
                       </span>
@@ -334,7 +334,7 @@ export function DashboardLayout() {
                     </PanelButton>
                     <div className="flex flex-col items-center gap-4 text-neutral-500">
                       <FileJson className="w-5 h-5 opacity-50" />
-                      <div className="w-px h-12 bg-gradient-to-b from-white/10 to-transparent" />
+                      <div className="w-px h-12 bg-neutral-800" />
                       <span className="[writing-mode:vertical-rl] text-[11px] font-mono tracking-[0.3em] font-medium text-neutral-400/70 whitespace-nowrap">
                         {mode === "build" ? "INSPECTOR" : "TOOL CALLS"}
                       </span>
@@ -396,44 +396,42 @@ export function DashboardLayout() {
             className="fixed inset-0 z-[100] flex items-center justify-center p-6 isolate"
           >
             {/* Backdrop */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-xl"
-              onClick={togglePipelinesDrawer} 
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={togglePipelinesDrawer}
             />
-            
+
             {/* Modal */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 30, stiffness: 400 }}
-              className="relative w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-[24px] shadow-[0_0_100px_rgba(0,0,0,0.8)] ring-1 ring-white/5 overflow-hidden flex flex-col max-h-[85vh] z-10"
+              className="relative w-full max-w-2xl bg-neutral-950 border border-neutral-800 rounded-lg shadow-sm overflow-hidden flex flex-col max-h-[85vh] z-10"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
-              
               {/* Modal Header */}
-              <div className="px-8 py-6 border-b border-white/[0.06] bg-black/50 backdrop-blur-md flex flex-col gap-2 relative z-10">
-                <h2 className="text-2xl font-semibold tracking-tight text-white flex items-center gap-3">
-                  <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl">
-                    <FolderOpen className="w-5 h-5" />
+              <div className="px-6 py-5 border-b border-neutral-800 flex flex-col gap-1.5">
+                <h2 className="text-lg font-semibold tracking-tight text-neutral-100 flex items-center gap-3">
+                  <div className="rounded-md border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-400">
+                    <FolderOpen className="w-4 h-4" />
                   </div>
                   My Pipelines
                 </h2>
-                <p className="text-sm text-neutral-400 font-mono">Manage your saved configurations and orchestrations.</p>
+                <p className="text-xs text-neutral-500 font-mono">Manage your saved configurations and orchestrations.</p>
               </div>
-              
+
               {/* Modal Content */}
-              <div className="p-8 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-4 relative z-10">
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-3">
                 {savedPipelines.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-20 h-20 rounded-2xl border border-dashed border-white/10 flex items-center justify-center mb-6 bg-white/[0.02] text-neutral-600">
-                      <LayoutTemplate className="w-8 h-8 opacity-50" />
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-16 h-16 rounded-lg border border-dashed border-neutral-700 flex items-center justify-center mb-5 bg-neutral-900 text-neutral-600">
+                      <LayoutTemplate className="w-7 h-7 opacity-50" />
                     </div>
-                    <p className="text-neutral-300 font-medium text-lg mb-2">No pipelines yet</p>
+                    <p className="text-neutral-300 font-medium text-base mb-1.5">No pipelines yet</p>
                     <p className="text-neutral-500 text-sm max-w-xs text-center">Save a configuration from the canvas to see it here.</p>
                   </div>
                 ) : (
@@ -442,11 +440,11 @@ export function DashboardLayout() {
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       key={p.id}
-                      className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all shadow-lg shadow-black/20"
+                      className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-md border border-neutral-800 bg-neutral-900 hover:bg-neutral-900 hover:border-neutral-700 transition-all"
                     >
                       <div>
-                        <div className="font-semibold text-neutral-100 text-lg group-hover:text-indigo-300 transition-colors">{p.name}</div>
-                        <div className="text-xs uppercase tracking-[0.15em] text-neutral-500 font-mono mt-2 flex items-center gap-2">
+                        <div className="font-semibold text-neutral-100 text-sm">{p.name}</div>
+                        <div className="text-xs uppercase tracking-[0.15em] text-neutral-500 font-mono mt-1.5 flex items-center gap-2">
                           <Activity className="w-3 h-3 text-emerald-500/70" />
                           Updated {p.updated_at?.slice(0, 10) || "Unknown"}
                         </div>
@@ -462,7 +460,7 @@ export function DashboardLayout() {
                               toast.error("Failed to load pipeline");
                             }
                           }}
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-500 text-white hover:bg-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]"
+                          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md bg-indigo-500 text-white hover:bg-indigo-400 transition-colors"
                         >
                           <Check className="w-4 h-4" /> Load
                         </button>
@@ -475,7 +473,7 @@ export function DashboardLayout() {
                               toast.error("Failed to delete pipeline");
                             }
                           }}
-                          className="p-2.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20"
+                          className="p-2 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all border border-transparent hover:border-red-500/20"
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />

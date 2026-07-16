@@ -48,7 +48,7 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1 px-[9px] h-8 rounded-lg text-[11px] font-mono tracking-widest font-medium text-neutral-400 hover:text-white bg-transparent hover:bg-white/[0.04] transition-all duration-300 flex items-center justify-center gap-2 group active:scale-95"
+        className="p-1 px-[9px] h-8 rounded-lg text-[11px] font-mono tracking-widest font-medium text-neutral-400 hover:text-white bg-transparent hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center gap-2 group active:scale-95"
       >
         <span className="hidden md:block">MENU</span>
       </button>
@@ -60,7 +60,7 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
             animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, scale: 0.96, y: 4, filter: "blur(2px)" }}
             transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.5 }}
-            className="absolute right-0 top-full mt-3 w-56 bg-[#0a0a0a]/95 backdrop-blur-3xl border border-white/[0.06] rounded-xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] overflow-hidden z-[200] flex flex-col p-1.5"
+            className="absolute right-0 top-full mt-3 w-56 bg-neutral-950 border border-neutral-800 rounded-lg shadow-sm overflow-hidden z-[200] flex flex-col p-1.5"
             style={{ transformOrigin: "top right" }}
           >
             <div className="px-3 py-2 border-b border-white/[0.04] mb-1 z-10 flex items-center justify-between">
@@ -78,7 +78,7 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
                 }
               }}
               disabled={isSaving || mode === "run"}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-white/[0.04] transition-all duration-200 disabled:opacity-50 z-10 hover:-translate-y-[1px] active:translate-y-0"
+              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 disabled:opacity-50 z-10 hover:-translate-y-[1px] active:translate-y-0"
             >
               {isSaving ? <Activity className="w-3.5 h-3.5 animate-spin text-neutral-400" /> : currentPipelineId ? <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" /> : <Save className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />}
               {isSaving ? "Saving..." : currentPipelineId ? "Saved" : "Save Pipeline"}
@@ -88,14 +88,14 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
               <button
                 onClick={() => { handleValidate(); setIsOpen(false); }}
                 disabled={isValidating}
-                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-white/[0.04] transition-all duration-200 disabled:opacity-50 z-10 hover:-translate-y-[1px] active:translate-y-0"
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 disabled:opacity-50 z-10 hover:-translate-y-[1px] active:translate-y-0"
               >
                 {isValidating ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />}
                 {isValidating ? "Checking..." : "Validate Workflow"}
               </button>
             )}
 
-            <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent my-1 z-10" />
+            <div className="h-[1px] w-full bg-neutral-800 my-1 z-10" />
 
             <div className="px-3 py-2 border-b border-white/[0.04] mb-1 z-10 mt-1 flex items-center">
               <span className="text-[9px] uppercase font-mono font-medium tracking-[0.2em] text-neutral-500">Workspace</span>
@@ -111,7 +111,7 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
                   toast.error("Failed to load pipelines");
                 }
               }}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-white/[0.04] transition-all duration-200 z-10 hover:-translate-y-[1px] active:translate-y-0"
+              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 z-10 hover:-translate-y-[1px] active:translate-y-0"
             >
               <FolderOpen className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />
               My Pipelines
@@ -120,7 +120,7 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
             <Link
               href="/settings"
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-white/[0.04] transition-all duration-200 z-10 hover:-translate-y-[1px] active:translate-y-0"
+              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 z-10 hover:-translate-y-[1px] active:translate-y-0"
             >
               <Settings className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />
               Settings
@@ -232,10 +232,10 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
         : "bg-red-500";
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 w-full text-sm font-sans z-50 relative bg-transparent rounded-[20px] transition-all">
+    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 w-full text-sm font-sans z-50 relative bg-transparent rounded-lg transition-all">
       {/* Left Area: Logo & Name Segment */}
       <div className="flex items-center gap-5 lg:gap-6 min-w-0 flex-1 w-full lg:w-auto justify-start">
-        <Link href="/" className="group flex items-center justify-center p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.04] transition-all duration-300 ease-out active:scale-95 shrink-0" title="Back to Home">
+        <Link href="/" className="group flex items-center justify-center p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all duration-300 ease-out active:scale-95 shrink-0" title="Back to Home">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-300" />
         </Link>
         
@@ -258,7 +258,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
         {/* Runtime Indicator */}
         {mode === "run" && (
           <div className="flex items-center px-2.5 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/[0.03] gap-2 shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             <span className="text-[10px] uppercase font-mono font-medium tracking-widest text-emerald-500/80 hidden sm:block">
               Live
             </span>
@@ -295,7 +295,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
         {/* Status Indicators */}
         {connectionStatus !== "connected" && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 bg-transparent shrink-0">
-            <span className={`h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor] ${connectionColor}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${connectionColor}`} />
             <span className="text-[10px] uppercase font-mono font-medium tracking-widest text-neutral-500 hidden sm:block">{connectionStatus}</span>
           </div>
         )}
@@ -331,7 +331,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
             {mode === "run" && (
               <button
                 onClick={() => { setMode("build"); setError(null); }}
-                className="px-4 py-1.5 rounded-lg text-[11px] font-mono font-medium text-neutral-400 hover:text-white bg-transparent hover:bg-white/[0.04] transition-all uppercase tracking-widest hidden sm:block active:scale-95"
+                className="px-4 py-1.5 rounded-lg text-[11px] font-mono font-medium text-neutral-400 hover:text-white bg-transparent hover:bg-neutral-900 transition-all uppercase tracking-widest hidden sm:block active:scale-95"
               >
                 End Run
               </button>
@@ -371,7 +371,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
                 onClick={() => setShowTaskInput(false)}
               />
               <div className="fixed inset-0 flex items-center justify-center pointer-events-none p-4">
@@ -380,7 +380,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98, y: 10 }}
                   transition={{ type: "spring", damping: 30, stiffness: 400 }}
-                  className="w-full max-w-[480px] bg-[#0a0a0a]/90 backdrop-blur-[40px] border border-white/[0.08] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden pointer-events-auto flex flex-col relative"
+                  className="w-full max-w-[480px] bg-neutral-950 border border-neutral-800 shadow-sm rounded-lg overflow-hidden pointer-events-auto flex flex-col relative"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="p-7 flex flex-col gap-6 z-10">
@@ -402,7 +402,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
                             }
                           }}
                           placeholder="What needs to be done?"
-                          className="relative w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 outline-none text-white text-[15px] placeholder:text-neutral-500 min-h-[140px] resize-none focus:border-white/20 focus:bg-white/[0.05] transition-all hover:border-white/[0.12]"
+                          className="relative w-full bg-neutral-900 border border-neutral-800 rounded-md px-4 py-3 outline-none text-white text-[15px] placeholder:text-neutral-500 min-h-[140px] resize-none focus:border-neutral-700 transition-all hover:border-neutral-700"
                         />
                       </div>
                     </div>
@@ -410,7 +410,7 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
                     <div className="flex items-center justify-end gap-2 pt-2">
                       <button
                         onClick={() => setShowTaskInput(false)}
-                        className="px-5 py-2.5 rounded-lg text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-white/[0.04] transition-all"
+                        className="px-5 py-2.5 rounded-lg text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all"
                       >
                         Cancel
                       </button>

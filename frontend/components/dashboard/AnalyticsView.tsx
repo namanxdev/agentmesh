@@ -63,9 +63,9 @@ export function AnalyticsView() {
   return (
     <div className="flex flex-col h-full w-full p-6 md:p-10 gap-8 overflow-y-auto custom-scrollbar">
       <div className="flex flex-col gap-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 w-fit">
-            <Activity className="w-3 h-3 text-indigo-400" />
-            <p className="text-[10px] sm:text-xs uppercase tracking-widest font-mono text-indigo-300 font-semibold">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-neutral-800 bg-neutral-900 w-fit">
+            <Activity className="w-3 h-3 text-neutral-400" />
+            <p className="text-[10px] sm:text-xs uppercase tracking-widest font-mono text-neutral-400 font-semibold">
               Pipeline Analytics
             </p>
         </div>
@@ -75,7 +75,7 @@ export function AnalyticsView() {
       </div>
 
       {!currentPipelineId ? (
-        <div className="flex flex-col items-center justify-center p-12 mt-8 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-xl text-center">
+        <div className="flex flex-col items-center justify-center p-12 mt-8 rounded-lg border border-neutral-800 bg-neutral-900 text-center">
           <Play className="w-16 h-16 text-neutral-600 mb-6 font-light stroke-[1]" />
           <h2 className="text-xl font-medium text-neutral-300 mb-2">No Active Pipeline</h2>
           <p className="text-sm text-neutral-500 max-w-sm">
@@ -89,7 +89,7 @@ export function AnalyticsView() {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="relative h-32 rounded-[24px] border border-white/10 bg-white/[0.03] overflow-hidden"
+                className="relative h-32 rounded-md border border-neutral-800 bg-neutral-900 overflow-hidden"
               >
                 <div
                   className="absolute inset-0 -translate-x-full"
@@ -101,7 +101,7 @@ export function AnalyticsView() {
               </div>
             ))}
           </div>
-          <div className="h-64 rounded-[32px] border border-white/10 bg-white/[0.02] relative overflow-hidden">
+          <div className="h-64 rounded-md border border-neutral-800 bg-neutral-900 relative overflow-hidden">
             <div
               className="absolute inset-0 -translate-x-full"
               style={{
@@ -117,7 +117,7 @@ export function AnalyticsView() {
           `}</style>
         </div>
       ) : error ? (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium">
+        <div className="flex items-center gap-3 p-4 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium">
           <AlertTriangle className="w-5 h-5" />
           {error}
         </div>
@@ -125,7 +125,7 @@ export function AnalyticsView() {
         <div className="flex flex-col gap-8 w-full max-w-[1920px]">
           {/* KPI Bento Grid */}
           <BentoGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <BentoCard className="col-span-1 border border-white/10 bg-white/[0.03] backdrop-blur-md rounded-[24px]">
+            <BentoCard className="col-span-1 border border-neutral-800 bg-neutral-900 rounded-md">
               <div className="flex flex-col h-full z-10 w-full justify-between">
                 <div className="flex items-center gap-2 mb-4">
                   <Activity className="w-3.5 h-3.5 text-neutral-500" />
@@ -135,7 +135,7 @@ export function AnalyticsView() {
               </div>
             </BentoCard>
 
-            <BentoCard className="col-span-1 border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-md rounded-[24px]">
+            <BentoCard className="col-span-1 border border-emerald-500/20 bg-emerald-500/5 rounded-md">
               <div className="flex flex-col h-full z-10 w-full justify-between">
                 <div className="flex items-center gap-2 mb-4">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70" />
@@ -145,11 +145,11 @@ export function AnalyticsView() {
               </div>
             </BentoCard>
 
-            <BentoCard className="col-span-1 border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md rounded-[24px]">
+            <BentoCard className="col-span-1 border border-neutral-800 bg-neutral-900 rounded-md">
               <div className="flex flex-col h-full z-10 w-full justify-between">
                 <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-3.5 h-3.5 text-indigo-400/70" />
-                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-indigo-400/80">Avg Duration</span>
+                  <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400">Avg Duration</span>
                 </div>
                 {avgDuration !== null ? (
                   <div className="flex items-end gap-1">
@@ -166,11 +166,11 @@ export function AnalyticsView() {
               </div>
             </BentoCard>
 
-            <BentoCard className="col-span-1 border border-fuchsia-500/20 bg-fuchsia-500/5 backdrop-blur-md rounded-[24px]">
+            <BentoCard className="col-span-1 border border-neutral-800 bg-neutral-900 rounded-md">
               <div className="flex flex-col h-full z-10 w-full justify-between">
                 <div className="flex items-center gap-2 mb-4">
-                  <Hash className="w-3.5 h-3.5 text-fuchsia-400/70" />
-                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-fuchsia-400/80">Avg Tokens</span>
+                  <Hash className="w-3.5 h-3.5 text-neutral-500" />
+                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400">Avg Tokens</span>
                 </div>
                 {avgTokens !== null ? (
                   <AnimatedCounter target={avgTokens} className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono" />
@@ -184,17 +184,17 @@ export function AnalyticsView() {
           {/* Runs Table Section */}
           <div className="flex-1 min-h-[300px]">
             {runs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-16 rounded-[32px] border border-white/5 bg-white/[0.02] text-center w-full">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+              <div className="flex flex-col items-center justify-center p-16 rounded-md border border-neutral-800 bg-neutral-900 text-center w-full">
+                <div className="w-16 h-16 rounded-md bg-neutral-800 border border-neutral-700 flex items-center justify-center mb-6">
                    <Play className="w-8 h-8 text-neutral-500" />
                 </div>
                 <h3 className="text-xl font-semibold text-neutral-200 mb-2">No runs yet</h3>
                 <p className="text-neutral-500 text-sm">Return to the canvas and run this pipeline to see history.</p>
               </div>
             ) : (
-              <div className="flex flex-col w-full rounded-[32px] border border-white/10 bg-[#0a0a0a]/60 backdrop-blur-xl overflow-hidden shadow-2xl">
+              <div className="flex flex-col w-full rounded-md border border-neutral-800 bg-neutral-950 overflow-hidden shadow-sm">
                 {/* Desktop Native Table Header */}
-                <div className="hidden lg:grid grid-cols-12 gap-4 p-5 bg-white/[0.02] border-b border-white/10 text-[10px] font-mono tracking-widest uppercase text-neutral-500">
+                <div className="hidden lg:grid grid-cols-12 gap-4 p-5 bg-neutral-900 border-b border-neutral-800 text-[10px] font-mono tracking-widest uppercase text-neutral-500">
                   <span className="col-span-4">Workflow ID</span>
                   <span className="col-span-2">Status</span>
                   <span className="col-span-2">Duration</span>
@@ -203,14 +203,14 @@ export function AnalyticsView() {
                 </div>
 
                 {/* Runs List (Responsive) */}
-                <div className="flex flex-col divide-y divide-white/5 max-h-[500px] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col divide-y divide-neutral-800 max-h-[500px] overflow-y-auto custom-scrollbar">
                   {runs.map((run, i) => (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
                       key={run.id} 
-                      className="grid grid-cols-2 gap-y-4 lg:grid-cols-12 lg:gap-4 p-5 lg:items-center hover:bg-white/[0.02] transition-colors"
+                      className="grid grid-cols-2 gap-y-4 lg:grid-cols-12 lg:gap-4 p-5 lg:items-center hover:bg-neutral-900 transition-colors"
                     >
                       {/* ID */}
                       <div className="col-span-2 lg:col-span-4 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">

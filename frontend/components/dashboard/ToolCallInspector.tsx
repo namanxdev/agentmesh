@@ -324,7 +324,7 @@ function IconBtn({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-wider text-neutral-500 hover:text-neutral-200 hover:bg-white/5 transition-all"
+      className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[10px] font-mono uppercase tracking-wider text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900 transition-all"
       title={label}
     >
       {icon}
@@ -343,7 +343,7 @@ function ActionBtn({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-all border border-white/5 hover:border-white/10"
+      className="flex items-center gap-2 px-4 py-2 rounded-md text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all border border-neutral-800 hover:border-neutral-700"
     >
       {children}
     </button>

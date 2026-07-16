@@ -132,14 +132,13 @@ export function PipelineCanvas({ mode }: PipelineCanvasProps) {
       style={{
         width: "100%",
         height: "100%",
-        borderRadius: 24,
+        borderRadius: 8,
         overflow: "hidden",
         padding: 1,
         position: "relative",
-        background:
-          "radial-gradient(circle at 16% 14%, rgba(240,106,55,0.09), transparent 22%), radial-gradient(circle at 82% 12%, rgba(215,255,112,0.06), transparent 18%), linear-gradient(180deg, rgba(24, 19, 16, 0.96), rgba(15, 12, 10, 0.98))",
+        background: "rgb(10, 10, 10)",
         boxShadow: isDragOver
-          ? "0 0 0 1px rgba(240,106,55,0.4), 0 34px 90px rgba(0,0,0,0.42), inset 0 0 0 1px rgba(240,106,55,0.18)"
+          ? "0 0 0 1px rgba(99,102,241,0.3), inset 0 0 0 1px rgba(99,102,241,0.1)"
           : undefined,
       }}
       onDrop={handleDrop}
@@ -151,17 +150,16 @@ export function PipelineCanvas({ mode }: PipelineCanvasProps) {
           className="pipeline-canvas__dropzone"
           style={{
             position: "absolute",
-            inset: 22,
+            inset: 16,
             zIndex: 4,
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-end",
             gap: 6,
-            border: "1px dashed rgba(255,255,255,0.1)",
-            borderRadius: 22,
+            border: "1px dashed rgba(99,102,241,0.3)",
+            borderRadius: 6,
             padding: "1.2rem 1.25rem",
-            background:
-              "linear-gradient(180deg, rgba(240,106,55,0.02), rgba(240,106,55,0.08)), rgba(17,14,12,0.3)",
+            background: "rgba(10,10,10,0.4)",
             opacity: isDragOver ? 1 : 0,
             transform: isDragOver ? "scale(1)" : "scale(0.985)",
             pointerEvents: "none",
@@ -241,15 +239,15 @@ export function PipelineCanvas({ mode }: PipelineCanvasProps) {
         />
         <Controls
           style={{
-            background: "rgba(24, 19, 16, 0.92)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 16,
+            background: "rgb(10, 10, 10)",
+            border: "1px solid rgb(38, 38, 38)",
+            borderRadius: 8,
           }}
         />
         <MiniMap
           style={{
-            background: "rgba(24, 19, 16, 0.92)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgb(10, 10, 10)",
+            border: "1px solid rgb(38, 38, 38)",
           }}
           maskColor="var(--bg-primary)"
           nodeColor={(n) => {

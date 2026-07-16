@@ -141,12 +141,12 @@ export function NodePalette() {
 
           <div className="flex flex-col gap-2">
             {isLoadingTemplates ? (
-              <div className="flex flex-col gap-2 p-4 rounded-2xl border border-white/5 bg-white/[0.02] animate-pulse">
-                <div className="h-4 w-1/2 bg-white/10 rounded" />
-                <div className="h-3 w-3/4 bg-white/5 rounded mt-2" />
+              <div className="flex flex-col gap-2 p-4 rounded-md border border-neutral-800 bg-neutral-900 animate-pulse">
+                <div className="h-4 w-1/2 bg-neutral-800 rounded" />
+                <div className="h-3 w-3/4 bg-neutral-800/60 rounded mt-2" />
               </div>
             ) : templateError ? (
-              <div className="flex flex-col gap-2 p-4 rounded-2xl border border-red-500/20 bg-red-500/10">
+              <div className="flex flex-col gap-2 p-4 rounded-md border border-red-500/20 bg-red-500/10">
                 <span className="text-xs font-mono text-red-400 font-semibold">Unavailable</span>
                 <span className="text-[10px] text-red-500/70">{templateError}</span>
                 <button
@@ -157,7 +157,7 @@ export function NodePalette() {
                 </button>
               </div>
             ) : templates.length === 0 ? (
-              <div className="flex flex-col gap-2 p-4 rounded-2xl border border-white/5 bg-white/[0.02]">
+              <div className="flex flex-col gap-2 p-4 rounded-md border border-neutral-800 bg-neutral-900">
                 <span className="text-xs text-neutral-400 font-medium">No templates</span>
                 <span className="text-[10px] text-neutral-600 leading-relaxed">No starter configurations found in the directory.</span>
               </div>
@@ -169,23 +169,22 @@ export function NodePalette() {
                     loadTemplate(template.definition);
                     toast.success(`Template "${template.name}" loaded`);
                   }}
-                  className="group relative flex flex-col gap-1 p-3.5 rounded-[16px] border border-white/[0.04] bg-white/[0.02] cursor-pointer hover:bg-indigo-500/10 hover:border-indigo-500/30 overflow-hidden transition-all duration-300"
+                  className="group relative flex flex-col gap-1 p-3.5 rounded-md border border-neutral-800 bg-neutral-900 cursor-pointer hover:bg-neutral-800 hover:border-neutral-700 overflow-hidden transition-all duration-200"
                 >
-                  <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-indigo-500/0 group-hover:via-indigo-500/50 to-transparent transition-all duration-500" />
-                  <span className="text-xs font-semibold text-neutral-200 group-hover:text-indigo-300 transition-colors">{template.name}</span>
-                  <span className="text-[10px] text-neutral-500 leading-relaxed group-hover:text-indigo-200/60 transition-colors">{template.description}</span>
+                  <span className="text-xs font-semibold text-neutral-200 transition-colors">{template.name}</span>
+                  <span className="text-[10px] text-neutral-500 leading-relaxed transition-colors">{template.description}</span>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        <div className="h-px bg-white/5 mx-2" />
+        <div className="h-px bg-neutral-800 mx-2" />
 
         {/* NODES SECTION */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 pl-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50" />
+            <div className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
             <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500 font-semibold">
               Components
             </span>
@@ -201,19 +200,14 @@ export function NodePalette() {
                   key={kind}
                   draggable
                   onDragStart={(event) => handleDragStart(event, kind)}
-                  className="group relative flex flex-col p-3 rounded-[16px] border border-white/[0.05] bg-[#0c0a09]/80 cursor-grab active:cursor-grabbing hover:-translate-y-[2px] transition-all duration-200"
-                  style={{
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.02)"
-                  }}
+                  className="group relative flex flex-col p-3 rounded-md border border-neutral-800 bg-neutral-900 cursor-grab active:cursor-grabbing hover:-translate-y-[2px] transition-all duration-200"
                   onMouseEnter={(event) => {
                     event.currentTarget.style.borderColor = withAlphaHex(color, 0.4);
-                    event.currentTarget.style.background = `linear-gradient(145deg, #0c0a09 40%, ${withAlphaHex(color, 0.1)} 100%)`;
-                    event.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${withAlphaHex(color, 0.1)}, inset 0 1px 0 rgba(255,255,255,0.05)`;
+                    event.currentTarget.style.background = `linear-gradient(145deg, #171717 40%, ${withAlphaHex(color, 0.08)} 100%)`;
                   }}
                   onMouseLeave={(event) => {
-                    event.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
-                    event.currentTarget.style.background = "#0c0a09";
-                    event.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.02)";
+                    event.currentTarget.style.borderColor = "#262626";
+                    event.currentTarget.style.background = "#171717";
                   }}
                 >
                   <div 
@@ -247,8 +241,8 @@ export function NodePalette() {
         </div>
       </div>
 
-      <div className="p-4 mt-auto border-t border-white/[0.04] shrink-0 text-center">
-        <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-neutral-600 font-semibold bg-neutral-900/50 py-1.5 px-3 rounded-lg border border-white/[0.02]">
+      <div className="p-4 mt-auto border-t border-neutral-800 shrink-0 text-center">
+        <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-neutral-600 font-semibold bg-neutral-900 py-1.5 px-3 rounded-md border border-neutral-800">
           Drag into Canvas
         </span>
       </div>
