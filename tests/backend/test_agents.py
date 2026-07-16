@@ -11,7 +11,7 @@ def test_agent_config_defaults():
         role="Code Reviewer",
         system_prompt="You are a code reviewer.",
     )
-    assert config.model == "gemini-2.0-flash"
+    assert config.model == "gemini-2.5-flash"
     assert config.temperature == 0.7
     assert config.max_tokens == 4096
     assert config.mcp_servers == []
