@@ -1,0 +1,64 @@
+# AgentMesh
+
+> Self-hosted visual multi-agent AI pipelines — MCP-native, bring your own keys, monitor everything in real-time.
+
+AgentMesh is an open-source platform for building, running, and monitoring multi-agent AI workflows using a visual drag-and-drop canvas. It is MCP-native (Model Context Protocol), fully self-hostable, and stores API keys encrypted per-user so you always own your infrastructure and credentials.
+
+## Key capabilities
+
+- **Visual pipeline builder** — drag-and-drop canvas built on React Flow; connect LLM agents, tools, routers, memory, parallel fan-out, and transform nodes
+- **Real-time Mission Control** — WebSocket-driven event stream shows every agent decision, tool call, and handoff as it happens
+- **MCP-native** — register any MCP server (stdio or HTTP) and call its tools directly from pipeline nodes
+- **Multi-provider LLM routing** — Gemini, Groq, and OpenAI via a unified `MultiProvider` router; swap models per node
+- **Per-user encrypted key storage** — Fernet AES-256; users paste keys once, everything is encrypted at rest
+- **Pre-built templates** — Research Synthesis, GitHub Code Review (more planned)
+- **Self-hosted / open-source** — MIT license; deploy on Render + Vercel + Neon for free, or Docker Compose on your own server
+
+## Tech stack
+
+- Backend: FastAPI + uvicorn, custom `WorkflowOrchestrator` state machine, PostgreSQL + SQLAlchemy async + Alembic
+- Frontend: Next.js 15 (App Router), React 19, React Flow (`@xyflow/react`), Zustand 5, Tailwind CSS v4
+- Auth: NextAuth v5 + Google OAuth
+- Real-time: WebSocket + `EventBus` (100-event circular buffer)
+- Testing: pytest + pytest-asyncio
+
+## Node types
+
+Input, LLM Agent, Tool (MCP), Router (conditional branching), Memory, Transform (JSON), Parallel (fan-out), Output
+
+## Comparison
+
+AgentMesh vs alternatives:
+
+| Feature                        | AgentMesh | LangSmith | Gumloop | n8n |
+|-------------------------------|-----------|-----------|---------|-----|
+| Visual pipeline builder        | ✅        | ❌        | ✅      | ✅  |
+| Real-time agent monitoring     | ✅        | ✅        | ❌      | ❌  |
+| MCP-native                     | ✅        | ❌        | ❌      | ❌  |
+| Self-hosted / open-source      | ✅        | ❌        | ❌      | ✅  |
+| Per-user encrypted key storage | ✅        | ❌        | ❌      | ❌  |
+| Free to use                    | ✅        | ⚠️        | ❌      | ✅  |
+
+## Quick start
+
+```bash
+git clone https://github.com/naman/agentmesh.git
+cd agentmesh
+cp .env.example .env          # fill in backend vars
+uv sync
+uv run alembic upgrade head
+cd frontend && npm install
+# fill in frontend/.env.local
+make dev
+```
+
+Open `http://localhost:3000/dashboard` to start building pipelines.
+
+## Deployment
+
+Free-tier stack: Render (backend) + Vercel (frontend) + Neon (PostgreSQL).
+Also supports Railway and self-hosted Docker Compose.
+
+## License
+
+MIT
