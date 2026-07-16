@@ -37,7 +37,7 @@ class MultiProvider(BaseLLMProvider):
         self,
         messages: list[dict],
         tools: list[dict] | None = None,
-        model: str = "gemini-2.0-flash",
+        model: str = "gemini-2.5-flash",
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> LLMResponse:

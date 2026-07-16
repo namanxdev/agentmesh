@@ -36,8 +36,8 @@ const PROVIDERS = [
 ];
 
 const MODELS = [
-  "gemini-2.0-flash",
-  "gemini-2.0-pro",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
   "llama-3.3-70b-versatile",
   "llama-3.1-8b-instant",
   "gpt-4o",

@@ -24,7 +24,7 @@ import { type AgentStatus } from "@/types/agents";
 const DEFAULT_CONFIGS: Record<NodeKind, NodeConfig> = {
   input: { name: "Input", description: "" },
   output: { output_format: "text" },
-  llm_agent: { name: "Agent", system_prompt: "", model: "gemini-2.0-flash", temperature: 0.7 },
+  llm_agent: { name: "Agent", system_prompt: "", model: "gemini-2.5-flash", temperature: 0.7 },
   tool: { tool_name: "", server: "", parameters: "{}" },
   text: { content: "", variables: [] },
   router: { routing_key: "route", conditions: [] },

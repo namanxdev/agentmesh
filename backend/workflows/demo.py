@@ -18,7 +18,7 @@ FETCHER = AgentConfig(
     role="Code Fetcher",
     system_prompt=_load_prompt("code_reviewer.txt") or "You are a code fetcher.",
     mcp_servers=["github"],
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.2,
     handoff_rules={"on_complete": "Reviewer"},
 )
@@ -28,7 +28,7 @@ REVIEWER = AgentConfig(
     role="Senior Code Reviewer",
     system_prompt=_load_prompt("code_reviewer.txt"),
     mcp_servers=["github"],
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.3,
     handoff_rules={"on_complete": "SecurityScanner", "on_needs_more_context": "Fetcher"},
 )
@@ -48,7 +48,7 @@ SUMMARIZER = AgentConfig(
     role="Review Report Writer",
     system_prompt="You are a technical writer. Create a comprehensive code review report in Markdown.",
     mcp_servers=["filesystem"],
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.4,
     handoff_rules={"on_complete": "end"},
 )
@@ -58,7 +58,7 @@ SEARCHER = AgentConfig(
     role="Web Search Specialist",
     system_prompt=_load_prompt("researcher.txt"),
     mcp_servers=["web-search"],
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.4,
     handoff_rules={"on_complete": "Extractor"},
 )
@@ -68,7 +68,7 @@ EXTRACTOR = AgentConfig(
     role="Content Extraction Specialist",
     system_prompt="Extract key facts from web pages and summarize each source.",
     mcp_servers=["web-search"],
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.3,
     handoff_rules={"on_complete": "Analyst", "on_insufficient_data": "Searcher"},
 )
@@ -78,7 +78,7 @@ ANALYST = AgentConfig(
     role="Research Analyst",
     system_prompt=_load_prompt("analyst.txt"),
     mcp_servers=[],
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.5,
     handoff_rules={"on_complete": "Writer"},
 )
@@ -88,7 +88,7 @@ WRITER = AgentConfig(
     role="Research Report Writer",
     system_prompt=_load_prompt("writer.txt"),
     mcp_servers=["filesystem"],
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.6,
     handoff_rules={"on_complete": "end"},
 )

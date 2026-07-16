@@ -50,7 +50,7 @@ async def test_gemini_generate_text():
         provider = GeminiProvider(api_key="test")
         result = await provider.generate(
             messages=[{"role": "user", "content": "Review this"}],
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
         )
 
     assert result.text == "Looks good."

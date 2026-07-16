@@ -270,7 +270,7 @@ class TestPipelineToWorkflowConfig:
             "config": {
                 "name": name,
                 "system_prompt": system_prompt,
-                "model": "gemini-2.0-flash",
+                "model": "gemini-2.5-flash",
                 "temperature": 0.5,
             },
         }
@@ -303,7 +303,7 @@ class TestPipelineToWorkflowConfig:
         reg = result["agent_registry"]
         agent = reg.get("summariser")
         assert agent.config.name == "summariser"
-        assert agent.config.model == "gemini-2.0-flash"
+        assert agent.config.model == "gemini-2.5-flash"
         assert agent.config.temperature == 0.5
 
     def test_two_agent_pipeline_in_series(self):

@@ -259,7 +259,7 @@ def pipeline_to_workflow_config(
                 name=cfg.get("name", nid),
                 role="agent",
                 system_prompt=system_prompt,
-                model=cfg.get("model", "gemini-2.0-flash"),
+                model=cfg.get("model", "gemini-2.5-flash"),
                 temperature=float(cfg.get("temperature", 0.7)),
                 mcp_servers=mcp_servers_map[nid],
                 handoff_rules=handoff_rules_map[nid],

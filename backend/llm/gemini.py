@@ -10,9 +10,17 @@ from .base import BaseLLMProvider, LLMResponse
 # synchronized retries across concurrent agents in a workflow.
 _RETRY_DELAYS = [8, 20, 45, 60]
 
+# Retired Gemini model IDs → current replacements (saved pipelines may still store old names).
+_MODEL_ALIASES = {
+    "gemini-2.0-flash": "gemini-2.5-flash",
+    "gemini-2.0-pro": "gemini-2.5-pro",
+    "models/gemini-2.0-flash": "gemini-2.5-flash",
+    "models/gemini-2.0-pro": "gemini-2.5-pro",
+}
+
 
 class GeminiProvider(BaseLLMProvider):
-    """Gemini LLM provider (Gemini 2.0 Flash)."""
+    """Gemini LLM provider (Gemini 2.5 Flash)."""
 
     def __init__(self, api_key: str):
         self._client = genai.Client(api_key=api_key)
@@ -21,10 +29,11 @@ class GeminiProvider(BaseLLMProvider):
         self,
         messages: list[dict],
         tools: list[dict] | None = None,
-        model: str = "gemini-2.0-flash",
+        model: str = "gemini-2.5-flash",
         temperature: float = 0.7,
         max_tokens: int = 4096,
     ) -> LLMResponse:
+        model = _MODEL_ALIASES.get(model, model)
         last_exc = None
         for attempt, delay in enumerate([0] + _RETRY_DELAYS):
             if delay:

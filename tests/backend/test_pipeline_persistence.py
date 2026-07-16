@@ -572,4 +572,4 @@ class TestPipelineTemplatesModule:
         tmpl = next(t for t in PIPELINE_TEMPLATES if t["id"] == "research-synthesis")
         for node in tmpl["definition"]["nodes"]:
             if node["kind"] == "llm_agent":
-                assert node["config"]["model"] == "gemini-2.0-flash"
+                assert node["config"]["model"] == "gemini-2.5-flash"

@@ -5,7 +5,7 @@
 - **Database:** PostgreSQL via SQLAlchemy `asyncpg` driver (`AsyncSession`)
 - **ORM base:** `backend.db.engine.Base` (DeclarativeBase)
 - **Migrations:** Alembic (`backend/alembic/`)
-- **LLM default model:** `gemini-2.0-flash` (see `backend/llm/`)
+- **LLM default model:** `gemini-2.5-flash` (see `backend/llm/`)
 - **Event system:** Internal `EventBus` (`backend/events/bus.py`) — emit typed dicts, not custom classes
 
 ## Auth Pattern (BFF proxy)

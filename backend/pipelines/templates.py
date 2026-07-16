@@ -27,7 +27,7 @@ PIPELINE_TEMPLATES = [
                             " information on the given topic and provide a comprehensive"
                             " list of key facts and sources."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -42,7 +42,7 @@ PIPELINE_TEMPLATES = [
                             "You extract and organize key facts from research."
                             " Synthesize information into clear, structured insights."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -57,7 +57,7 @@ PIPELINE_TEMPLATES = [
                             "You analyze research data. Identify themes, patterns,"
                             " and provide actionable insights."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -72,7 +72,7 @@ PIPELINE_TEMPLATES = [
                             "You write clear, well-structured reports in Markdown format."
                             " Create a comprehensive research report from the analysis provided."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -127,7 +127,7 @@ PIPELINE_TEMPLATES = [
                             "You fetch and examine code files for review."
                             " Identify the key files and code sections that need review."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -143,7 +143,7 @@ PIPELINE_TEMPLATES = [
                             " best practices, performance, and readability."
                             " Output as [ROUTE: on_needs_more_context] if you need more context."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -158,7 +158,7 @@ PIPELINE_TEMPLATES = [
                             "You are a security auditor. Scan for injection vulnerabilities,"
                             " auth issues, and data exposure risks."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -173,7 +173,7 @@ PIPELINE_TEMPLATES = [
                             "You create comprehensive code review reports in Markdown format"
                             " summarizing all findings."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -237,7 +237,7 @@ PIPELINE_TEMPLATES = [
                             " Structure your output with: **Feasibility**, **Complexity**,"
                             " **Trade-offs**, and **Technical Risks**."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.3,
                         "mcp_servers": [],
                     },
@@ -255,7 +255,7 @@ PIPELINE_TEMPLATES = [
                             " Structure your output with: **Market Size**, **Segments**,"
                             " **Competitive Landscape**, and **Growth Potential**."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.4,
                         "mcp_servers": [],
                     },
@@ -273,7 +273,7 @@ PIPELINE_TEMPLATES = [
                             " and a mitigation strategy."
                             " Structure your output with: **Risk Register** and **Mitigations**."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.3,
                         "mcp_servers": [],
                     },
@@ -292,7 +292,7 @@ PIPELINE_TEMPLATES = [
                             " **Market Assessment**, **Risk Assessment**, and **Recommendation**."
                             " Be concise and decisive."
                         ),
-                        "model": "gemini-2.0-flash",
+                        "model": "gemini-2.5-flash",
                         "temperature": 0.5,
                         "mcp_servers": [],
                     },
