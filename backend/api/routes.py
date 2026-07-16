@@ -503,6 +503,99 @@ def create_app(
         await db.commit()
         return {"deleted": server_id}
 
+    @app.post("/api/mcp/user-servers/{server_id}/test")
+    async def test_user_mcp_server(
+        server_id: str,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        import asyncio as _asyncio
+        import time as _time
+
+        from backend.mcp.client import MCPClientWrapper
+
+        result = await db.execute(
+            text(
+                "SELECT id, name, server_type, command_or_url, env_vars"
+                " FROM mcp_servers WHERE id=:id AND user_id=:uid"
+            ),
+            {"id": server_id, "uid": user_id},
+        )
+        row = result.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="MCP server not found")
+
+        try:
+            transport_config = _mcp_transport_config_from_row(row)
+        except ValueError as exc:
+            return {"ok": False, "latency_ms": None, "tools": [], "error": str(exc)}
+
+        from backend.events.bus import EventBus as _EventBus
+
+        client = MCPClientWrapper(
+            server_name=row.name,
+            transport_config=transport_config,
+            event_bus=_EventBus(),
+        )
+        t0 = _time.monotonic()
+        try:
+            await _asyncio.wait_for(client.connect(), timeout=10)
+            latency_ms = (_time.monotonic() - t0) * 1000
+            tools = [
+                {
+                    "name": t["function"]["name"],
+                    "description": t["function"].get("description", ""),
+                }
+                for t in client.get_tool_definitions()
+            ]
+            return {"ok": True, "latency_ms": latency_ms, "tools": tools}
+        except Exception as exc:
+            latency_ms = (_time.monotonic() - t0) * 1000
+            error_msg = str(exc) if str(exc) else type(exc).__name__
+            return {"ok": False, "latency_ms": None, "tools": [], "error": error_msg}
+        finally:
+            client._connected = False
+            client._tool_definitions = []
+
+    # -- Global run history endpoint ------------------------------------------
+
+    @app.get("/api/runs")
+    async def list_runs(
+        limit: int = 50,
+        user_id: str = Depends(get_current_user_dep),
+        db: AsyncSession = Depends(get_db),
+    ):
+        clamped_limit = min(max(1, limit), 200)
+        result = await db.execute(
+            text(
+                "SELECT pr.id, pr.workflow_id, pr.pipeline_id, p.name AS pipeline_name,"
+                " pr.status, pr.total_tokens, pr.duration_seconds, pr.error, pr.created_at"
+                " FROM pipeline_runs pr"
+                " LEFT JOIN pipelines p ON p.id = pr.pipeline_id"
+                " WHERE pr.user_id = :uid"
+                " ORDER BY pr.created_at DESC"
+                " LIMIT :lim"
+            ),
+            {"uid": user_id, "lim": clamped_limit},
+        )
+        rows = result.fetchall()
+        return {
+            "runs": [
+                {
+                    "id": r.id,
+                    "workflow_id": r.workflow_id,
+                    "pipeline_id": r.pipeline_id,
+                    "pipeline_name": r.pipeline_name,
+                    "status": r.status,
+                    "total_tokens": r.total_tokens,
+                    "duration_seconds": r.duration_seconds,
+                    "error": r.error,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in rows
+            ]
+        }
+
     # -- Pipeline endpoints ----------------------------------------------------
 
     @app.post("/api/pipelines/validate")
