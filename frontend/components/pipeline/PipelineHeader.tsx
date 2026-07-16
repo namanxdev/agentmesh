@@ -2,22 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle } from "lucide-react";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useUIStore } from "@/stores/uiStore";
 import { MagicButton } from "@/components/ui/magic-button";
 
-type AppTab = "canvas" | "analytics";
-
-interface PipelineHeaderProps {
-  activeTab: AppTab;
-  onTabChange: (tab: AppTab) => void;
-}
+// PipelineHeader no longer owns the analytics/canvas tab-switch.
+// Navigation lives in DashboardSidebar. This header is pipeline-editor-only.
+export type PipelineHeaderProps = Record<string, never>;
 
 interface NavbarMenuProps {
   isSaving: boolean;
@@ -140,7 +136,7 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
   );
 }
 
-export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) {
+export function PipelineHeader(_props: PipelineHeaderProps = {}) {
   const {
     mode,
     setMode,
@@ -233,20 +229,9 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
 
   return (
     <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 w-full text-sm font-sans z-50 relative bg-transparent rounded-lg transition-all">
-      {/* Left Area: Logo & Name Segment */}
-      <div className="flex items-center gap-5 lg:gap-6 min-w-0 flex-1 w-full lg:w-auto justify-start">
-        <Link href="/" className="group flex items-center justify-center p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all duration-300 ease-out active:scale-95 shrink-0" title="Back to Home">
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-300" />
-        </Link>
-        
-        <div className="hidden sm:flex items-center gap-3 pr-4 border-r border-white-[0.04]">
-          <div className="relative w-6 h-6 rounded-md overflow-hidden">
-            <Image src="/agentmesh_logo.png" alt="AgentMesh" width={24} height={24} className="object-contain" />
-          </div>
-          <span className="font-semibold text-neutral-200 tracking-tight text-[13px]">AgentMesh</span>
-        </div>
-
-        <div className="flex items-center gap-3 flex-1 min-w-0 px-2 py-1.5 group">
+      {/* Left Area: Pipeline Name */}
+      <div className="flex items-center gap-3 min-w-0 flex-1 w-full lg:w-auto justify-start">
+        <div className="flex items-center gap-3 flex-1 min-w-0 px-2 py-1.5">
           <input
             value={pipelineName}
             onChange={(e) => setPipelineName(e.target.value)}
@@ -264,30 +249,6 @@ export function PipelineHeader({ activeTab, onTabChange }: PipelineHeaderProps) 
             </span>
           </div>
         )}
-      </div>
-
-      {/* Center Area: Tab Switcher (Minimal Sliding Underline) */}
-      <div className="flex justify-center shrink-0 w-full lg:w-auto">
-        <div className="flex gap-1">
-          {(["canvas", "analytics"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => onTabChange(tab)}
-              className={`relative px-5 py-2 text-xs font-semibold tracking-wide capitalize transition-colors duration-300 z-10 ${
-                activeTab === tab ? "text-white" : "text-neutral-500 hover:text-neutral-300"
-              }`}
-            >
-              {activeTab === tab && (
-                <motion.div
-                  layoutId="active-tab-underline"
-                  className="absolute bottom-0 left-3 right-3 h-px bg-white z-[-1]"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              {tab}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Right Area: Actions */}

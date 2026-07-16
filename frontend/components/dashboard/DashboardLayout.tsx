@@ -4,19 +4,18 @@ import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Trash2, FolderOpen, Blocks, Bot, FileJson, Activity, TerminalSquare, LayoutTemplate, Monitor, Server, RefreshCw, AlertCircle } from "lucide-react";
-import { useAgentMeshEvents } from "@/hooks/useAgentMeshEvents";
 import { usePipelineStore } from "@/stores/pipelineStore";
 
 import { AgentSidebar } from "./AgentSidebar";
 import { ToolCallInspector } from "./ToolCallInspector";
 import { MessageStream } from "./MessageStream";
-import { AnalyticsView } from "./AnalyticsView";
 import { PipelineHeader } from "@/components/pipeline/PipelineHeader";
 import { PipelineCanvas } from "@/components/pipeline/PipelineCanvas";
 import { NodePalette } from "@/components/pipeline/NodePalette";
 import { NodeConfigInspector } from "@/components/pipeline/NodeConfigInspector";
 
-type AppTab = "canvas" | "analytics";
+// useAgentMeshEvents is now mounted by DashboardEventProvider in the shell layout.
+
 type MCPServerRow = {
   id: string;
   name: string;
@@ -103,9 +102,12 @@ function MCPServerStrip() {
   );
 }
 
-export function DashboardLayout() {
-  useAgentMeshEvents(true);
-
+/**
+ * PipelineWorkbench — the full pipeline editor experience.
+ * Previously called DashboardLayout; re-exported below for backward compat.
+ * useAgentMeshEvents is now mounted by DashboardEventProvider in the shell.
+ */
+export function PipelineWorkbench() {
   const mode = usePipelineStore((s) => s.mode);
   const setMode = usePipelineStore((s) => s.setMode);
   const nodes = usePipelineStore((s) => s.nodes);
@@ -117,7 +119,6 @@ export function DashboardLayout() {
 
   const isRunning = usePipelineStore((s) => s.isRunning);
 
-  const [activeTab, setActiveTab] = useState<AppTab>("canvas");
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(true);
   const [bottomCollapsed, setBottomCollapsed] = useState(true);
@@ -149,18 +150,18 @@ export function DashboardLayout() {
     .filter((n) => n.data?.kind === "llm_agent")
     .map((n) => (n.data?.config as { name?: string } | undefined)?.name ?? n.data?.label ?? n.id);
 
-  const isBuild = activeTab === "canvas";
-
   return (
-    <div className="relative flex h-screen w-screen overflow-hidden bg-neutral-950 text-neutral-100 selection:bg-neutral-700">
+    // This component fills the content area provided by the dashboard shell layout.
+    // The shell gives us h-full via the flex-1 min-h-0 wrapper, so we use h-full here.
+    <div className="relative flex h-full w-full overflow-hidden bg-neutral-950 text-neutral-100 selection:bg-neutral-700">
       <div className="relative z-10 flex h-full w-full flex-col gap-3 p-3">
         <div className="relative z-50 mx-auto w-full max-w-[1920px] flex-shrink-0 rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm">
-          <PipelineHeader activeTab={activeTab} onTabChange={setActiveTab} />
+          <PipelineHeader />
         </div>
-        {isBuild && <MCPServerStrip />}
+        <MCPServerStrip />
 
         {/* Workspace section */}
-        {isBuild ? (
+        {(
           <div className="relative mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 gap-3 overflow-hidden">
 
             {/* LEFT PANEL */}
@@ -374,15 +375,6 @@ export function DashboardLayout() {
             )}
 
           </div>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.98, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="relative mx-auto min-h-0 w-full max-w-[1920px] flex-1 overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 p-4 shadow-sm"
-          >
-            <AnalyticsView />
-          </motion.div>
         )}
       </div>
 
@@ -490,3 +482,6 @@ export function DashboardLayout() {
     </div>
   );
 }
+
+// Backward-compat re-export so any existing import of DashboardLayout still works.
+export { PipelineWorkbench as DashboardLayout };

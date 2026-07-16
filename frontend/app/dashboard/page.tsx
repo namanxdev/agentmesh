@@ -1,10 +1,10 @@
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { OverviewPage } from "@/components/overview/OverviewPage";
 
 export const metadata = {
-  title: "Mission Control - AgentMesh",
-  description: "Visual pipeline builder and real-time multi-agent workflow monitor",
+  title: "Overview - AgentMesh",
+  description: "Mission Control: pipeline and MCP server overview",
 };
 
-export default function DashboardPage() {
-  return <DashboardLayout />;
+export default function DashboardOverview() {
+  return <OverviewPage />;
 }
