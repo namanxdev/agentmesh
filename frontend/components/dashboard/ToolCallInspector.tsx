@@ -9,7 +9,7 @@ import { useUIStore } from "@/stores/uiStore";
 import type { ToolCalledEvent, ToolResultEvent, ToolErrorEvent } from "@/types/events";
 import type { AgentRuntimeState } from "@/stores/eventStore";
 import type { InspectorTab } from "@/stores/uiStore";
-import { Maximize2, Minimize2, Copy, Check, FileText } from "lucide-react";
+import { PanelRightOpen, X, Copy, Check, FileText } from "lucide-react";
 
 interface ToolCall {
   call: ToolCalledEvent;
@@ -179,18 +179,20 @@ export function ToolCallInspector() {
 function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const displayOutput =
+    lastOutput?.replace(/\n?\[ROUTE:\s*[a-zA-Z_][a-zA-Z0-9_]*\]\s*$/g, "").trim() ?? "";
 
   const handleCopy = useCallback(() => {
-    if (!lastOutput) return;
-    navigator.clipboard.writeText(lastOutput);
+    if (!displayOutput) return;
+    navigator.clipboard.writeText(displayOutput);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [lastOutput]);
+  }, [displayOutput]);
 
-  if (!lastOutput) {
+  if (!displayOutput) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[200px] px-6 text-center gap-4">
-        <div className="w-12 h-12 rounded-2xl border border-dashed border-white/10 flex items-center justify-center bg-white/[0.02]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-800 bg-neutral-950">
           <FileText className="w-5 h-5 text-neutral-600" />
         </div>
         <div>
@@ -201,15 +203,15 @@ function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
     );
   }
 
-  const wordCount = lastOutput.trim().split(/\s+/).length;
-  const charCount = lastOutput.length;
+  const wordCount = displayOutput.trim().split(/\s+/).length;
+  const charCount = displayOutput.length;
 
   return (
     <>
       {/* ── Inline (sidebar) view ── */}
       <div className="flex flex-col h-full">
         {/* mini toolbar */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05] bg-white/[0.015] shrink-0">
+        <div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-950 px-3 py-2.5 shrink-0">
           <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
             {wordCount.toLocaleString()} words · {charCount.toLocaleString()} chars
           </span>
@@ -221,8 +223,8 @@ function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
             />
             <IconBtn
               onClick={() => setIsExpanded(true)}
-              label="Expand"
-              icon={<Maximize2 className="w-3 h-3" />}
+              label="Read"
+              icon={<PanelRightOpen className="w-3 h-3" />}
             />
           </div>
         </div>
@@ -230,7 +232,7 @@ function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
         {/* content — fills remaining height */}
         <div className="flex-1 overflow-hidden min-h-0">
           <div className="h-full overflow-y-auto custom-scrollbar sidebar-view">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{lastOutput}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayOutput}</ReactMarkdown>
           </div>
         </div>
       </div>
@@ -242,29 +244,29 @@ function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] isolate"
+            className="fixed inset-0 z-[200] isolate flex justify-end"
           >
             {/* backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#050505]/95 backdrop-blur-2xl"
+              className="absolute inset-0 bg-neutral-950/70"
               onClick={() => setIsExpanded(false)}
             />
 
             {/* document frame */}
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 24 }}
-              transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="relative h-full flex flex-col z-10"
+              initial={{ opacity: 0, x: 32 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 32 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="relative z-10 flex h-full w-full max-w-[920px] flex-col border-l border-neutral-800 bg-neutral-950 shadow-2xl"
             >
               {/* header */}
-              <header className="shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.05] bg-[#0a0a0a]/50 backdrop-blur-xl">
+              <header className="flex shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-5 py-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-800 bg-neutral-900 text-neutral-400">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
@@ -288,16 +290,16 @@ function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
                     )}
                   </ActionBtn>
                   <ActionBtn onClick={() => setIsExpanded(false)}>
-                    <Minimize2 className="w-3.5 h-3.5" /> Close
+                    <X className="w-3.5 h-3.5" /> Close
                   </ActionBtn>
                 </div>
               </header>
 
               {/* document body */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar flex justify-center">
-                <article className="document-view w-full max-w-3xl py-12 px-8 md:px-12">
+              <div className="flex flex-1 justify-center overflow-y-auto custom-scrollbar">
+                <article className="document-view w-full px-6 py-8 md:px-10">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {lastOutput}
+                    {displayOutput}
                   </ReactMarkdown>
                 </article>
               </div>

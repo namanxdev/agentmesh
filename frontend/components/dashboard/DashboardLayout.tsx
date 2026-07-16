@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Trash2, FolderOpen, Blocks, Bot, FileJson, Activity, TerminalSquare, LayoutTemplate, Monitor } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Trash2, FolderOpen, Blocks, Bot, FileJson, Activity, TerminalSquare, LayoutTemplate, Monitor, Server, RefreshCw, AlertCircle } from "lucide-react";
 import { useAgentMeshEvents } from "@/hooks/useAgentMeshEvents";
 import { usePipelineStore } from "@/stores/pipelineStore";
 
@@ -15,12 +15,14 @@ import { PipelineHeader } from "@/components/pipeline/PipelineHeader";
 import { PipelineCanvas } from "@/components/pipeline/PipelineCanvas";
 import { NodePalette } from "@/components/pipeline/NodePalette";
 import { NodeConfigInspector } from "@/components/pipeline/NodeConfigInspector";
-import RetroGrid from "@/components/ui/retro-grid";
-import { BorderBeam } from "@/components/ui/border-beam";
-import { AnimatedTooltip } from "@/components/ui/animated-tooltip";
-import { Spotlight } from "@/components/ui/spotlight";
 
 type AppTab = "canvas" | "analytics";
+type MCPServerRow = {
+  id: string;
+  name: string;
+  server_type: string;
+  command_or_url: string;
+};
 
 // --- Components ---
 
@@ -32,16 +34,74 @@ interface PanelButtonProps {
 }
 
 const PanelButton = ({ onClick, children, className = "", title }: PanelButtonProps) => (
-  <AnimatedTooltip items={[{ id: 1, name: title }]}>
-    <button
-      onClick={onClick}
-      className={`group relative flex items-center justify-center w-8 h-12 rounded-xl border border-white/5 bg-white/[0.02] text-neutral-400 hover:text-white hover:border-white/20 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] backdrop-blur-2xl transition-all duration-300 z-50 ${className}`}
-    >
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-      {children}
-    </button>
-  </AnimatedTooltip>
+  <button
+    onClick={onClick}
+    className={`flex h-9 w-9 items-center justify-center rounded-md border border-neutral-800 bg-neutral-950 text-neutral-500 transition-colors hover:border-neutral-700 hover:bg-neutral-900 hover:text-neutral-100 ${className}`}
+    title={title}
+  >
+    {children}
+  </button>
 );
+
+function MCPServerStrip() {
+  const [servers, setServers] = useState<MCPServerRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchServers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/mcp/user-servers");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.detail ?? `Failed to load MCP servers (${res.status})`);
+      }
+      const data = await res.json();
+      setServers(data.servers ?? []);
+    } catch (err) {
+      setServers([]);
+      setError(err instanceof Error ? err.message : "Failed to load MCP servers");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchServers();
+  }, [fetchServers]);
+
+  return (
+    <div className="flex min-h-12 items-center justify-between gap-4 rounded-lg border border-neutral-800 bg-neutral-950/95 px-4 py-2 text-sm shadow-[0_1px_0_rgba(255,255,255,0.03)]">
+      <div className="flex min-w-0 items-center gap-3">
+        <Server className="h-4 w-4 shrink-0 text-neutral-400" />
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-neutral-200">MCP registry</span>
+            <span className="rounded-md border border-neutral-800 bg-neutral-900 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+              {loading ? "Loading" : `${servers.length} server${servers.length === 1 ? "" : "s"}`}
+            </span>
+          </div>
+          <div className="mt-0.5 truncate text-xs text-neutral-500">
+            {error
+              ? error
+              : servers.length > 0
+                ? servers.map((server) => `${server.name} (${server.server_type})`).join(", ")
+                : "No MCP servers registered. Add one in Settings, then select it on a Tool node."}
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={fetchServers}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-800 text-neutral-500 transition-colors hover:border-neutral-700 hover:text-neutral-200"
+        title="Refresh MCP servers"
+      >
+        {error ? <AlertCircle className="h-3.5 w-3.5 text-red-400" /> : <RefreshCw className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  );
+}
 
 export function DashboardLayout() {
   useAgentMeshEvents(true);
@@ -92,32 +152,16 @@ export function DashboardLayout() {
   const isBuild = activeTab === "canvas";
 
   return (
-<div className="relative w-screen h-screen flex overflow-hidden bg-black text-[#ededed] font-sans selection:bg-fuchsia-500/30">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:radial-gradient(ellipse_100%_100%_at_50%_0%,#000_100%,transparent_110%)] pointer-events-none opacity-40"></div>
-      <div className="absolute inset-0 pointer-events-none overflow-hidden h-full w-full mix-blend-screen opacity-30 z-0">
-        <div className="absolute top-[-30%] flex justify-center w-full h-[60%] opacity-40 blur-[120px] bg-gradient-to-r from-transparent via-indigo-500/30 to-fuchsia-500/20" />
-      </div>
-      
-      <Spotlight
-        className="-top-40 left-0 md:left-60 md:-top-20"
-        fill="white"
-      />
-      
-      
-      {/* Main Container */}
-      <div className="relative z-10 flex flex-col w-full h-full p-6 pt-4 gap-6">
-        
-        {/* Header section (Awwwards/Minimalist Premium) */}
-        <div className="relative flex-shrink-0 mx-auto w-full max-w-7xl mt-4 z-50">
-          {/* Subtle diffusion shadow container, separating shadow from border */}
-          <div className="absolute inset-0 bg-[#070707]/80 backdrop-blur-[40px] rounded-[20px] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.4)] border border-white/[0.05] will-change-transform transform-gpu overflow-visible" />
-          <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+    <div className="relative flex h-screen w-screen overflow-hidden bg-neutral-950 text-neutral-100 selection:bg-neutral-700">
+      <div className="relative z-10 flex h-full w-full flex-col gap-3 p-3">
+        <div className="relative z-50 mx-auto w-full max-w-[1920px] flex-shrink-0 rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm">
           <PipelineHeader activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
+        {isBuild && <MCPServerStrip />}
 
         {/* Workspace section */}
         {isBuild ? (
-          <div className="relative flex flex-1 overflow-hidden gap-6 min-h-0 max-w-[1920px] w-full mx-auto">
+          <div className="relative mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 gap-3 overflow-hidden">
 
             {/* LEFT PANEL */}
             {!isMobile && (
@@ -128,11 +172,8 @@ export function DashboardLayout() {
                 width: leftCollapsed ? 64 : 340,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
-              className="group relative h-full flex flex-col bg-[#0a0a0a]/80 border border-white/[0.08] backdrop-blur-[40px] rounded-[24px] shadow-2xl shadow-black/50 overflow-hidden z-20 flex-shrink-0 ring-1 ring-black/20"
+              className="group relative z-20 flex h-full flex-shrink-0 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm"
             >
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent opacity-50" />
-              <BorderBeam size={300} duration={12} delay={2} colorFrom="#ec4899" colorTo="#3b82f6" />
-              
               <AnimatePresence mode="popLayout" initial={false}>
                 {leftCollapsed ? (
                   <motion.div
@@ -140,7 +181,7 @@ export function DashboardLayout() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0, transition: { delay: 0.1 } }}
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.1 } }}
-                    className="flex flex-col items-center pt-6 w-16 h-full gap-8"
+                    className="flex h-full w-16 flex-col items-center gap-8 pt-4"
                   >
                     <PanelButton onClick={() => setLeftCollapsed(false)} title="Expand Blocks">
                       <ChevronRight className="w-5 h-5" />
@@ -161,9 +202,9 @@ export function DashboardLayout() {
                     exit={{ opacity: 0, x: 20, transition: { duration: 0.1 } }}
                     className="flex flex-col w-[340px] h-full"
                   >
-                    <div className="px-6 pt-5 pb-3 border-b border-white/[0.06] flex items-center justify-between">
+                    <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
                       <div className="flex items-center gap-3 text-neutral-200">
-                        <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <div className="rounded-md border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-400">
                           {mode === "build" ? <Blocks className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                         </div>
                         <span className="text-sm font-semibold tracking-wide">
@@ -171,14 +212,14 @@ export function DashboardLayout() {
                         </span>
                       </div>
                       <button 
-                        className="text-neutral-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-1.5 rounded-md" 
+                        className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
                         onClick={() => setLeftCollapsed(true)} 
                         title="Collapse panel"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="flex-1 min-h-0 overflow-hidden w-full bg-black/20">
+                    <div className="min-h-0 w-full flex-1 overflow-hidden">
                       {mode === "build" ? <NodePalette /> : <AgentSidebar agentNames={agentNames} />}
                     </div>
                   </motion.div>
@@ -188,15 +229,11 @@ export function DashboardLayout() {
             )}
 
             {/* CENTER CANVAS & BOTTOM PANEL */}
-            <div className="flex flex-1 flex-col min-w-0 overflow-hidden relative rounded-[24px] gap-6">
+            <div className="relative flex min-w-0 flex-1 flex-col gap-3 overflow-hidden rounded-lg">
               
               {/* Canvas Container */}
-              <div className="flex-1 flex flex-col relative rounded-[24px] border border-white/[0.08] bg-[#050505]/40 backdrop-blur-md shadow-2xl overflow-hidden min-h-0 ring-1 ring-black/50">
-                <RetroGrid className="opacity-[0.15]" />
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm">
                 <PipelineCanvas mode={mode} />
-                
-                {/* Internal Drop Shadows for depth */}
-                <div className="absolute inset-0 pointer-events-none rounded-[24px] shadow-[inset_0_0_40px_rgba(0,0,0,0.8)]" />
 
                 {/* Event stream toggler */}
                 {!isMobile && (
@@ -210,9 +247,9 @@ export function DashboardLayout() {
                     >
                       <button
                         onClick={() => setBottomCollapsed(false)}
-                        className="group flex items-center gap-2.5 px-6 py-3 bg-[#111]/90 hover:bg-[#1a1a1a]/90 border border-white/10 hover:border-white/20 backdrop-blur-2xl rounded-full text-xs font-mono uppercase tracking-[0.2em] text-neutral-300 hover:text-white shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all hover:scale-105"
+                        className="group flex items-center gap-2 rounded-md border border-neutral-800 bg-neutral-950 px-4 py-2 text-xs font-medium text-neutral-300 shadow-sm transition-colors hover:border-neutral-700 hover:bg-neutral-900 hover:text-white"
                       >
-                        <TerminalSquare className="w-4 h-4 text-emerald-400 group-hover:text-emerald-300" />
+                        <TerminalSquare className="w-4 h-4 text-neutral-400" />
                         <span>Event Stream</span>
                       </button>
                     </motion.div>
@@ -230,18 +267,15 @@ export function DashboardLayout() {
                     animate={{ height: 320, opacity: 1, marginTop: 0 }}
                     exit={{ height: 0, opacity: 0, marginTop: -24 }}
                     transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                    className="relative w-full bg-[#0a0a0a]/80 border border-white/[0.08] backdrop-blur-[40px] rounded-[24px] shadow-2xl flex flex-col flex-shrink-0 ring-1 ring-black/40 isolate"
+                    className="relative flex w-full flex-shrink-0 flex-col rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm"
                   >
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
-                    <BorderBeam size={400} duration={10} delay={1} colorFrom="#10b981" colorTo="#3b82f6" />
-
-                    <div className="px-6 py-3 border-b border-white/[0.06] flex items-center justify-between">
+                    <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <TerminalSquare className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-mono tracking-widest uppercase text-neutral-300">Live Event Stream</span>
+                        <TerminalSquare className="w-4 h-4 text-neutral-400" />
+                        <span className="text-xs font-medium text-neutral-300">Live Event Stream</span>
                       </div>
                       <button
-                        className="p-1.5 text-neutral-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                        className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
                         onClick={() => setBottomCollapsed(true)}
                         title="Collapse event stream"
                       >
@@ -249,7 +283,7 @@ export function DashboardLayout() {
                       </button>
                     </div>
 
-                    <div className="flex-1 overflow-hidden w-full relative bg-black/40">
+                    <div className="relative w-full flex-1 overflow-hidden">
                       <MessageStream />
                     </div>
                   </motion.div>
@@ -264,8 +298,8 @@ export function DashboardLayout() {
                   animate={{ opacity: 1, y: 0 }}
                   className="absolute bottom-4 left-4 right-4 z-30"
                 >
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-xl shadow-2xl">
-                    <Monitor className="w-5 h-5 text-indigo-400 shrink-0" />
+                  <div className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-3 shadow-sm">
+                    <Monitor className="w-5 h-5 text-neutral-400 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-white">Desktop Editing Only</p>
                       <p className="text-[10px] text-neutral-400 mt-0.5">Pipeline editing is only enabled on larger screens. Viewing is still available.</p>
@@ -284,10 +318,8 @@ export function DashboardLayout() {
                 width: rightCollapsed ? 64 : 340,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
-              className="group relative h-full flex flex-col bg-[#0a0a0a]/80 border border-white/[0.08] backdrop-blur-[40px] rounded-[24px] shadow-2xl overflow-hidden z-20 flex-shrink-0 ring-1 ring-black/20"
+              className="group relative z-20 flex h-full flex-shrink-0 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm"
             >
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
-              <BorderBeam size={300} duration={12} delay={5} colorFrom="#3b82f6" colorTo="#8b5cf6" />
               <AnimatePresence mode="popLayout" initial={false}>
                 {rightCollapsed ? (
                   <motion.div
@@ -316,9 +348,9 @@ export function DashboardLayout() {
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.1 } }}
                     className="flex flex-col w-[340px] h-full"
                   >
-                    <div className="px-6 pt-5 pb-3 border-b border-white/[0.06] flex items-center justify-between">
+                    <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
                       <button 
-                        className="text-neutral-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-1.5 rounded-md" 
+                        className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
                         onClick={() => setRightCollapsed(true)} 
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -327,12 +359,12 @@ export function DashboardLayout() {
                         <span className="text-sm font-semibold tracking-wide">
                           {mode === "build" ? "Properties" : "Tool Calls"}
                         </span>
-                        <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                        <div className="rounded-md border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-400">
                           {mode === "build" ? <LayoutTemplate className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 overflow-hidden w-full custom-scrollbar bg-black/20">
+                    <div className="custom-scrollbar w-full flex-1 overflow-hidden">
                       {mode === "build" ? <NodeConfigInspector /> : <ToolCallInspector />}
                     </div>
                   </motion.div>
@@ -347,9 +379,8 @@ export function DashboardLayout() {
             initial={{ opacity: 0, scale: 0.98, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="relative flex-1 rounded-[24px] border border-white/[0.08] bg-[#0a0a0a]/60 backdrop-blur-[40px] shadow-2xl overflow-hidden p-8 min-h-0 max-w-[1920px] w-full mx-auto"
+            className="relative mx-auto min-h-0 w-full max-w-[1920px] flex-1 overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 p-4 shadow-sm"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-black/0 to-fuchsia-500/5 pointer-events-none" />
             <AnalyticsView />
           </motion.div>
         )}

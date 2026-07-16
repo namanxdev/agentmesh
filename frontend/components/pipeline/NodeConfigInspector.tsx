@@ -1,7 +1,7 @@
 "use client";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { NODE_COLORS } from "./nodes/BaseNode";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type {
   NodeKind,
   InputNodeConfig,
@@ -73,8 +73,8 @@ function InputForm({ id, config }: { id: string; config: InputNodeConfig }) {
 }
 
 const MODELS = [
-  "gemini-2.0-flash",
-  "gemini-2.0-pro",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
   "llama-3.3-70b-versatile",
   "llama-3.1-8b-instant",
   "gpt-4o",
@@ -162,36 +162,88 @@ type MCPServerOption = { id: string; name: string };
 function ToolForm({ id, config }: { id: string; config: ToolNodeConfig }) {
   const update = usePipelineStore((s) => s.updateNodeConfig);
   const [mcpServers, setMcpServers] = useState<MCPServerOption[]>([]);
+  const [mcpLoading, setMcpLoading] = useState(true);
+  const [mcpError, setMcpError] = useState<string | null>(null);
+
+  const fetchMcpServers = useCallback(async () => {
+    setMcpLoading(true);
+    setMcpError(null);
+    try {
+      const res = await fetch("/api/mcp/user-servers");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail ?? `Could not load MCP servers (${res.status})`);
+      }
+      const data = await res.json();
+      setMcpServers(data.servers ?? []);
+    } catch (err) {
+      setMcpServers([]);
+      setMcpError(err instanceof Error ? err.message : "Could not load MCP servers");
+    } finally {
+      setMcpLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch("/api/mcp/user-servers")
-      .then((r) => r.ok ? r.json() : { servers: [] })
-      .then((data) => setMcpServers(data.servers ?? []))
-      .catch(() => {});
-  }, []);
+    fetchMcpServers();
+  }, [fetchMcpServers]);
 
   return (
     <>
       <Field label="Server">
-        {mcpServers.length > 0 ? (
-          <select
-            style={fieldStyle}
-            value={config.server}
-            onChange={(e) => update(id, { server: e.target.value })}
+        <div style={{ display: "flex", gap: 6 }}>
+          {mcpServers.length > 0 ? (
+            <select
+              style={{ ...fieldStyle, minWidth: 0 }}
+              value={config.server}
+              onChange={(e) => update(id, { server: e.target.value })}
+            >
+              <option value="">Select server</option>
+              {mcpServers.map((s) => (
+                <option key={s.id} value={s.name}>{s.name}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              style={{ ...fieldStyle, minWidth: 0 }}
+              value={config.server}
+              onChange={(e) => update(id, { server: e.target.value })}
+              placeholder={mcpLoading ? "Loading servers..." : "mcp-server-name"}
+            />
+          )}
+          <button
+            type="button"
+            onClick={fetchMcpServers}
+            disabled={mcpLoading}
+            style={{
+              width: 34,
+              flexShrink: 0,
+              borderRadius: 6,
+              border: "1px solid var(--border-subtle)",
+              background: "var(--bg-tertiary)",
+              color: "var(--text-secondary)",
+              cursor: mcpLoading ? "default" : "pointer",
+              opacity: mcpLoading ? 0.55 : 1,
+            }}
+            title="Refresh MCP servers"
           >
-            <option value="">-- select server --</option>
-            {mcpServers.map((s) => (
-              <option key={s.id} value={s.name}>{s.name}</option>
-            ))}
-          </select>
-        ) : (
-          <input
-            style={fieldStyle}
-            value={config.server}
-            onChange={(e) => update(id, { server: e.target.value })}
-            placeholder="mcp-server-name"
-          />
-        )}
+            R
+          </button>
+        </div>
+        {mcpError ? (
+          <p style={{ margin: "6px 0 0", color: "var(--status-error)", fontSize: 11 }}>
+            {mcpError}
+          </p>
+        ) : !mcpLoading && mcpServers.length === 0 ? (
+          <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: 11 }}>
+            No saved MCP servers. Add one in Settings, or type a registered server name.
+          </p>
+        ) : null}
+        {config.server && !mcpServers.some((s) => s.name === config.server) ? (
+          <p style={{ margin: "6px 0 0", color: "var(--status-warning)", fontSize: 11 }}>
+            This server is not in your saved MCP registry.
+          </p>
+        ) : null}
       </Field>
       <Field label="Tool Name">
         <input style={fieldStyle} value={config.tool_name} onChange={(e) => update(id, { tool_name: e.target.value })} placeholder="tool_function_name" />
