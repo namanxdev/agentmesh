@@ -1,7 +1,9 @@
 import hashlib
 import hmac
+import json
 import logging
 import os
+import shlex
 import secrets
 import time
 import uuid
@@ -21,9 +23,98 @@ from backend.db.engine import get_db
 from backend.events.bus import EventBus
 from backend.llm.base import BaseLLMProvider
 from backend.mcp.registry import MCPRegistry
+from backend.observability import tcc as _tcc_obs
 from backend.orchestrator.graph import WorkflowOrchestrator
 
 # -- Request / Response models ------------------------------------------------
+
+
+def _parse_mcp_env_vars(env_vars: object) -> dict:
+    if isinstance(env_vars, dict):
+        return env_vars
+    if isinstance(env_vars, str) and env_vars.strip():
+        try:
+            parsed = json.loads(env_vars)
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
+def _mcp_transport_config_from_row(row: object) -> dict:
+    server_type = getattr(row, "server_type")
+    command_or_url = getattr(row, "command_or_url")
+    env_vars = _parse_mcp_env_vars(getattr(row, "env_vars", {}))
+
+    if server_type == "stdio":
+        parts = shlex.split(command_or_url, posix=os.name != "nt")
+        if not parts:
+            raise ValueError("stdio MCP server command cannot be empty")
+        config = {
+            "transport": "stdio",
+            "command": parts[0].strip("\"'"),
+            "args": [p.strip("\"'") for p in parts[1:]],
+        }
+        if env_vars:
+            config["env"] = env_vars
+        return config
+
+    if server_type in {"sse", "http"}:
+        return {"transport": server_type, "url": command_or_url}
+
+    raise ValueError(f"Unknown MCP server type: {server_type}")
+
+
+def _referenced_mcp_servers(definition: dict) -> set[str]:
+    return {
+        n.get("config", {}).get("server", "")
+        for n in definition.get("nodes", [])
+        if n.get("kind") == "tool" and n.get("config", {}).get("server")
+    }
+
+
+async def _load_user_mcp_registry(
+    *,
+    user_id: str,
+    db: AsyncSession,
+    event_bus: EventBus,
+    definition: dict,
+) -> MCPRegistry:
+    """Build an isolated MCP registry for the user servers used by one run."""
+    registry = MCPRegistry(event_bus=event_bus)
+    required_servers = _referenced_mcp_servers(definition)
+    if not required_servers:
+        return registry
+
+    result = await db.execute(
+        text(
+            "SELECT name, server_type, command_or_url, env_vars"
+            " FROM mcp_servers WHERE user_id=:uid"
+        ),
+        {"uid": user_id},
+    )
+    rows = result.fetchall()
+    found_servers: set[str] = set()
+
+    for row in rows:
+        if row.name not in required_servers:
+            continue
+        found_servers.add(row.name)
+        registry.register(row.name, **_mcp_transport_config_from_row(row))
+
+    missing = sorted(required_servers - found_servers)
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "missing_mcp_servers",
+                "message": "Pipeline references MCP server(s) not registered in Settings: "
+                + ", ".join(missing),
+            },
+        )
+
+    await registry.connect_all()
+    return registry
 
 
 class WorkflowRunRequest(BaseModel):
@@ -240,6 +331,8 @@ def create_app(
 
         # Run async (fire-and-forget style — events stream via WebSocket)
         import asyncio
+
+        _tcc_obs.current_user_id.set(user_id)
 
         async def _run():
             result = await orchestrator.run(
@@ -490,7 +583,7 @@ def create_app(
         missing: list[str] = []
         for n in nodes:
             if n["kind"] == "llm_agent":
-                model = n["config"].get("model", "gemini-2.0-flash")
+                model = n["config"].get("model", "gemini-2.5-flash")
                 family = _required_family(model)
                 if family not in providers:
                     agent_name = n["config"].get("name", n["id"])
@@ -515,7 +608,13 @@ def create_app(
             "edges": edges,
         }
 
-        config = pipeline_to_workflow_config(defn_dict, user_llm, event_bus, mcp_registry)
+        run_mcp_registry = await _load_user_mcp_registry(
+            user_id=user_id,
+            db=db,
+            event_bus=event_bus,
+            definition=defn_dict,
+        )
+        config = pipeline_to_workflow_config(defn_dict, user_llm, event_bus, run_mcp_registry)
         agent_reg = config["agent_registry"]
         graph_cfg = config["graph_config"]
         task = request.task or config["task"]
@@ -563,6 +662,8 @@ def create_app(
             await db.commit()
         except Exception as e:
             _log.warning("Non-critical error saving pipeline run to DB: %s", e)
+
+        _tcc_obs.current_user_id.set(user_id)
 
         async def _run():
             result = await orchestrator.run(
@@ -946,12 +1047,19 @@ def create_app(
         )
         nodes = defn.get("nodes", [])
         edges = defn.get("edges", [])
+        defn_dict = {"name": defn.get("name", "webhook"), "nodes": nodes, "edges": edges}
 
+        run_mcp_registry = await _load_user_mcp_registry(
+            user_id=trigger_row.user_id,
+            db=db,
+            event_bus=event_bus,
+            definition=defn_dict,
+        )
         config = pipeline_to_workflow_config(
-            {"name": defn.get("name", "webhook"), "nodes": nodes, "edges": edges},
+            defn_dict,
             user_llm,
             event_bus,
-            mcp_registry,
+            run_mcp_registry,
         )
         agent_reg = config["agent_registry"]
         graph_cfg = config["graph_config"]
@@ -974,6 +1082,8 @@ def create_app(
             "status": "running",
             "started_at": time.time(),
         }
+
+        _tcc_obs.current_user_id.set(trigger_row.user_id)
 
         async def _run():
             result = await orchestrator.run(task=task, initial_state={})

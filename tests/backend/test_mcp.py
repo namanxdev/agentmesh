@@ -1,5 +1,7 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from fastapi import HTTPException
 import pytest
 
 from backend.mcp.tools import format_tool_for_llm, namespace_tool, parse_tool_name
@@ -162,3 +164,106 @@ def test_mcp_registry_double_register_overwrites():
     # The client should be the newest one
     client = registry.get_client("github")
     assert client.server_name == "github"
+
+
+def test_mcp_transport_config_from_stdio_row_splits_command_and_env():
+    from backend.api.routes import _mcp_transport_config_from_row
+
+    row = SimpleNamespace(
+        server_type="stdio",
+        command_or_url="npx -y @modelcontextprotocol/server-filesystem E:/Projects",
+        env_vars='{"TOKEN":"secret"}',
+    )
+
+    config = _mcp_transport_config_from_row(row)
+
+    assert config == {
+        "transport": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "E:/Projects"],
+        "env": {"TOKEN": "secret"},
+    }
+
+
+def test_mcp_transport_config_from_http_row_uses_url():
+    from backend.api.routes import _mcp_transport_config_from_row
+
+    row = SimpleNamespace(
+        server_type="http",
+        command_or_url="http://localhost:8080/mcp",
+        env_vars={},
+    )
+
+    assert _mcp_transport_config_from_row(row) == {
+        "transport": "http",
+        "url": "http://localhost:8080/mcp",
+    }
+
+
+@pytest.mark.asyncio
+async def test_load_user_mcp_registry_registers_referenced_servers_only():
+    from backend.api.routes import _load_user_mcp_registry
+    from backend.events.bus import EventBus
+
+    result = MagicMock()
+    result.fetchall.return_value = [
+        SimpleNamespace(
+            name="filesystem",
+            server_type="stdio",
+            command_or_url="mcp-server-filesystem E:/Projects",
+            env_vars={},
+        ),
+        SimpleNamespace(
+            name="unused",
+            server_type="http",
+            command_or_url="http://localhost:9999/mcp",
+            env_vars={},
+        ),
+    ]
+    db = MagicMock()
+    db.execute = AsyncMock(return_value=result)
+    definition = {
+        "nodes": [
+            {"id": "a", "kind": "llm_agent", "config": {"name": "A"}},
+            {"id": "t", "kind": "tool", "config": {"server": "filesystem"}},
+        ],
+        "edges": [],
+    }
+
+    with patch("backend.api.routes.MCPRegistry.connect_all", new_callable=AsyncMock) as connect:
+        registry = await _load_user_mcp_registry(
+            user_id="user-1",
+            db=db,
+            event_bus=EventBus(),
+            definition=definition,
+        )
+
+    info = registry.get_server_info()
+    assert [s["name"] for s in info["servers"]] == ["filesystem"]
+    connect.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_load_user_mcp_registry_rejects_missing_referenced_server():
+    from backend.api.routes import _load_user_mcp_registry
+    from backend.events.bus import EventBus
+
+    result = MagicMock()
+    result.fetchall.return_value = []
+    db = MagicMock()
+    db.execute = AsyncMock(return_value=result)
+    definition = {
+        "nodes": [{"id": "t", "kind": "tool", "config": {"server": "missing"}}],
+        "edges": [],
+    }
+
+    with pytest.raises(HTTPException) as exc:
+        await _load_user_mcp_registry(
+            user_id="user-1",
+            db=db,
+            event_bus=EventBus(),
+            definition=definition,
+        )
+
+    assert exc.value.status_code == 422
+    assert exc.value.detail["error"] == "missing_mcp_servers"
