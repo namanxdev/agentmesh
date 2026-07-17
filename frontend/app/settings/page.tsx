@@ -18,23 +18,9 @@ import {
   Zap,
 } from "lucide-react";
 import { ApiKeyCard } from "@/components/settings/ApiKeyCard";
+import { DEFAULT_LLM_MODEL, LLM_PROVIDERS } from "@/config/llmProviders";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { InputNodeConfig, LLMAgentConfig } from "@/types/pipeline";
-
-const PROVIDERS = [
-  { provider: "gemini" as const, label: "Google Gemini", description: "Gemini 2.0 Flash and Gemini 2.0 Pro models." },
-  { provider: "groq" as const, label: "Groq", description: "Llama and other open-source models served by Groq." },
-  { provider: "openai" as const, label: "OpenAI", description: "GPT-4o and GPT-4o mini models." },
-];
-
-const MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-pro",
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "gpt-4o",
-  "gpt-4o-mini",
-];
 
 const SERVER_TYPES = ["stdio", "sse", "http"] as const;
 
@@ -90,7 +76,7 @@ export default function SettingsPage() {
   const description = inputConfig?.description ?? "";
   const llmNodes = nodes.filter((node) => node.data?.kind === "llm_agent");
   const firstLLMConfig = llmNodes[0]?.data?.config as LLMAgentConfig | undefined;
-  const currentModel = firstLLMConfig?.model ?? MODELS[0];
+  const currentModel = firstLLMConfig?.model ?? DEFAULT_LLM_MODEL;
   const currentTemp = firstLLMConfig?.temperature ?? 0.4;
 
   const fetchKeys = useCallback(async () => {
@@ -232,7 +218,7 @@ export default function SettingsPage() {
                   <label className="block space-y-2"><span className="flex justify-between gap-3"><span className={labelClass}>Description / task</span>{!inputNode && <span className="text-[11px] text-amber-400">Requires an input node</span>}</span><textarea value={description} onChange={(event) => inputNode && updateNodeConfig(inputNode.id, { description: event.target.value })} placeholder="Describe what this pipeline does" disabled={!inputNode} className={`${fieldClass} min-h-32 resize-y`} /></label>
                 </div>
                 <div className="space-y-5">
-                  <label className="block space-y-2"><span className="flex justify-between gap-3"><span className={labelClass}>Agent model</span><span className="font-mono text-[10px] text-neutral-600">{llmNodes.length} agents</span></span><select value={currentModel} onChange={(event) => llmNodes.forEach((node) => updateNodeConfig(node.id, { model: event.target.value }))} disabled={llmNodes.length === 0} className={fieldClass}>{MODELS.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+                  <label className="block space-y-2"><span className="flex justify-between gap-3"><span className={labelClass}>Agent model</span><span className="font-mono text-[10px] text-neutral-600">{llmNodes.length} agents</span></span><select value={currentModel} onChange={(event) => llmNodes.forEach((node) => updateNodeConfig(node.id, { model: event.target.value }))} disabled={llmNodes.length === 0} className={fieldClass}>{LLM_PROVIDERS.map((provider) => <optgroup key={provider.provider} label={provider.label}>{provider.models.map((model) => <option key={model} value={model}>{model}</option>)}</optgroup>)}</select></label>
                   <label className="block space-y-3"><span className="flex justify-between gap-3"><span className={labelClass}>Temperature</span><span className="font-mono text-xs tabular-nums text-neutral-300">{currentTemp.toFixed(1)}</span></span><input type="range" min={0} max={1} step={0.1} value={currentTemp} onChange={(event) => llmNodes.forEach((node) => updateNodeConfig(node.id, { temperature: Number(event.target.value) }))} disabled={llmNodes.length === 0} className="w-full accent-indigo-500 disabled:cursor-not-allowed disabled:opacity-50" /><span className="flex justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-neutral-600"><span>Precise</span><span>Creative</span></span></label>
                   <div className="flex justify-end border-t border-neutral-800 pt-5"><button type="button" onClick={async () => { try { await savePipeline(); toast.success("Pipeline configuration saved"); } catch { toast.error("Failed to save pipeline configuration"); } }} disabled={isSaving} className="inline-flex min-h-9 items-center gap-2 rounded-md bg-indigo-500 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"><Zap className="h-3.5 w-3.5" />{isSaving ? "Saving" : "Save configuration"}</button></div>
                 </div>
@@ -242,9 +228,9 @@ export default function SettingsPage() {
         </section>
 
         <section className="flex flex-col gap-5">
-          <SectionHeading icon={KeyRound} eyebrow="Credentials" title="Provider API keys" description="Keys are encrypted before storage and are never included in execution logs." />
-          <div className="grid gap-3">
-            {loading ? [1, 2, 3].map((item) => <div key={item} className="h-36 animate-pulse border border-neutral-800 bg-neutral-900/30" />) : PROVIDERS.map((provider) => <ApiKeyCard key={provider.provider} {...provider} isSaved={provider.provider in savedKeys} savedAt={savedKeys[provider.provider]} onSaved={fetchKeys} />)}
+          <SectionHeading icon={KeyRound} eyebrow="Credentials" title="Provider API keys" description={`${LLM_PROVIDERS.length} supported providers. Keys are encrypted before storage and never included in execution logs.`} />
+          <div className="grid gap-3 lg:grid-cols-2">
+            {loading ? [1, 2, 3, 4].map((item) => <div key={item} className="h-36 animate-pulse border border-neutral-800 bg-neutral-900/30" />) : LLM_PROVIDERS.map((provider) => <ApiKeyCard key={provider.provider} provider={provider.provider} label={provider.label} description={provider.description} isSaved={provider.provider in savedKeys} savedAt={savedKeys[provider.provider]} onSaved={fetchKeys} />)}
           </div>
         </section>
 

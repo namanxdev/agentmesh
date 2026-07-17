@@ -137,7 +137,7 @@ agentmesh/
 │   ├── crypto.py        # Fernet AES-256 per-user key encryption
 │   ├── db/              # SQLAlchemy async + Alembic migrations
 │   ├── events/          # EventBus: 100-event circular buffer, WS broadcast
-│   ├── llm/             # Gemini, Groq, OpenAI + MultiProvider router
+│   ├── llm/             # Direct and OpenAI-compatible providers + model router
 │   ├── mcp/             # FastMCP client wrapper + MCPRegistry
 │   ├── orchestrator/    # WorkflowOrchestrator: sequential + parallel execution
 │   └── pipelines/       # DAG validator, pipeline→workflow converter, templates
@@ -217,7 +217,7 @@ Minimum spec: 1 vCPU / 1 GB RAM. Add Nginx + Let's Encrypt for HTTPS.
 | Backend | FastAPI + uvicorn |
 | Orchestration | Custom `WorkflowOrchestrator` state machine |
 | MCP | FastMCP (stdio + HTTP) |
-| LLM providers | Gemini, Groq, OpenAI via `MultiProvider` |
+| LLM providers | Gemini, Groq, OpenAI, xAI, DeepSeek, OpenRouter, Mistral, Together, and Cerebras via `MultiProvider` |
 | Real-time | WebSocket + `EventBus` (100-event circular buffer) |
 | Database | PostgreSQL + SQLAlchemy async + Alembic |
 | Encryption | Fernet (AES-256) |

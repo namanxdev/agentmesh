@@ -3,9 +3,10 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Check, KeyRound, Trash2 } from "lucide-react";
+import type { LLMProviderId } from "@/config/llmProviders";
 
 interface ApiKeyCardProps {
-  provider: "gemini" | "groq" | "openai";
+  provider: LLMProviderId;
   label: string;
   description: string;
   isSaved: boolean;

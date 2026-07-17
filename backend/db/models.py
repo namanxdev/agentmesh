@@ -42,7 +42,7 @@ class ApiKey(Base):
     user_id: Mapped[str] = mapped_column(
         String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    provider: Mapped[str] = mapped_column(String, nullable=False)  # "gemini" | "groq"
+    provider: Mapped[str] = mapped_column(String, nullable=False)  # validated by llm.catalog
     encrypted_key: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 

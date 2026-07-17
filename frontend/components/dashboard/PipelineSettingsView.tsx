@@ -1,16 +1,8 @@
 "use client";
 
 import { usePipelineStore } from "@/stores/pipelineStore";
+import { DEFAULT_LLM_MODEL, LLM_PROVIDERS } from "@/config/llmProviders";
 import type { InputNodeConfig, LLMAgentConfig } from "@/types/pipeline";
-
-const MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-pro",
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "gpt-4o",
-  "gpt-4o-mini",
-];
 
 const fieldStyle: React.CSSProperties = {
   width: "100%",
@@ -59,7 +51,7 @@ export function PipelineSettingsView() {
   const llmNodes = nodes.filter((n) => n.data?.kind === "llm_agent");
   const firstLLM = llmNodes[0];
   const firstLLMConfig = firstLLM?.data?.config as LLMAgentConfig | undefined;
-  const currentModel = firstLLMConfig?.model ?? MODELS[0];
+  const currentModel = firstLLMConfig?.model ?? DEFAULT_LLM_MODEL;
   const currentTemp = firstLLMConfig?.temperature ?? 0.4;
 
   const applyModelToAll = (model: string) => {
@@ -168,10 +160,14 @@ export function PipelineSettingsView() {
               onChange={(e) => applyModelToAll(e.target.value)}
               disabled={llmNodes.length === 0}
             >
-              {MODELS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
+              {LLM_PROVIDERS.map((provider) => (
+                <optgroup key={provider.provider} label={provider.label}>
+                  {provider.models.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>

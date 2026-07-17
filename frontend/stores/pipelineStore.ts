@@ -19,12 +19,13 @@ import {
   PipelineNodeDefinition,
 } from "@/types/pipeline";
 import { type AgentStatus } from "@/types/agents";
+import { DEFAULT_LLM_MODEL } from "@/config/llmProviders";
 
 // Default configs per kind
 const DEFAULT_CONFIGS: Record<NodeKind, NodeConfig> = {
   input: { name: "Input", description: "" },
   output: { output_format: "text" },
-  llm_agent: { name: "Agent", system_prompt: "", model: "gemini-2.5-flash", temperature: 0.7, mcp_servers: [] },
+  llm_agent: { name: "Agent", system_prompt: "", model: DEFAULT_LLM_MODEL, temperature: 0.7, mcp_servers: [] },
   tool: { tool_name: "", server: "", parameters: "{}" },
   text: { content: "", variables: [] },
   router: { routing_key: "route", conditions: [] },

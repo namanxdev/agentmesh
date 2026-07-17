@@ -8,11 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.api.auth_middleware import get_current_user
 from backend.crypto import encrypt
 from backend.db.engine import get_db
+from backend.llm.catalog import VALID_PROVIDERS
 
 router = APIRouter(prefix="/api/keys", tags=["keys"])
-
-VALID_PROVIDERS = {"gemini", "groq", "openai"}
-
 
 class SaveKeyRequest(BaseModel):
     provider: str

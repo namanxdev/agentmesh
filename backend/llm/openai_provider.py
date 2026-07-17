@@ -6,10 +6,20 @@ from .base import BaseLLMProvider, LLMResponse
 
 
 class OpenAIProvider(BaseLLMProvider):
-    """OpenAI LLM provider (GPT-4o, GPT-4o-mini)."""
+    """OpenAI chat-completions provider and compatible API adapter."""
 
-    def __init__(self, api_key: str):
-        self._client = AsyncOpenAI(api_key=api_key)
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str | None = None,
+        default_headers: dict[str, str] | None = None,
+    ):
+        client_options: dict = {"api_key": api_key}
+        if base_url:
+            client_options["base_url"] = base_url
+        if default_headers:
+            client_options["default_headers"] = default_headers
+        self._client = AsyncOpenAI(**client_options)
 
     async def generate(
         self,

@@ -22,6 +22,7 @@ from backend.api.websocket import websocket_events_handler
 from backend.db.engine import get_db
 from backend.events.bus import EventBus
 from backend.llm.base import BaseLLMProvider
+from backend.llm.catalog import PROVIDER_DISPLAY_NAMES, create_provider, provider_for_model
 from backend.mcp.registry import MCPRegistry
 from backend.observability import tcc as _tcc_obs
 from backend.orchestrator.graph import WorkflowOrchestrator
@@ -295,15 +296,10 @@ def create_app(
                 _log.warning("workflow run: failed to decrypt key for provider '%s' (user %s)", row.provider, user_id)
                 continue
             _log.info("workflow run: loaded %s key from DB for user %s (prefix: %s...)", row.provider, user_id, api_key[:8])
-            if row.provider == "gemini":
-                from backend.llm.gemini import GeminiProvider
-                providers["gemini"] = GeminiProvider(api_key=api_key)
-            elif row.provider == "groq":
-                from backend.llm.groq import GroqProvider
-                providers["groq"] = GroqProvider(api_key=api_key)
-            elif row.provider == "openai":
-                from backend.llm.openai_provider import OpenAIProvider
-                providers["openai"] = OpenAIProvider(api_key=api_key)
+            try:
+                providers[row.provider] = create_provider(row.provider, api_key)
+            except ValueError:
+                _log.warning("workflow run: ignoring unknown provider '%s'", row.provider)
 
         if not providers:
             raise HTTPException(
@@ -676,18 +672,10 @@ def create_app(
                     "Failed to decrypt API key for provider '%s' (user %s)", row.provider, user_id
                 )
                 continue
-            if row.provider == "gemini":
-                from backend.llm.gemini import GeminiProvider
-
-                providers["gemini"] = GeminiProvider(api_key=api_key)
-            elif row.provider == "groq":
-                from backend.llm.groq import GroqProvider
-
-                providers["groq"] = GroqProvider(api_key=api_key)
-            elif row.provider == "openai":
-                from backend.llm.openai_provider import OpenAIProvider
-
-                providers["openai"] = OpenAIProvider(api_key=api_key)
+            try:
+                providers[row.provider] = create_provider(row.provider, api_key)
+            except ValueError:
+                _log.warning("pipeline run: ignoring unknown provider '%s'", row.provider)
 
         if not providers:
             raise HTTPException(
@@ -702,24 +690,20 @@ def create_app(
 
         # Pre-validate that each llm_agent node's model has a matching saved key.
         # This surfaces "wrong provider" errors immediately rather than mid-execution.
-        _PROVIDER_DISPLAY = {"gemini": "Gemini", "openai": "OpenAI", "groq": "Groq"}
-
-        def _required_family(model: str) -> str:
-            m = model.lower()
-            if m.startswith("gemini"):
-                return "gemini"
-            if m.startswith(("gpt", "o1", "o3", "o4")):
-                return "openai"
-            return "groq"
-
         missing: list[str] = []
         for n in nodes:
             if n["kind"] == "llm_agent":
                 model = n["config"].get("model", "gemini-2.5-flash")
-                family = _required_family(model)
+                try:
+                    family = provider_for_model(model)
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=422,
+                        detail={"error": "unsupported_model", "message": str(exc)},
+                    ) from exc
                 if family not in providers:
                     agent_name = n["config"].get("name", n["id"])
-                    display = _PROVIDER_DISPLAY.get(family, family.capitalize())
+                    display = PROVIDER_DISPLAY_NAMES.get(family, family.capitalize())
                     missing.append(
                         f"'{agent_name}' needs a {display} key (model: {model})"
                     )
@@ -1180,18 +1164,10 @@ def create_app(
             except Exception as e:
                 _log.warning("Failed to decrypt API key for provider '%s': %s", krow.provider, e)
                 continue
-            if krow.provider == "gemini":
-                from backend.llm.gemini import GeminiProvider
-
-                providers["gemini"] = GeminiProvider(api_key=api_key)
-            elif krow.provider == "groq":
-                from backend.llm.groq import GroqProvider
-
-                providers["groq"] = GroqProvider(api_key=api_key)
-            elif krow.provider == "openai":
-                from backend.llm.openai_provider import OpenAIProvider
-
-                providers["openai"] = OpenAIProvider(api_key=api_key)
+            try:
+                providers[krow.provider] = create_provider(krow.provider, api_key)
+            except ValueError:
+                _log.warning("webhook run: ignoring unknown provider '%s'", krow.provider)
 
         if not providers:
             raise HTTPException(

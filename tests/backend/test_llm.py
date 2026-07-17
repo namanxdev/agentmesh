@@ -3,6 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from backend.llm.base import BaseLLMProvider, LLMResponse
+from backend.llm.catalog import (
+    MODEL_PROVIDER,
+    VALID_PROVIDERS,
+    create_provider,
+    provider_for_model,
+)
 
 
 def test_llm_response_no_tool_calls():
@@ -22,6 +28,63 @@ def test_llm_response_with_tool_calls():
 def test_base_provider_is_abstract():
     with pytest.raises(TypeError):
         BaseLLMProvider()
+
+
+@pytest.mark.parametrize(
+    ("model", "provider"),
+    [
+        ("gemini-2.5-flash", "gemini"),
+        ("llama-3.3-70b-versatile", "groq"),
+        ("gpt-4o-mini", "openai"),
+        ("grok-4.5", "xai"),
+        ("deepseek-v4-pro", "deepseek"),
+        ("~anthropic/claude-sonnet-latest", "openrouter"),
+        ("mistral-large-latest", "mistral"),
+        ("meta-llama/Llama-3.3-70B-Instruct-Turbo", "together"),
+        ("gpt-oss-120b", "cerebras"),
+    ],
+)
+def test_provider_catalog_routes_models(model, provider):
+    assert provider_for_model(model) == provider
+    assert MODEL_PROVIDER[model] == provider
+
+
+def test_provider_catalog_contains_expanded_key_options():
+    assert VALID_PROVIDERS == {
+        "gemini",
+        "groq",
+        "openai",
+        "xai",
+        "deepseek",
+        "openrouter",
+        "mistral",
+        "together",
+        "cerebras",
+    }
+
+
+def test_provider_catalog_rejects_unknown_models():
+    with pytest.raises(ValueError, match="Unsupported model"):
+        provider_for_model("mystery-model")
+
+
+def test_create_xai_provider_uses_xai_base_url():
+    with patch("backend.llm.openai_provider.AsyncOpenAI") as mock_openai:
+        create_provider("xai", "xai-test-key")
+
+    mock_openai.assert_called_once_with(
+        api_key="xai-test-key",
+        base_url="https://api.x.ai/v1",
+    )
+
+
+def test_create_openrouter_provider_adds_app_headers():
+    with patch("backend.llm.openai_provider.AsyncOpenAI") as mock_openai:
+        create_provider("openrouter", "openrouter-test-key")
+
+    options = mock_openai.call_args.kwargs
+    assert options["base_url"] == "https://openrouter.ai/api/v1"
+    assert options["default_headers"]["X-OpenRouter-Title"] == "AgentMesh"
 
 
 from backend.llm.gemini import GeminiProvider

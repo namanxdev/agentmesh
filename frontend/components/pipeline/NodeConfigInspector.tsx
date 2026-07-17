@@ -2,6 +2,7 @@
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { NODE_COLORS } from "./nodes/BaseNode";
 import { useCallback, useEffect, useState } from "react";
+import { LLM_PROVIDERS } from "@/config/llmProviders";
 import type {
   NodeKind,
   InputNodeConfig,
@@ -72,15 +73,6 @@ function InputForm({ id, config }: { id: string; config: InputNodeConfig }) {
   );
 }
 
-const MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-pro",
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "gpt-4o",
-  "gpt-4o-mini",
-];
-
 type AgentMCPServer = { id: string; name: string; server_type: string };
 
 function LLMAgentForm({ id, config }: { id: string; config: LLMAgentConfig }) {
@@ -142,8 +134,12 @@ function LLMAgentForm({ id, config }: { id: string; config: LLMAgentConfig }) {
           value={config.model}
           onChange={(e) => update(id, { model: e.target.value })}
         >
-          {MODELS.map((m) => (
-            <option key={m} value={m}>{m}</option>
+          {LLM_PROVIDERS.map((provider) => (
+            <optgroup key={provider.provider} label={provider.label}>
+              {provider.models.map((model) => (
+                <option key={model} value={model}>{model}</option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </Field>

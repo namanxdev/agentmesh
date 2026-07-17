@@ -9,7 +9,7 @@ AgentMesh is an open-source platform for building, running, and monitoring multi
 - **Visual pipeline builder** — drag-and-drop canvas built on React Flow; connect LLM agents, tools, routers, memory, parallel fan-out, and transform nodes
 - **Real-time Mission Control** — WebSocket-driven event stream shows every agent decision, tool call, and handoff as it happens
 - **MCP-native** — register any MCP server (stdio or HTTP) and call its tools directly from pipeline nodes
-- **Multi-provider LLM routing** — Gemini, Groq, and OpenAI via a unified `MultiProvider` router; swap models per node
+- **Multi-provider LLM routing** — Gemini, Groq, OpenAI, xAI, DeepSeek, OpenRouter, Mistral, Together, and Cerebras via a unified `MultiProvider` router; swap models per node
 - **Per-user encrypted key storage** — Fernet AES-256; users paste keys once, everything is encrypted at rest
 - **Pre-built templates** — Research Synthesis, GitHub Code Review (more planned)
 - **Self-hosted / open-source** — MIT license; deploy on Render + Vercel + Neon for free, or Docker Compose on your own server
