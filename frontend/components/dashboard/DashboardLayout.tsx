@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Trash2, FolderOpen, Blocks, Bot, FileJson, Activity, TerminalSquare, LayoutTemplate, Monitor, Server, RefreshCw, AlertCircle } from "lucide-react";
@@ -22,6 +22,22 @@ type MCPServerRow = {
   server_type: string;
   command_or_url: string;
 };
+
+const MOBILE_BREAKPOINT = "(max-width: 767px)";
+
+function subscribeToViewport(callback: () => void) {
+  const query = window.matchMedia(MOBILE_BREAKPOINT);
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+}
+
+function getMobileSnapshot() {
+  return window.matchMedia(MOBILE_BREAKPOINT).matches;
+}
+
+function useIsMobileViewport() {
+  return useSyncExternalStore(subscribeToViewport, getMobileSnapshot, () => false);
+}
 
 // --- Components ---
 
@@ -71,11 +87,11 @@ function MCPServerStrip() {
   }, [fetchServers]);
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm">
+    <div className="flex h-8 items-center justify-between gap-3 border-t border-neutral-800 bg-neutral-950 px-3 text-sm">
       <div className="flex min-w-0 items-center gap-2.5">
-        <Server className="h-3.5 w-3.5 shrink-0 text-neutral-500" />
-        <span className="text-[13px] font-medium text-neutral-300 shrink-0">MCP registry</span>
-        <span className="text-[12px] text-neutral-500">
+        <Server className="h-3 w-3 shrink-0 text-neutral-600" />
+        <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">MCP registry</span>
+        <span className="text-[11px] text-neutral-500">
           {loading ? "Loading…" : `${servers.length} server${servers.length === 1 ? "" : "s"}`}
         </span>
         {!loading && !error && servers.length > 0 && (
@@ -95,7 +111,7 @@ function MCPServerStrip() {
       <button
         type="button"
         onClick={fetchServers}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-neutral-800 text-neutral-500 transition-colors hover:border-neutral-700 hover:text-neutral-200"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-neutral-600 transition-colors hover:bg-neutral-900 hover:text-neutral-200"
         title="Refresh MCP servers"
       >
         {error ? <AlertCircle className="h-3.5 w-3.5 text-red-400" /> : <RefreshCw className="h-3.5 w-3.5" />}
@@ -122,16 +138,9 @@ export function PipelineWorkbench() {
   const isRunning = usePipelineStore((s) => s.isRunning);
 
   const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(true);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
   const [bottomCollapsed, setBottomCollapsed] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const isMobile = useIsMobileViewport();
 
   useEffect(() => {
     setMode(isMobile ? "run" : "build");
@@ -158,15 +167,15 @@ export function PipelineWorkbench() {
     // This component fills the content area provided by the dashboard shell layout.
     // The shell gives us h-full via the flex-1 min-h-0 wrapper, so we use h-full here.
     <div className="relative flex h-full w-full overflow-hidden bg-neutral-950 text-neutral-100 selection:bg-neutral-700">
-      <div className="relative z-10 flex h-full w-full flex-col gap-3 p-3">
-        <div className="relative z-50 mx-auto w-full max-w-[1920px] flex-shrink-0 rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm">
+      <div className="relative z-10 flex h-full w-full flex-col p-3">
+        <div className="relative z-50 mx-auto w-full max-w-[1920px] flex-shrink-0 overflow-visible rounded-t-lg border border-neutral-800 bg-neutral-950 shadow-sm">
           <PipelineHeader />
+          <MCPServerStrip />
         </div>
-        <MCPServerStrip />
 
         {/* Workspace section */}
         {(
-          <div className="relative mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 gap-3 overflow-hidden">
+          <div className="relative mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 overflow-hidden rounded-b-lg border-x border-b border-neutral-800 bg-neutral-950">
 
             {/* LEFT PANEL */}
             {!isMobile && (
@@ -174,10 +183,10 @@ export function PipelineWorkbench() {
               layout
               initial={false}
               animate={{
-                width: leftCollapsed ? 40 : 340,
+                width: leftCollapsed ? 36 : 272,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
-              className="group relative z-20 flex h-full flex-shrink-0 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm"
+              className="group relative z-20 hidden h-full flex-shrink-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-950 md:flex"
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 {leftCollapsed ? (
@@ -186,7 +195,7 @@ export function PipelineWorkbench() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1, transition: { duration: 0.15 } }}
                     exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                    className="flex h-full w-10 flex-col items-center pt-3"
+                    className="flex h-full w-9 flex-col items-center pt-2"
                   >
                     <PanelButton
                       onClick={() => setLeftCollapsed(false)}
@@ -201,14 +210,14 @@ export function PipelineWorkbench() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1, transition: { duration: 0.15 } }}
                     exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                    className="flex flex-col w-[340px] h-full"
+                    className="flex h-full w-[272px] flex-col"
                   >
-                    <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+                    <div className="flex h-11 items-center justify-between border-b border-neutral-800 px-3">
                       <div className="flex items-center gap-3 text-neutral-200">
-                        <div className="rounded-md border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-400">
+                        <div className="flex h-6 w-6 items-center justify-center rounded border border-neutral-800 bg-neutral-900 text-neutral-400">
                           {mode === "build" ? <Blocks className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                         </div>
-                        <span className="text-sm font-semibold tracking-wide">
+                        <span className="text-[12px] font-semibold text-neutral-300">
                           {mode === "build" ? "Components" : "Agents"}
                         </span>
                       </div>
@@ -230,10 +239,10 @@ export function PipelineWorkbench() {
             )}
 
             {/* CENTER CANVAS & BOTTOM PANEL */}
-            <div className="relative flex min-w-0 flex-1 flex-col gap-3 overflow-hidden rounded-lg">
+            <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
 
               {/* Canvas Container */}
-              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm">
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-neutral-950">
                 <PipelineCanvas mode={mode} />
 
                 {/* Status strip — docked at bottom of canvas (VS Code pattern) */}
@@ -262,7 +271,7 @@ export function PipelineWorkbench() {
                     animate={{ height: 320, opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                    className="relative flex w-full flex-shrink-0 flex-col rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm"
+                    className="relative flex w-full flex-shrink-0 flex-col border-t border-neutral-800 bg-neutral-950"
                   >
                     <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -287,11 +296,10 @@ export function PipelineWorkbench() {
               )}
 
               {/* Mobile editing disabled banner */}
-              {isMobile && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute bottom-4 left-4 right-4 z-30"
+                  className="absolute bottom-4 left-4 right-4 z-30 md:hidden"
                 >
                   <div className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-950 px-4 py-3 shadow-sm">
                     <Monitor className="w-5 h-5 text-neutral-400 shrink-0" />
@@ -301,7 +309,6 @@ export function PipelineWorkbench() {
                     </div>
                   </div>
                 </motion.div>
-              )}
             </div>
 
             {/* RIGHT PANEL */}
@@ -310,10 +317,10 @@ export function PipelineWorkbench() {
               layout
               initial={false}
               animate={{
-                width: rightCollapsed ? 40 : 340,
+                width: rightCollapsed ? 36 : 304,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
-              className="group relative z-20 flex h-full flex-shrink-0 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-sm"
+              className="group relative z-20 hidden h-full flex-shrink-0 flex-col overflow-hidden border-l border-neutral-800 bg-neutral-950 md:flex"
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 {rightCollapsed ? (
@@ -322,7 +329,7 @@ export function PipelineWorkbench() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1, transition: { duration: 0.15 } }}
                     exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                    className="flex flex-col items-center pt-3 w-10 h-full"
+                    className="flex h-full w-9 flex-col items-center pt-2"
                   >
                     <PanelButton
                       onClick={() => setRightCollapsed(false)}
@@ -337,9 +344,9 @@ export function PipelineWorkbench() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1, transition: { duration: 0.15 } }}
                     exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                    className="flex flex-col w-[340px] h-full"
+                    className="flex h-full w-[304px] flex-col"
                   >
-                    <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+                    <div className="flex h-11 items-center justify-between border-b border-neutral-800 px-3">
                       <button
                         className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
                         onClick={() => setRightCollapsed(true)}
@@ -347,7 +354,7 @@ export function PipelineWorkbench() {
                         <ChevronRight className="w-4 h-4" />
                       </button>
                       <div className="flex items-center gap-3 text-neutral-200">
-                        <span className="text-sm font-semibold tracking-wide">
+                        <span className="text-[12px] font-semibold text-neutral-300">
                           {mode === "build" ? "Properties" : "Tool Calls"}
                         </span>
                         <div className="rounded-md border border-neutral-800 bg-neutral-900 p-1.5 text-neutral-400">

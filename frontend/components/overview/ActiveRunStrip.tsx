@@ -137,9 +137,7 @@ export function ActiveRunStrip() {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
-      // Keep last elapsed value on completed/error
       if (workflowStatus === "idle") {
-        setElapsed(0);
         startTimeRef.current = null;
       }
     }
@@ -163,6 +161,7 @@ export function ActiveRunStrip() {
   // Find the currently active/thinking agent for emphasis
   const activeAgentName =
     agentEntries.find(([, s]) => s.status === "active" || s.status === "thinking")?.[0] ?? null;
+  const displayElapsed = workflowStatus === "idle" ? 0 : elapsed;
 
   if (workflowStatus === "idle" && !hasAgents) {
     return (
@@ -209,9 +208,9 @@ export function ActiveRunStrip() {
         </div>
 
         <div className="flex items-center gap-4 text-[11px] font-mono text-neutral-500">
-          {(workflowStatus === "running" || elapsed > 0) && (
+          {(workflowStatus === "running" || displayElapsed > 0) && (
             <span className="tabular-nums">
-              {formatDuration(finalDuration != null ? Math.round(finalDuration) : elapsed)}
+              {formatDuration(finalDuration != null ? Math.round(finalDuration) : displayElapsed)}
             </span>
           )}
           {totalTokens > 0 && (

@@ -55,24 +55,22 @@ export function McpRegistryPage() {
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="p-8 max-w-4xl mx-auto flex flex-col gap-6">
+      <div className="app-page flex max-w-5xl flex-col gap-7">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-end justify-between gap-4 border-b border-neutral-800 pb-6">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
-              <div className="rounded-md border border-neutral-800 bg-neutral-900 p-2 text-neutral-400 shrink-0">
-                <Server className="w-4 h-4" />
+              <div>
+                <p className="app-eyebrow">Tool registry</p>
+                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-100">MCP servers</h1>
               </div>
-              <h1 className="text-2xl font-semibold text-neutral-100 tracking-tight">
-                MCP Registry
-              </h1>
               {!loading && !error && (
                 <span className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 font-mono text-xs text-neutral-500">
                   {servers.length} server{servers.length === 1 ? "" : "s"}
                 </span>
               )}
             </div>
-            <p className="text-sm text-neutral-500 pl-11">
+            <p className="mt-1 text-sm text-neutral-500">
               Registered MCP servers available for tool nodes in your pipelines.
             </p>
           </div>

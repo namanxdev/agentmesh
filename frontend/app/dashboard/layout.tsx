@@ -1,6 +1,8 @@
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopBar } from "@/components/dashboard/DashboardTopBar";
 import { DashboardEventProvider } from "@/components/dashboard/DashboardEventProvider";
+import { MobileDashboardNav } from "@/components/dashboard/MobileDashboardNav";
+import { MobileWorkspaceGuard } from "@/components/dashboard/MobileWorkspaceGuard";
 
 export default function DashboardShellLayout({
   children,
@@ -8,7 +10,7 @@ export default function DashboardShellLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 text-neutral-100">
+    <div className="dashboard-app flex h-screen w-screen overflow-hidden">
       {/* Global event stream — runs across all dashboard routes */}
       <DashboardEventProvider />
 
@@ -16,12 +18,13 @@ export default function DashboardShellLayout({
       <DashboardSidebar />
 
       {/* Main content area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <DashboardTopBar />
+        <MobileDashboardNav />
         {/* Children control their own overflow/scroll */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {children}
-        </div>
+        <main className="min-h-0 flex-1 overflow-hidden">
+          <MobileWorkspaceGuard>{children}</MobileWorkspaceGuard>
+        </main>
       </div>
     </div>
   );

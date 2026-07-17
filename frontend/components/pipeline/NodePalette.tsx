@@ -1,22 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
+import { GripVertical, LayoutTemplate, Plus, RotateCcw, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import type { NodeKind, PipelineDefinition } from "@/types/pipeline";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { NODE_COLORS, NODE_ICONS } from "./nodes/BaseNode";
-import { FolderHeart } from "lucide-react";
 
-const PALETTE_ITEMS: Array<{ kind: NodeKind; name: string; description: string }> = [
-  { kind: "input", name: "Input", description: "Pipeline entry point" },
-  { kind: "output", name: "Output", description: "Collect final result" },
-  { kind: "llm_agent", name: "LLM Agent", description: "AI reasoning agent" },
-  { kind: "tool", name: "Tool", description: "MCP tool call" },
-  { kind: "text", name: "Text", description: "Prompt templates" },
-  { kind: "router", name: "Router", description: "Conditional branching" },
-  { kind: "memory", name: "Memory", description: "Context storage" },
-  { kind: "transform", name: "Transform", description: "Data formatting" },
-  { kind: "parallel", name: "Parallel", description: "Concurrent scatter/gather" },
+type PaletteItem = {
+  kind: NodeKind;
+  name: string;
+  description: string;
+  group: "Core" | "Intelligence" | "Flow";
+};
+
+const PALETTE_ITEMS: PaletteItem[] = [
+  { kind: "input", name: "Input", description: "Workflow entry", group: "Core" },
+  { kind: "text", name: "Text", description: "Prompt template", group: "Core" },
+  { kind: "output", name: "Output", description: "Final response", group: "Core" },
+  { kind: "llm_agent", name: "LLM agent", description: "Reason and generate", group: "Intelligence" },
+  { kind: "tool", name: "Tool call", description: "Invoke an MCP tool", group: "Intelligence" },
+  { kind: "memory", name: "Memory", description: "Persist context", group: "Intelligence" },
+  { kind: "router", name: "Router", description: "Conditional branch", group: "Flow" },
+  { kind: "transform", name: "Transform", description: "Reshape payload", group: "Flow" },
+  { kind: "parallel", name: "Parallel", description: "Fan out work", group: "Flow" },
 ];
 
 type PipelineTemplate = {
@@ -27,10 +34,7 @@ type PipelineTemplate = {
 };
 
 function isPipelineTemplate(value: unknown): value is PipelineTemplate {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
+  if (!value || typeof value !== "object") return false;
   const template = value as Record<string, unknown>;
   return (
     typeof template.id === "string" &&
@@ -41,210 +45,184 @@ function isPipelineTemplate(value: unknown): value is PipelineTemplate {
   );
 }
 
-function withAlphaHex(colorHex: string, alpha: number) {
-  if (colorHex.startsWith("#") && colorHex.length === 7) {
-    const hex = Math.round(alpha * 255).toString(16).padStart(2, '0');
-    return `${colorHex}${hex}`;
-  }
-  return colorHex;
+function withAlpha(color: string, alpha: number) {
+  if (!color.startsWith("#") || color.length !== 7) return color;
+  return `${color}${Math.round(alpha * 255).toString(16).padStart(2, "0")}`;
 }
 
 export function NodePalette() {
+  const [query, setQuery] = useState("");
   const [templates, setTemplates] = useState<PipelineTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
   const [templateError, setTemplateError] = useState<string | null>(null);
-  const [retryKey, setRetryKey] = useState(0);
-  const loadTemplate = usePipelineStore((s) => s.loadTemplate);
+  const nodes = usePipelineStore((state) => state.nodes);
+  const addNode = usePipelineStore((state) => state.addNode);
+  const loadTemplate = usePipelineStore((state) => state.loadTemplate);
+
+  const fetchTemplates = useCallback(async () => {
+    setIsLoadingTemplates(true);
+    setTemplateError(null);
+    try {
+      const response = await fetch("/api/pipelines/templates", { cache: "no-store" });
+      const payload = (await response.json().catch(() => null)) as
+        | { templates?: unknown; error?: unknown }
+        | null;
+      if (!response.ok) {
+        throw new Error(typeof payload?.error === "string" ? payload.error : "Templates unavailable");
+      }
+      if (!Array.isArray(payload?.templates)) throw new Error("Templates unavailable");
+      setTemplates(payload.templates.filter(isPipelineTemplate));
+    } catch (error) {
+      setTemplates([]);
+      setTemplateError(error instanceof Error ? error.message : "Templates unavailable");
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const RETRY_DELAYS = [2000, 4000, 8000, 15000];
+    void fetchTemplates();
+  }, [fetchTemplates]);
 
-    const attempt = async (retriesLeft: number): Promise<void> => {
-      if (cancelled) return;
-      setIsLoadingTemplates(true);
-      setTemplateError(null);
+  const filteredItems = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return PALETTE_ITEMS;
+    return PALETTE_ITEMS.filter((item) =>
+      `${item.name} ${item.description} ${item.group}`.toLowerCase().includes(term)
+    );
+  }, [query]);
 
-      try {
-        const response = await fetch("/api/pipelines/templates", { cache: "no-store" });
-        const payload = (await response.json().catch(() => null)) as
-          | { templates?: unknown; error?: unknown }
-          | null;
-
-        if (!response.ok) {
-          throw new Error(
-            typeof payload?.error === "string"
-              ? payload.error
-              : `Request failed with status ${response.status}`
-          );
-        }
-        if (!Array.isArray(payload?.templates)) {
-          throw new Error("Templates response was invalid");
-        }
-        if (!cancelled) setTemplates(payload.templates.filter(isPipelineTemplate));
-      } catch (error) {
-        if (cancelled) return;
-        const delay = RETRY_DELAYS[RETRY_DELAYS.length - 1 - retriesLeft];
-        if (retriesLeft > 0 && delay !== undefined) {
-          await new Promise<void>((r) => setTimeout(r, delay));
-          return attempt(retriesLeft - 1);
-        }
-        setTemplates([]);
-        const msg = error instanceof Error ? error.message : "Unable to load templates";
-        setTemplateError(msg);
-        toast.error(msg);
-      } finally {
-        if (!cancelled) setIsLoadingTemplates(false);
-      }
-    };
-
-    void attempt(RETRY_DELAYS.length - 1);
-    return () => { cancelled = true; };
-  }, [retryKey]);
-
-  const handleDragStart = (
-    event: React.DragEvent<HTMLDivElement>,
-    kind: NodeKind
-  ) => {
+  const handleDragStart = (event: DragEvent<HTMLDivElement>, kind: NodeKind) => {
     event.dataTransfer.setData("application/pipeline-node-kind", kind);
     event.dataTransfer.effectAllowed = "copy";
   };
 
+  const insertNode = (kind: NodeKind) => {
+    const column = nodes.length % 3;
+    const row = Math.floor(nodes.length / 3);
+    addNode(kind, { x: 100 + column * 220, y: 110 + row * 160 });
+  };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        width: "100%"
-      }}
-    >
-      <div
-        className="custom-scrollbar"
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 20,
-          paddingBottom: 20
-        }}
-      >
-        {/* TEMPLATES SECTION */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 pl-2">
-            <FolderHeart className="w-4 h-4 text-neutral-500" />
-            <span className="text-[11px] font-medium text-neutral-500">
-              Templates
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {isLoadingTemplates ? (
-              <div className="flex flex-col gap-2 p-4 rounded-md border border-neutral-800 bg-neutral-900 animate-pulse">
-                <div className="h-4 w-1/2 bg-neutral-800 rounded" />
-                <div className="h-3 w-3/4 bg-neutral-800/60 rounded mt-2" />
-              </div>
-            ) : templateError ? (
-              <div className="flex flex-col gap-2 p-4 rounded-md border border-red-500/20 bg-red-500/10">
-                <span className="text-xs font-mono text-red-400 font-semibold">Unavailable</span>
-                <span className="text-[10px] text-red-500/70">{templateError}</span>
-                <button
-                  onClick={() => setRetryKey((k) => k + 1)}
-                  className="mt-2 text-[10px] font-mono border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-lg px-3 py-1.5 transition-all outline-none w-fit"
-                >
-                  Retry Connection
-                </button>
-              </div>
-            ) : templates.length === 0 ? (
-              <div className="flex flex-col gap-2 p-4 rounded-md border border-neutral-800 bg-neutral-900">
-                <span className="text-xs text-neutral-400 font-medium">No templates</span>
-                <span className="text-[10px] text-neutral-600 leading-relaxed">No starter configurations found in the directory.</span>
-              </div>
-            ) : (
-              templates.map((template) => (
-                <div
-                  key={template.id}
-                  onClick={() => {
-                    loadTemplate(template.definition);
-                    toast.success(`Template "${template.name}" loaded`);
-                  }}
-                  className="group relative flex flex-col gap-1 p-3.5 rounded-md border border-neutral-800 bg-neutral-900 cursor-pointer hover:bg-neutral-800 hover:border-neutral-700 overflow-hidden transition-all duration-200"
-                >
-                  <span className="text-xs font-semibold text-neutral-200 transition-colors">{template.name}</span>
-                  <span className="text-[10px] text-neutral-500 leading-relaxed transition-colors">{template.description}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="h-px bg-neutral-800 mx-2" />
-
-        {/* NODES SECTION */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 pl-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
-            <span className="text-[11px] font-medium text-neutral-500">
-              Components
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {PALETTE_ITEMS.map(({ kind, name, description }) => {
-              const color = NODE_COLORS[kind];
-              const icon = NODE_ICONS[kind];
-
-              return (
-                <div
-                  key={kind}
-                  draggable
-                  onDragStart={(event) => handleDragStart(event, kind)}
-                  className="group relative flex flex-col p-3 rounded-md border border-neutral-800 bg-neutral-900 cursor-grab active:cursor-grabbing hover:-translate-y-[2px] transition-all duration-200"
-                  onMouseEnter={(event) => {
-                    event.currentTarget.style.borderColor = withAlphaHex(color, 0.4);
-                    event.currentTarget.style.background = `linear-gradient(145deg, #171717 40%, ${withAlphaHex(color, 0.08)} 100%)`;
-                  }}
-                  onMouseLeave={(event) => {
-                    event.currentTarget.style.borderColor = "#262626";
-                    event.currentTarget.style.background = "#171717";
-                  }}
-                >
-                  <div 
-                    style={{ background: `linear-gradient(90deg, transparent, ${withAlphaHex(color, 0.6)}, transparent)` }}
-                    className="absolute inset-x-4 top-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
-                  />
-
-                  <div className="flex items-center gap-2.5 mb-1.5">
-                    <span
-                      style={{
-                        background: `linear-gradient(135deg, ${withAlphaHex(color, 0.2)}, ${withAlphaHex(color, 0.05)})`,
-                        border: `1px solid ${withAlphaHex(color, 0.3)}`,
-                        color: color,
-                      }}
-                      className="flex items-center justify-center w-6 h-6 rounded-md font-mono text-[9px] font-bold shrink-0"
-                    >
-                      {icon}
-                    </span>
-                    <span className="text-xs font-semibold text-neutral-200 whitespace-nowrap overflow-hidden text-overflow-ellipsis">
-                      {name}
-                    </span>
-                  </div>
-                  
-                  <span className="text-[9px] text-neutral-500 leading-relaxed font-medium">
-                    {description}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+    <div className="flex h-full w-full flex-col bg-neutral-950">
+      <div className="border-b border-neutral-800 p-2.5">
+        <label className="flex h-8 items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-2.5 text-neutral-500 transition-colors focus-within:border-neutral-700 focus-within:text-neutral-300">
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Find a component"
+            className="min-w-0 flex-1 border-0 bg-transparent text-[12px] text-neutral-200 outline-none placeholder:text-neutral-600"
+          />
+          <kbd className="font-mono text-[9px] text-neutral-600">9 blocks</kbd>
+        </label>
       </div>
 
-      <div className="p-4 mt-auto border-t border-neutral-800 shrink-0 text-center">
-        <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-neutral-600 font-semibold bg-neutral-900 py-1.5 px-3 rounded-md border border-neutral-800">
-          Drag into Canvas
-        </span>
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-2 py-2.5">
+        {!query && (
+          <section className="mb-3 border-b border-neutral-800 pb-3">
+            <div className="mb-1.5 flex items-center justify-between px-1">
+              <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">Starters</span>
+              {templateError && (
+                <button
+                  type="button"
+                  onClick={() => void fetchTemplates()}
+                  className="flex items-center gap-1 text-[10px] text-neutral-600 transition-colors hover:text-neutral-300"
+                >
+                  <RotateCcw className="h-3 w-3" /> Retry
+                </button>
+              )}
+            </div>
+
+            {isLoadingTemplates ? (
+              <div className="flex h-12 items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-3">
+                <div className="h-6 w-6 animate-pulse rounded bg-neutral-800" />
+                <div className="space-y-1.5">
+                  <div className="h-2 w-24 animate-pulse rounded bg-neutral-800" />
+                  <div className="h-2 w-16 animate-pulse rounded bg-neutral-800/70" />
+                </div>
+              </div>
+            ) : templates.length > 0 ? (
+              <div className="space-y-1">
+                {templates.slice(0, 2).map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => {
+                      loadTemplate(template.definition);
+                      toast.success(`Loaded ${template.name}`);
+                    }}
+                    className="group flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-2 text-left transition-colors hover:border-neutral-800 hover:bg-neutral-900"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-neutral-800 bg-neutral-900 text-neutral-500">
+                      <LayoutTemplate className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[11px] font-medium text-neutral-300">{template.name}</span>
+                      <span className="block truncate text-[10px] text-neutral-600">{template.description}</span>
+                    </span>
+                    <Plus className="h-3.5 w-3.5 text-neutral-700 group-hover:text-neutral-300" />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-10 items-center gap-2 rounded-md border border-dashed border-neutral-800 px-2.5 text-[10px] text-neutral-600">
+                <LayoutTemplate className="h-3.5 w-3.5" />
+                {templateError ? "Starter library is offline" : "No saved starters yet"}
+              </div>
+            )}
+          </section>
+        )}
+
+        {(["Core", "Intelligence", "Flow"] as const).map((group) => {
+          const items = filteredItems.filter((item) => item.group === group);
+          if (items.length === 0) return null;
+          return (
+            <section key={group} className="mb-3">
+              <div className="mb-1 px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">{group}</div>
+              <div className="space-y-0.5">
+                {items.map((item) => {
+                  const color = NODE_COLORS[item.kind];
+                  return (
+                    <div
+                      key={item.kind}
+                      draggable
+                      onDragStart={(event) => handleDragStart(event, item.kind)}
+                      onClick={() => insertNode(item.kind)}
+                      className="group flex cursor-grab items-center gap-2 rounded-md border border-transparent px-1.5 py-1.5 transition-colors hover:border-neutral-800 hover:bg-neutral-900 active:cursor-grabbing"
+                      title={`Click to add ${item.name}, or drag it onto the canvas`}
+                    >
+                      <GripVertical className="h-3.5 w-3.5 shrink-0 text-neutral-800 transition-colors group-hover:text-neutral-600" />
+                      <span
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded border font-mono text-[8px] font-bold"
+                        style={{
+                          color,
+                          borderColor: withAlpha(color, 0.22),
+                          background: withAlpha(color, 0.07),
+                        }}
+                      >
+                        {NODE_ICONS[item.kind]}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[11px] font-medium text-neutral-300">{item.name}</span>
+                        <span className="block truncate text-[10px] text-neutral-600">{item.description}</span>
+                      </span>
+                      <Plus className="h-3.5 w-3.5 shrink-0 text-neutral-800 transition-colors group-hover:text-neutral-300" />
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+
+        {filteredItems.length === 0 && (
+          <div className="px-2 py-8 text-center text-[11px] text-neutral-600">No components match “{query}”.</div>
+        )}
+      </div>
+
+      <div className="flex h-8 shrink-0 items-center justify-center border-t border-neutral-800 font-mono text-[9px] uppercase tracking-[0.12em] text-neutral-700">
+        Click to add · drag to position
       </div>
     </div>
   );

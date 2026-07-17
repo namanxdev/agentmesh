@@ -260,7 +260,7 @@ export function RunsTable({ runs, loading, error, onRetry }: RunsTableProps) {
   const headerBar = (
     <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-neutral-800 bg-neutral-900/40">
       <div className="flex items-center gap-3 min-w-0">
-        <h1 className="text-sm font-semibold text-neutral-100 tracking-tight shrink-0">Runs</h1>
+        <span className="text-sm font-medium text-neutral-200 tracking-tight shrink-0">All executions</span>
         {!loading && !error && (
           <span className="text-[10px] font-mono text-neutral-500 tabular-nums">
             {runs.length} total

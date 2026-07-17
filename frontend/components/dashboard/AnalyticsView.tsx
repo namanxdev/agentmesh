@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Activity, AlertTriangle, CheckCircle2, Clock, Hash, Play } from "lucide-react";
 import { usePipelineStore } from "@/stores/pipelineStore";
-import { BentoGrid, BentoCard } from "@/components/bento-grid";
-import { Play, CheckCircle2, Clock, Hash, AlertTriangle, Activity } from "lucide-react";
-import { motion } from "framer-motion";
-import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 
 interface PipelineRun {
   id: string;
@@ -16,11 +13,33 @@ interface PipelineRun {
   created_at: string;
 }
 
-const statusColors: Record<string, string> = {
-  completed: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-  running: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-  error: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+const statusStyle: Record<PipelineRun["status"], { dot: string; label: string }> = {
+  completed: { dot: "bg-emerald-500", label: "text-emerald-400" },
+  running: { dot: "animate-pulse bg-indigo-400", label: "text-indigo-300" },
+  error: { dot: "bg-red-400", label: "text-red-400" },
 };
+
+function Metric({ label, value, detail, icon: Icon }: { label: string; value: string; detail: string; icon: typeof Activity }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-4 first:pl-0 sm:border-l sm:border-neutral-800 sm:first:border-l-0 sm:first:pl-0">
+      <div className="flex items-center gap-2 text-neutral-500">
+        <Icon className="h-3.5 w-3.5" />
+        <span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em]">{label}</span>
+      </div>
+      <span className="font-mono text-2xl font-semibold tracking-tight text-neutral-100 tabular-nums">{value}</span>
+      <span className="text-xs text-neutral-600">{detail}</span>
+    </div>
+  );
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function AnalyticsView() {
   const currentPipelineId = usePipelineStore((s) => s.currentPipelineId);
@@ -29,243 +48,119 @@ export function AnalyticsView() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!currentPipelineId) return;
-    let isMounted = true;
-    const fetchRuns = async () => {
+    if (!currentPipelineId) {
+      setRuns([]);
+      setLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    async function fetchRuns() {
       setLoading(true);
       setError(null);
       try {
-        const r = await fetch(`/api/pipelines/${currentPipelineId}/runs`);
-        const d = await r.json();
-        if (isMounted) setRuns(d.runs ?? []);
+        const response = await fetch(`/api/pipelines/${currentPipelineId}/runs`);
+        if (!response.ok) throw new Error(`Request failed (${response.status})`);
+        const data = await response.json();
+        if (mounted) setRuns(data.runs ?? []);
       } catch {
-        if (isMounted) setError("Failed to load run history");
+        if (mounted) setError("Failed to load run history");
       } finally {
-        if (isMounted) setLoading(false);
+        if (mounted) setLoading(false);
       }
+    }
+
+    void fetchRuns();
+    return () => {
+      mounted = false;
     };
-    fetchRuns();
-    return () => { isMounted = false; };
   }, [currentPipelineId]);
 
-  const completed = runs.filter((r) => r.status === "completed");
-  const avgDuration =
-    completed.length > 0
-      ? completed.reduce((sum, r) => sum + (r.duration_seconds ?? 0), 0) / completed.length
-      : null;
-  const avgTokens =
-    completed.length > 0
-      ? Math.round(
-          completed.reduce((sum, r) => sum + (r.total_tokens ?? 0), 0) / completed.length
-        )
-      : null;
+  const completed = runs.filter((run) => run.status === "completed");
+  const avgDuration = completed.length
+    ? completed.reduce((sum, run) => sum + (run.duration_seconds ?? 0), 0) / completed.length
+    : null;
+  const avgTokens = completed.length
+    ? Math.round(completed.reduce((sum, run) => sum + (run.total_tokens ?? 0), 0) / completed.length)
+    : null;
 
   return (
-    <div className="flex flex-col h-full w-full p-6 md:p-10 gap-8 overflow-y-auto custom-scrollbar">
-      <div className="flex flex-col gap-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-neutral-800 bg-neutral-900 w-fit">
-            <Activity className="w-3 h-3 text-neutral-400" />
-            <p className="text-[10px] sm:text-xs uppercase tracking-widest font-mono text-neutral-400 font-semibold">
-              Pipeline Analytics
-            </p>
+    <div className="h-full overflow-y-auto custom-scrollbar">
+      <div className="app-page flex flex-col gap-8">
+        <div className="border-b border-neutral-800 pb-6">
+          <p className="app-eyebrow">Pipeline telemetry</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-100">Run analytics</h1>
+          <p className="mt-1 text-sm text-neutral-500">A concise view of the active pipeline&apos;s execution record.</p>
         </div>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-2 font-display">
-          Run History
-        </h1>
-      </div>
 
-      {!currentPipelineId ? (
-        <div className="flex flex-col items-center justify-center p-12 mt-8 rounded-lg border border-neutral-800 bg-neutral-900 text-center">
-          <Play className="w-16 h-16 text-neutral-600 mb-6 font-light stroke-[1]" />
-          <h2 className="text-xl font-medium text-neutral-300 mb-2">No Active Pipeline</h2>
-          <p className="text-sm text-neutral-500 max-w-sm">
-            Save your pipeline first in the build canvas to track workflow run history.
-          </p>
-        </div>
-      ) : loading ? (
-        /* Skeleton shimmer matching BentoCard layout */
-        <div className="flex flex-col gap-8 w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="relative h-32 rounded-md border border-neutral-800 bg-neutral-900 overflow-hidden"
-              >
-                <div
-                  className="absolute inset-0 -translate-x-full"
-                  style={{
-                    background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)",
-                    animation: `shimmer 1.6s ease-in-out ${i * 0.15}s infinite`,
-                  }}
-                />
-              </div>
-            ))}
+        {!currentPipelineId ? (
+          <div className="flex max-w-xl items-start gap-3 border-l-2 border-neutral-700 py-1 pl-4">
+            <Play className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" />
+            <div>
+              <p className="text-sm font-medium text-neutral-300">No pipeline selected</p>
+              <p className="mt-1 text-sm leading-6 text-neutral-500">Open a saved pipeline in the editor to inspect its run history and performance.</p>
+            </div>
           </div>
-          <div className="h-64 rounded-md border border-neutral-800 bg-neutral-900 relative overflow-hidden">
-            <div
-              className="absolute inset-0 -translate-x-full"
-              style={{
-                background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)",
-                animation: "shimmer 1.6s ease-in-out 0.4s infinite",
-              }}
-            />
+        ) : loading ? (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-2 divide-x divide-y divide-neutral-800 border-y border-neutral-800 sm:grid-cols-4 sm:divide-y-0">
+              {["runs", "completed", "duration", "tokens"].map((item) => (
+                <div key={item} className="h-28 animate-pulse bg-neutral-900/30" />
+              ))}
+            </div>
+            <div className="h-56 animate-pulse border border-neutral-800 bg-neutral-900/20" />
           </div>
-          <style>{`
-            @keyframes shimmer {
-              to { transform: translateX(200%); }
-            }
-          `}</style>
-        </div>
-      ) : error ? (
-        <div className="flex items-center gap-3 p-4 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 font-medium">
-          <AlertTriangle className="w-5 h-5" />
-          {error}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-8 w-full max-w-[1920px]">
-          {/* KPI Bento Grid */}
-          <BentoGrid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <BentoCard className="col-span-1 border border-neutral-800 bg-neutral-900 rounded-md">
-              <div className="flex flex-col h-full z-10 w-full justify-between">
-                <div className="flex items-center gap-2 mb-4">
-                  <Activity className="w-3.5 h-3.5 text-neutral-500" />
-                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400">Total Runs</span>
-                </div>
-                <AnimatedCounter target={runs.length} className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono" />
-              </div>
-            </BentoCard>
+        ) : error ? (
+          <div className="flex max-w-xl items-start gap-3 border-l-2 border-red-400 py-1 pl-4">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <div>
+              <p className="text-sm font-medium text-red-300">Analytics unavailable</p>
+              <p className="mt-1 font-mono text-xs text-neutral-500">{error}</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 divide-x divide-y divide-neutral-800 border-y border-neutral-800 sm:grid-cols-4 sm:divide-y-0">
+              <Metric icon={Activity} label="Runs" value={runs.length.toString()} detail="Recorded executions" />
+              <Metric icon={CheckCircle2} label="Completed" value={completed.length.toString()} detail="Successful executions" />
+              <Metric icon={Clock} label="Avg duration" value={avgDuration === null ? "–" : `${avgDuration.toFixed(1)}s`} detail="Completed runs only" />
+              <Metric icon={Hash} label="Avg tokens" value={avgTokens === null ? "–" : avgTokens.toLocaleString()} detail="Completed runs only" />
+            </div>
 
-            <BentoCard className="col-span-1 border border-emerald-500/20 bg-emerald-500/5 rounded-md">
-              <div className="flex flex-col h-full z-10 w-full justify-between">
-                <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70" />
-                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-emerald-500/80">Completed</span>
-                </div>
-                <AnimatedCounter target={completed.length} className="text-4xl md:text-5xl font-bold text-emerald-400 tracking-tight font-mono" />
+            <section className="overflow-hidden border border-neutral-800 bg-neutral-950">
+              <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+                <span className="app-eyebrow">Execution timeline</span>
+                <span className="font-mono text-[10px] text-neutral-600">{runs.length} records</span>
               </div>
-            </BentoCard>
 
-            <BentoCard className="col-span-1 border border-neutral-800 bg-neutral-900 rounded-md">
-              <div className="flex flex-col h-full z-10 w-full justify-between">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400">Avg Duration</span>
+              {runs.length === 0 ? (
+                <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
+                  <Activity className="mb-3 h-5 w-5 text-neutral-700" />
+                  <p className="text-sm font-medium text-neutral-400">No runs recorded</p>
+                  <p className="mt-1 text-xs text-neutral-600">Run this pipeline to populate its execution telemetry.</p>
                 </div>
-                {avgDuration !== null ? (
-                  <div className="flex items-end gap-1">
-                    <AnimatedCounter
-                      target={Math.round(avgDuration * 10) / 10}
-                      duration={1.2}
-                      className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono"
-                    />
-                    <span className="text-xl text-neutral-500 mb-1 font-mono">s</span>
+              ) : (
+                <div className="divide-y divide-neutral-800/80">
+                  <div className="hidden grid-cols-[1fr_110px_92px_108px] gap-4 bg-neutral-900/40 px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-neutral-600 md:grid">
+                    <span>Workflow</span><span>Status</span><span>Duration</span><span className="text-right">Recorded</span>
                   </div>
-                ) : (
-                  <span className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono">—</span>
-                )}
-              </div>
-            </BentoCard>
-
-            <BentoCard className="col-span-1 border border-neutral-800 bg-neutral-900 rounded-md">
-              <div className="flex flex-col h-full z-10 w-full justify-between">
-                <div className="flex items-center gap-2 mb-4">
-                  <Hash className="w-3.5 h-3.5 text-neutral-500" />
-                  <span className="text-[10px] md:text-xs uppercase font-mono tracking-widest text-neutral-400">Avg Tokens</span>
+                  {runs.map((run) => {
+                    const state = statusStyle[run.status];
+                    return (
+                      <div key={run.id} className="grid gap-3 px-4 py-3.5 md:grid-cols-[1fr_110px_92px_108px] md:items-center">
+                        <span className="truncate font-mono text-xs text-neutral-300" title={run.workflow_id}>{run.workflow_id}</span>
+                        <span className={`flex items-center gap-2 font-mono text-[11px] ${state.label}`}><span className={`h-1.5 w-1.5 rounded-full ${state.dot}`} />{run.status}</span>
+                        <span className="font-mono text-xs tabular-nums text-neutral-500">{run.duration_seconds === null ? "–" : `${run.duration_seconds.toFixed(1)}s`}</span>
+                        <span className="font-mono text-xs tabular-nums text-neutral-600 md:text-right">{formatDate(run.created_at)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-                {avgTokens !== null ? (
-                  <AnimatedCounter target={avgTokens} className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono" />
-                ) : (
-                  <span className="text-4xl md:text-5xl font-bold text-white tracking-tight font-mono">—</span>
-                )}
-              </div>
-            </BentoCard>
-          </BentoGrid>
-
-          {/* Runs Table Section */}
-          <div className="flex-1 min-h-[300px]">
-            {runs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-16 rounded-md border border-neutral-800 bg-neutral-900 text-center w-full">
-                <div className="w-16 h-16 rounded-md bg-neutral-800 border border-neutral-700 flex items-center justify-center mb-6">
-                   <Play className="w-8 h-8 text-neutral-500" />
-                </div>
-                <h3 className="text-xl font-semibold text-neutral-200 mb-2">No runs yet</h3>
-                <p className="text-neutral-500 text-sm">Return to the canvas and run this pipeline to see history.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col w-full rounded-md border border-neutral-800 bg-neutral-950 overflow-hidden shadow-sm">
-                {/* Desktop Native Table Header */}
-                <div className="hidden lg:grid grid-cols-12 gap-4 p-5 bg-neutral-900 border-b border-neutral-800 text-[10px] font-mono tracking-widest uppercase text-neutral-500">
-                  <span className="col-span-4">Workflow ID</span>
-                  <span className="col-span-2">Status</span>
-                  <span className="col-span-2">Duration</span>
-                  <span className="col-span-2">Tokens</span>
-                  <span className="col-span-2 text-right">Date</span>
-                </div>
-
-                {/* Runs List (Responsive) */}
-                <div className="flex flex-col divide-y divide-neutral-800 max-h-[500px] overflow-y-auto custom-scrollbar">
-                  {runs.map((run, i) => (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      key={run.id} 
-                      className="grid grid-cols-2 gap-y-4 lg:grid-cols-12 lg:gap-4 p-5 lg:items-center hover:bg-neutral-900 transition-colors"
-                    >
-                      {/* ID */}
-                      <div className="col-span-2 lg:col-span-4 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
-                        <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Workflow ID</span>
-                        <span className="font-mono text-sm text-neutral-300 truncate pr-4">
-                          {run.workflow_id}
-                        </span>
-                      </div>
-
-                      {/* Status */}
-                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
-                        <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Status</span>
-                        <div className="flex">
-                           <span className={`text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColors[run.status] || "text-neutral-500 bg-neutral-500/10 border-neutral-500/20"}`}>
-                             {run.status}
-                           </span>
-                        </div>
-                      </div>
-
-                      {/* Duration */}
-                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
-                        <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Duration</span>
-                        <span className="font-mono text-sm text-neutral-300">
-                          {run.duration_seconds != null ? `${run.duration_seconds.toFixed(1)}s` : "—"}
-                        </span>
-                      </div>
-
-                      {/* Tokens */}
-                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-0">
-                         <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Tokens</span>
-                         <span className="font-mono text-sm text-neutral-300">
-                          {run.total_tokens != null ? run.total_tokens.toLocaleString() : "—"}
-                         </span>
-                      </div>
-
-                      {/* Date */}
-                      <div className="col-span-1 lg:col-span-2 flex flex-col lg:flex-row lg:items-center lg:justify-end gap-1 lg:gap-0">
-                         <span className="lg:hidden text-[10px] font-mono uppercase tracking-widest text-neutral-500">Date</span>
-                         <span className="font-mono text-xs text-neutral-400 tabular-nums">
-                          {new Date(run.created_at).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                         </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              )}
+            </section>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Command,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -34,13 +35,13 @@ export function DashboardSidebar() {
 
   return (
     <aside
-      className={`relative flex flex-col shrink-0 h-screen bg-neutral-950 border-r border-neutral-800 transition-all duration-200 ${
-        collapsed ? "w-14" : "w-52"
+      className={`relative hidden h-screen shrink-0 flex-col border-r border-neutral-800 bg-neutral-950 transition-[width] duration-150 ease-out md:flex ${
+        collapsed ? "w-[60px]" : "w-60"
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-3 py-4 border-b border-neutral-800 shrink-0">
-        <div className="relative w-7 h-7 rounded-md overflow-hidden shrink-0">
+      <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-neutral-800 px-3.5">
+        <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md border border-neutral-800 bg-neutral-900">
           <Image
             src="/agentmesh_logo.png"
             alt="AgentMesh"
@@ -50,14 +51,15 @@ export function DashboardSidebar() {
           />
         </div>
         {!collapsed && (
-          <span className="font-semibold text-neutral-200 text-sm tracking-tight truncate">
+          <span className="truncate text-sm font-semibold tracking-tight text-neutral-100">
             AgentMesh
           </span>
         )}
       </div>
 
       {/* Nav */}
-      <nav className="flex flex-col gap-0.5 px-2 py-3 flex-1 min-h-0 overflow-y-auto">
+      <nav aria-label="Primary navigation" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-4">
+        {!collapsed && <span className="mb-1 px-2 text-[10px] font-mono font-medium uppercase tracking-[0.14em] text-neutral-600">Workspace</span>}
         {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact);
           return (
@@ -65,14 +67,15 @@ export function DashboardSidebar() {
               key={href}
               href={href}
               title={collapsed ? label : undefined}
-              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors ${
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors ${
                 active
-                  ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                  : "text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 border border-transparent"
+                  ? "bg-indigo-500/15 text-indigo-200"
+                  : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100"
               }`}
             >
               <Icon
-                className={`w-4 h-4 shrink-0 ${active ? "text-indigo-400" : "text-neutral-500"}`}
+                className={`h-4 w-4 shrink-0 ${active ? "text-indigo-400" : "text-neutral-500"}`}
               />
               {!collapsed && <span className="truncate">{label}</span>}
             </Link>
@@ -81,11 +84,16 @@ export function DashboardSidebar() {
       </nav>
 
       {/* Bottom: Settings + Collapse toggle */}
-      <div className="flex flex-col gap-0.5 px-2 py-3 border-t border-neutral-800 shrink-0">
+      <div className="flex shrink-0 flex-col gap-1 border-t border-neutral-800 px-2.5 py-3">
+        {!collapsed && (
+          <div className="mb-2 flex items-center gap-2 px-2 text-[10px] font-mono text-neutral-600">
+            <Command className="h-3 w-3" /> LOCAL CONTROL PLANE
+          </div>
+        )}
         <Link
           href="/settings"
           title={collapsed ? "Settings" : undefined}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 border border-transparent transition-colors"
+          className="flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-neutral-400 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
         >
           <Settings className="w-4 h-4 shrink-0 text-neutral-500" />
           {!collapsed && <span>Settings</span>}
@@ -94,7 +102,7 @@ export function DashboardSidebar() {
         <button
           onClick={() => setCollapsed((c) => !c)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium text-neutral-500 hover:text-neutral-100 hover:bg-neutral-900 border border-transparent transition-colors w-full"
+          className="flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-neutral-500 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4 shrink-0" />

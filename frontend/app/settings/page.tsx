@@ -1,38 +1,30 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
+import {
+  ArrowLeft,
+  KeyRound,
+  LayoutTemplate,
+  LogOut,
+  Monitor,
+  Plus,
+  Server,
+  Settings2,
+  TerminalSquare,
+  Trash2,
+  Zap,
+} from "lucide-react";
 import { ApiKeyCard } from "@/components/settings/ApiKeyCard";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { InputNodeConfig, LLMAgentConfig } from "@/types/pipeline";
-import {
-  ArrowLeft, LogOut, Settings2, KeyRound, Server, Zap,
-  Activity, Trash2, Plus, LayoutTemplate, TerminalSquare
-} from "lucide-react";
-import { BorderBeam } from "@/components/ui/border-beam";
-import RetroGrid from "@/components/ui/retro-grid";
 
 const PROVIDERS = [
-  {
-    provider: "gemini" as const,
-    label: "Google Gemini",
-    description: "Used for Gemini 2.0 Flash and Gemini 2.0 Pro models. Get your key at Google AI Studio.",
-    accentColor: "#3b82f6", // Blue
-  },
-  {
-    provider: "groq" as const,
-    label: "Groq",
-    description: "Used for Llama 3.3 70B and other open-source models. Get your key at console.groq.com.",
-    accentColor: "#f97316", // Orange
-  },
-  {
-    provider: "openai" as const,
-    label: "OpenAI",
-    description: "Used for GPT-4o and GPT-4o-mini models. Get your key at platform.openai.com.",
-    accentColor: "#10b981", // Emerald
-  },
+  { provider: "gemini" as const, label: "Google Gemini", description: "Gemini 2.0 Flash and Gemini 2.0 Pro models." },
+  { provider: "groq" as const, label: "Groq", description: "Llama and other open-source models served by Groq." },
+  { provider: "openai" as const, label: "OpenAI", description: "GPT-4o and GPT-4o mini models." },
 ];
 
 const MODELS = [
@@ -44,21 +36,39 @@ const MODELS = [
   "gpt-4o-mini",
 ];
 
+const SERVER_TYPES = ["stdio", "sse", "http"] as const;
+
 type MCPServerRow = {
   id: string;
   name: string;
   server_type: string;
   command_or_url: string;
-  created_at: string | null;
 };
 
-const SERVER_TYPES = ["stdio", "sse", "http"] as const;
+function SectionHeading({ icon: Icon, eyebrow, title, description }: {
+  icon: typeof Settings2;
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="max-w-2xl">
+      <div className="flex items-center gap-2">
+        <Icon className="h-3.5 w-3.5 text-indigo-400" />
+        <p className="app-eyebrow">{eyebrow}</p>
+      </div>
+      <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-100">{title}</h2>
+      <p className="mt-1.5 text-sm leading-6 text-neutral-500">{description}</p>
+    </div>
+  );
+}
+
+const fieldClass = "w-full rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-neutral-600 disabled:cursor-not-allowed disabled:opacity-50";
+const labelClass = "font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-neutral-500";
 
 export default function SettingsPage() {
   const [savedKeys, setSavedKeys] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-
-  // MCP servers state
   const [mcpServers, setMcpServers] = useState<MCPServerRow[]>([]);
   const [mcpLoading, setMcpLoading] = useState(true);
   const [mcpName, setMcpName] = useState("");
@@ -67,44 +77,36 @@ export default function SettingsPage() {
   const [mcpAdding, setMcpAdding] = useState(false);
   const [mcpError, setMcpError] = useState("");
 
-  // Pipeline settings from store
-  const nodes = usePipelineStore((s) => s.nodes);
-  const pipelineName = usePipelineStore((s) => s.pipelineName);
-  const setPipelineName = usePipelineStore((s) => s.setPipelineName);
-  const updateNodeConfig = usePipelineStore((s) => s.updateNodeConfig);
-  const savePipeline = usePipelineStore((s) => s.savePipeline);
-  const isSaving = usePipelineStore((s) => s.isSaving);
-  const currentPipelineId = usePipelineStore((s) => s.currentPipelineId);
+  const nodes = usePipelineStore((state) => state.nodes);
+  const pipelineName = usePipelineStore((state) => state.pipelineName);
+  const setPipelineName = usePipelineStore((state) => state.setPipelineName);
+  const updateNodeConfig = usePipelineStore((state) => state.updateNodeConfig);
+  const savePipeline = usePipelineStore((state) => state.savePipeline);
+  const isSaving = usePipelineStore((state) => state.isSaving);
+  const currentPipelineId = usePipelineStore((state) => state.currentPipelineId);
 
-  const inputNode = nodes.find((n) => n.data?.kind === "input");
+  const inputNode = nodes.find((node) => node.data?.kind === "input");
   const inputConfig = inputNode?.data?.config as InputNodeConfig | undefined;
   const description = inputConfig?.description ?? "";
-  const llmNodes = nodes.filter((n) => n.data?.kind === "llm_agent");
+  const llmNodes = nodes.filter((node) => node.data?.kind === "llm_agent");
   const firstLLMConfig = llmNodes[0]?.data?.config as LLMAgentConfig | undefined;
   const currentModel = firstLLMConfig?.model ?? MODELS[0];
   const currentTemp = firstLLMConfig?.temperature ?? 0.4;
 
   const fetchKeys = useCallback(async () => {
     try {
-      const res = await fetch("/api/keys");
-      if (res.status === 401 || res.status === 403) {
+      const response = await fetch("/api/keys");
+      if (response.status === 401 || response.status === 403) {
         window.location.href = "/login";
         return;
       }
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const msg = data?.detail ?? `Failed to load API keys (${res.status})`;
-        toast.error(msg);
-        return;
-      }
-      const data = await res.json();
-      const map: Record<string, string> = {};
-      for (const k of data.keys as { provider: string; saved_at: string }[]) {
-        map[k.provider] = k.saved_at;
-      }
-      setSavedKeys(map);
-    } catch {
-      toast.error("Network error loading API keys");
+      if (!response.ok) throw new Error(`Failed to load API keys (${response.status})`);
+      const data = await response.json();
+      const next: Record<string, string> = {};
+      for (const key of data.keys as { provider: string; saved_at: string }[]) next[key.provider] = key.saved_at;
+      setSavedKeys(next);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Network error loading API keys");
     } finally {
       setLoading(false);
     }
@@ -112,397 +114,160 @@ export default function SettingsPage() {
 
   const fetchMcpServers = useCallback(async () => {
     try {
-      const res = await fetch("/api/mcp/user-servers");
-      if (res.status === 401 || res.status === 403) {
+      const response = await fetch("/api/mcp/user-servers");
+      if (response.status === 401 || response.status === 403) {
         window.location.href = "/login";
         return;
       }
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const msg = data?.detail ?? `Failed to load MCP servers (${res.status})`;
-        toast.error(msg);
-        return;
-      }
-      const data = await res.json();
+      if (!response.ok) throw new Error(`Failed to load MCP servers (${response.status})`);
+      const data = await response.json();
       setMcpServers(data.servers ?? []);
-    } catch {
-      toast.error("Network error loading MCP servers");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Network error loading MCP servers");
     } finally {
       setMcpLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchKeys();
-    fetchMcpServers();
+    void fetchKeys();
+    void fetchMcpServers();
   }, [fetchKeys, fetchMcpServers]);
 
-  const handleAddMcpServer = async () => {
+  async function handleAddMcpServer() {
     setMcpError("");
     if (!mcpName.trim() || !mcpUrl.trim()) {
-      const msg = "Name and command/URL are required.";
-      setMcpError(msg);
-      toast.error(msg);
+      const message = "Name and command or URL are required.";
+      setMcpError(message);
       return;
     }
+
     setMcpAdding(true);
     try {
-      const res = await fetch("/api/mcp/user-servers", {
+      const response = await fetch("/api/mcp/user-servers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: mcpName.trim(),
-          server_type: mcpType,
-          command_or_url: mcpUrl.trim(),
-        }),
+        body: JSON.stringify({ name: mcpName.trim(), server_type: mcpType, command_or_url: mcpUrl.trim() }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        const msg = err.detail ?? "Failed to add server.";
-        setMcpError(msg);
-        toast.error(msg);
-        return;
+      if (!response.ok) {
+        const detail = (await response.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(detail.detail ?? "Failed to register the MCP server.");
       }
-      toast.success(`MCP server "${mcpName}" registered successfully`);
+      toast.success(`MCP server \"${mcpName}\" registered`);
       setMcpName("");
       setMcpType("stdio");
       setMcpUrl("");
       await fetchMcpServers();
-    } catch {
-      const msg = "Network error.";
-      setMcpError(msg);
-      toast.error(msg);
+    } catch (error) {
+      setMcpError(error instanceof Error ? error.message : "Network error registering MCP server.");
     } finally {
       setMcpAdding(false);
     }
-  };
+  }
 
-  const handleDeleteMcpServer = async (id: string) => {
+  async function handleDeleteMcpServer(id: string) {
     try {
-      const res = await fetch(`/api/mcp/user-servers/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        toast.error("Failed to delete MCP server");
-        return;
-      }
+      const response = await fetch(`/api/mcp/user-servers/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to unregister MCP server");
       toast.success("MCP server unregistered");
-      setMcpServers((prev) => prev.filter((s) => s.id !== id));
-    } catch {
-      toast.error("Network error deleting MCP server");
+      setMcpServers((servers) => servers.filter((server) => server.id !== id));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Network error deleting MCP server");
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-neutral-200 font-sans selection:bg-indigo-500/30 selection:text-white relative overflow-x-hidden">
-      
-      {/* Background effect */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-         <RetroGrid className="opacity-[0.12]" />
-         <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-indigo-500/10 blur-[150px] rounded-full translate-x-1/3 -translate-y-1/3" />
-         <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-fuchsia-500/10 blur-[150px] rounded-full -translate-x-1/3 translate-y-1/3" />
+    <>
+      <div className="flex min-h-screen items-center bg-neutral-950 px-8 text-neutral-100 md:hidden">
+        <div className="max-w-sm border-l-2 border-indigo-500/70 py-1 pl-4">
+          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md border border-neutral-800 bg-neutral-900 text-indigo-300"><Monitor className="h-4 w-4" /></div>
+          <p className="app-eyebrow">Desktop workspace</p>
+          <h1 className="mt-2 text-xl font-semibold tracking-tight">Settings needs a larger screen.</h1>
+          <p className="mt-2 text-sm leading-6 text-neutral-500">Manage credentials and MCP servers from a tablet or desktop workspace.</p>
+          <Link href="/dashboard" className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-300"><ArrowLeft className="h-3.5 w-3.5" /> Back to overview</Link>
+        </div>
       </div>
-
-      {/* Top Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-2xl border-b border-white/[0.06]">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link 
-              href="/dashboard"
-              className="group flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all shadow-sm"
-            >
-              <ArrowLeft className="w-4 h-4 text-neutral-400 group-hover:text-white group-hover:-translate-x-0.5 transition-all" />
+      <div className="hidden min-h-screen bg-neutral-950 text-neutral-100 md:block">
+      <header className="sticky top-0 z-20 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 w-full max-w-[1160px] items-center justify-between px-5 sm:px-8">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-900 hover:text-neutral-200" aria-label="Return to dashboard">
+              <ArrowLeft className="h-4 w-4" />
             </Link>
-            
-            <div className="flex items-center gap-3">
-               <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                  <Settings2 className="w-4 h-4" />
-               </div>
-               <h1 className="text-lg font-bold text-white tracking-tight">System Configuration</h1>
+            <span className="h-4 border-l border-neutral-800" />
+            <div>
+              <p className="app-eyebrow">Workspace</p>
+              <p className="text-sm font-medium tracking-tight text-neutral-200">System settings</p>
             </div>
           </div>
-
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="group flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-red-400 bg-white/[0.02] hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 transition-all font-mono uppercase tracking-widest"
-          >
-            <LogOut className="w-3 h-3 group-hover:scale-110 transition-transform" />
-            Sign Out
+          <button type="button" onClick={() => signOut({ callbackUrl: "/login" })} className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-400">
+            <LogOut className="h-3.5 w-3.5" /> Sign out
           </button>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 md:py-16 space-y-20">
-        
-        {/* PIPELINE SECTION */}
-        <section className="space-y-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-indigo-400 font-mono text-[10px] uppercase tracking-widest font-bold">
-               <LayoutTemplate className="w-3 h-3" />
-               Pipeline Status
+      <main className="app-page flex flex-col gap-12 py-10 sm:py-14">
+        <div className="border-b border-neutral-800 pb-7">
+          <p className="app-eyebrow">Configuration</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-100">Keep the system deliberate.</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">Manage the active pipeline, provider credentials, and the MCP services available to tool nodes.</p>
+        </div>
+
+        <section className="flex flex-col gap-5">
+          <SectionHeading icon={LayoutTemplate} eyebrow="Active pipeline" title="Execution defaults" description="Settings here apply to the pipeline currently open in the editor." />
+          <div className="border border-neutral-800 bg-neutral-950">
+            <div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900/35 px-4 py-3">
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-neutral-500">Pipeline configuration</span>
+              <span className={`flex items-center gap-1.5 font-mono text-[10px] ${currentPipelineId ? "text-emerald-400" : "text-neutral-600"}`}><span className={`h-1.5 w-1.5 rounded-full ${currentPipelineId ? "bg-emerald-500" : "bg-neutral-700"}`} />{currentPipelineId ? "Loaded" : "No pipeline loaded"}</span>
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Active Canvas Configuration</h2>
-          </div>
-
-          <div className="relative p-6 md:p-8 rounded-[24px] bg-[#0c0a09]/80 border border-white/[0.06] shadow-2xl backdrop-blur-xl">
-             <BorderBeam duration={12} size={300} colorFrom="#6366f1" colorTo="#ec4899" />
-             
-             {!currentPipelineId ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl border border-dashed border-white/10 flex items-center justify-center bg-white/[0.02]">
-                    <LayoutTemplate className="w-6 h-6 text-neutral-500 opacity-50" />
-                  </div>
-                  <div>
-                    <h3 className="text-neutral-300 font-medium text-base mb-1">No pipeline loaded</h3>
-                    <p className="text-neutral-500 text-sm max-w-sm mx-auto">Open a pipeline in Mission Control to configure its root details here.</p>
-                  </div>
-                </div>
-             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   {/* Left Col */}
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] text-neutral-500 font-mono uppercase tracking-widest font-bold ml-1">Pipeline Name</label>
-                        <input
-                          type="text"
-                          value={pipelineName}
-                          onChange={(e) => setPipelineName(e.target.value)}
-                          placeholder="Untitled pipeline"
-                          className="w-full bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-neutral-600"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] text-neutral-500 font-mono uppercase tracking-widest font-bold ml-1 flex justify-between">
-                           Description / Task
-                           {!inputNode && <span className="text-amber-500/70 lowercase tracking-normal font-sans">Requires Input Node</span>}
-                        </label>
-                        <textarea
-                          value={description}
-                          onChange={(e) => inputNode && updateNodeConfig(inputNode.id, { description: e.target.value })}
-                          placeholder="Describe what this pipeline does…"
-                          disabled={!inputNode}
-                          className="w-full h-32 resize-none bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-neutral-600"
-                        />
-                      </div>
-                   </div>
-
-                   {/* Right Col */}
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] text-neutral-500 font-mono uppercase tracking-widest font-bold ml-1 flex items-center justify-between">
-                           Global LLM Setting
-                           <span className="text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-full">{llmNodes.length} Agent{llmNodes.length !== 1 ? 's' : ''}</span>
-                        </label>
-                        <div className="relative">
-                           <select
-                             value={currentModel}
-                             onChange={(e) => llmNodes.forEach((n) => updateNodeConfig(n.id, { model: e.target.value }))}
-                             disabled={llmNodes.length === 0}
-                             className="w-full appearance-none bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-3 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed pr-10"
-                           >
-                             {MODELS.map((m) => <option key={m} value={m} className="bg-[#0a0a0a]">{m}</option>)}
-                           </select>
-                           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">▼</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="flex text-[10px] text-neutral-500 font-mono uppercase tracking-widest font-bold ml-1 justify-between">
-                           <span>Temperature Range</span>
-                           <span className="text-white/80 bg-white/5 px-2 py-0.5 rounded-md">{currentTemp.toFixed(1)}</span>
-                        </label>
-                        <div className="p-4 rounded-xl bg-black/20 border border-white/5 space-y-4">
-                           <input
-                             type="range"
-                             min={0}
-                             max={1}
-                             step={0.1}
-                             value={currentTemp}
-                             onChange={(e) => llmNodes.forEach((n) => updateNodeConfig(n.id, { temperature: parseFloat(e.target.value) }))}
-                             disabled={llmNodes.length === 0}
-                             className="w-full accent-indigo-500 cursor-pointer disabled:opacity-50"
-                           />
-                           <div className="flex justify-between text-[10px] text-neutral-500 font-mono font-medium">
-                             <span>PRECISE (0.0)</span>
-                             <span>CREATIVE (1.0)</span>
-                           </div>
-                        </div>
-                      </div>
-
-                      <div className="pt-2 flex justify-end">
-                         <button
-                           onClick={async () => {
-                             try {
-                               await savePipeline();
-                               toast.success("Pipeline configuration saved");
-                             } catch {
-                               toast.error("Failed to save pipeline configuration");
-                             }
-                           }}
-                           disabled={isSaving}
-                           className="group flex items-center justify-center gap-2 px-6 py-3 w-full md:w-auto rounded-xl text-sm font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]"
-                         >
-                           {isSaving ? <Activity className="animate-spin w-4 h-4" /> : <Zap className="w-4 h-4 group-hover:scale-110 transition-transform" />}
-                           {isSaving ? "Saving Configuration…" : "Update Configuration"}
-                         </button>
-                      </div>
-                   </div>
-                </div>
-             )}
-          </div>
-        </section>
-
-        {/* API KEYS SECTION */}
-        <section className="space-y-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-fuchsia-400 font-mono text-[10px] uppercase tracking-widest font-bold">
-               <KeyRound className="w-3 h-3" />
-               Security Vault
-            </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">API Provider Keys</h2>
-            <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed">
-              Keys are encrypted locally with AES-256 before storage. Each workflow leverages your own API keys natively for localized spending control. Keys are never logged.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {loading ? (
-              [1, 2, 3].map((i) => (
-                <div key={i} className="h-[120px] rounded-[20px] bg-white/[0.02] border border-white/[0.05] animate-pulse" />
-              ))
+            {!currentPipelineId ? (
+              <div className="flex items-start gap-3 px-5 py-7">
+                <LayoutTemplate className="mt-0.5 h-4 w-4 text-neutral-600" />
+                <p className="max-w-lg text-sm leading-6 text-neutral-500">Open a pipeline from the editor before changing its name, instructions, model, or temperature.</p>
+              </div>
             ) : (
-              PROVIDERS.map((p) => (
-                <ApiKeyCard
-                  key={p.provider}
-                  provider={p.provider}
-                  label={p.label}
-                  description={p.description}
-                  accentColor={p.accentColor}
-                  isSaved={p.provider in savedKeys}
-                  savedAt={savedKeys[p.provider]}
-                  onSaved={fetchKeys}
-                />
-              ))
+              <div className="grid gap-x-8 gap-y-6 p-5 md:grid-cols-2 md:p-6">
+                <div className="space-y-5">
+                  <label className="block space-y-2"><span className={labelClass}>Pipeline name</span><input value={pipelineName} onChange={(event) => setPipelineName(event.target.value)} placeholder="Untitled pipeline" className={fieldClass} /></label>
+                  <label className="block space-y-2"><span className="flex justify-between gap-3"><span className={labelClass}>Description / task</span>{!inputNode && <span className="text-[11px] text-amber-400">Requires an input node</span>}</span><textarea value={description} onChange={(event) => inputNode && updateNodeConfig(inputNode.id, { description: event.target.value })} placeholder="Describe what this pipeline does" disabled={!inputNode} className={`${fieldClass} min-h-32 resize-y`} /></label>
+                </div>
+                <div className="space-y-5">
+                  <label className="block space-y-2"><span className="flex justify-between gap-3"><span className={labelClass}>Agent model</span><span className="font-mono text-[10px] text-neutral-600">{llmNodes.length} agents</span></span><select value={currentModel} onChange={(event) => llmNodes.forEach((node) => updateNodeConfig(node.id, { model: event.target.value }))} disabled={llmNodes.length === 0} className={fieldClass}>{MODELS.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+                  <label className="block space-y-3"><span className="flex justify-between gap-3"><span className={labelClass}>Temperature</span><span className="font-mono text-xs tabular-nums text-neutral-300">{currentTemp.toFixed(1)}</span></span><input type="range" min={0} max={1} step={0.1} value={currentTemp} onChange={(event) => llmNodes.forEach((node) => updateNodeConfig(node.id, { temperature: Number(event.target.value) }))} disabled={llmNodes.length === 0} className="w-full accent-indigo-500 disabled:cursor-not-allowed disabled:opacity-50" /><span className="flex justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-neutral-600"><span>Precise</span><span>Creative</span></span></label>
+                  <div className="flex justify-end border-t border-neutral-800 pt-5"><button type="button" onClick={async () => { try { await savePipeline(); toast.success("Pipeline configuration saved"); } catch { toast.error("Failed to save pipeline configuration"); } }} disabled={isSaving} className="inline-flex min-h-9 items-center gap-2 rounded-md bg-indigo-500 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"><Zap className="h-3.5 w-3.5" />{isSaving ? "Saving" : "Save configuration"}</button></div>
+                </div>
+              </div>
             )}
           </div>
         </section>
 
-        {/* MCP SERVERS SECTION */}
-        <section className="space-y-6 pb-20">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] uppercase tracking-widest font-bold">
-               <Server className="w-3 h-3" />
-               Tool Registry
-            </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Model Context Protocol</h2>
-            <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed">
-              Register localized MCP servers. Once added, tool nodes on your canvas can directly interface with these systems seamlessly.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6">
-             {/* List Servers */}
-             {!mcpLoading && mcpServers.length > 0 ? (
-               <div className="flex flex-col gap-3">
-                 {mcpServers.map((srv) => (
-                   <div
-                     key={srv.id}
-                     className="flex flex-col md:flex-row md:items-center gap-4 bg-[#0c0a09]/60 border border-white/10 rounded-2xl p-4 transition-all hover:bg-[#0c0a09] hover:border-white/20"
-                   >
-                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
-                           <TerminalSquare className="w-5 h-5" />
-                        </div>
-                        <div className="flex flex-col min-w-0 flex-1">
-                           <div className="flex items-center gap-2">
-                             <span className="text-sm font-bold text-white truncate">{srv.name}</span>
-                             <span className="text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/5 text-neutral-400 border border-white/5">
-                               {srv.server_type}
-                             </span>
-                           </div>
-                           <span className="text-xs text-neutral-500 font-mono truncate mt-0.5">
-                             {srv.command_or_url}
-                           </span>
-                        </div>
-                     </div>
-                     <button
-                       onClick={() => handleDeleteMcpServer(srv.id)}
-                       className="group/btn self-start md:self-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-red-400 bg-red-500/5 hover:bg-red-500/20 border border-red-500/10 hover:border-red-500/40 transition-all"
-                     >
-                       <Trash2 className="w-3.5 h-3.5" />
-                       Unregister
-                     </button>
-                   </div>
-                 ))}
-               </div>
-             ) : !mcpLoading && (
-               <div className="flex flex-col items-center justify-center py-10 px-6 border border-dashed border-white/10 rounded-2xl bg-white/[0.01]">
-                  <Server className="w-8 h-8 text-neutral-600 mb-3" />
-                  <span className="text-sm font-medium text-neutral-300">No external servers registered</span>
-               </div>
-             )}
-
-             {/* Add Server Form */}
-             <div className="p-6 md:p-8 rounded-[24px] bg-[#0c0a09]/80 border border-white/10 shadow-xl backdrop-blur-md">
-               <h3 className="text-sm font-bold text-white mb-6 uppercase tracking-widest flex items-center gap-2 font-mono">
-                  <Plus className="w-4 h-4 text-emerald-400" /> Integrate New Server
-               </h3>
-               
-               <div className="flex flex-col md:flex-row gap-4 mb-4">
-                 <div className="flex-1 space-y-2">
-                    <label className="text-[10px] text-neutral-500 font-mono uppercase tracking-widest font-bold ml-1">Alias / Name</label>
-                    <input
-                      placeholder="e.g., github"
-                      value={mcpName}
-                      onChange={(e) => setMcpName(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-3 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-neutral-600 font-mono"
-                    />
-                 </div>
-                 
-                 <div className="w-full md:w-32 space-y-2">
-                    <label className="text-[10px] text-neutral-500 font-mono uppercase tracking-widest font-bold ml-1">Protocol</label>
-                    <div className="relative">
-                       <select
-                         value={mcpType}
-                         onChange={(e) => setMcpType(e.target.value as typeof SERVER_TYPES[number])}
-                         className="w-full appearance-none bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-3 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono uppercase pr-10"
-                       >
-                         {SERVER_TYPES.map((t) => <option key={t} value={t} className="bg-[#0a0a0a]">{t}</option>)}
-                       </select>
-                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">▼</div>
-                    </div>
-                 </div>
-
-                 <div className="flex-[2] space-y-2">
-                    <label className="text-[10px] text-neutral-500 font-mono uppercase tracking-widest font-bold ml-1">Execution Command / URI</label>
-                    <input
-                      placeholder="npx -y @modelcontextprotocol/server-github"
-                      value={mcpUrl}
-                      onChange={(e) => setMcpUrl(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddMcpServer()}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-3 outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-neutral-600 font-mono"
-                    />
-                 </div>
-               </div>
-
-               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
-                 <div className="text-xs text-red-400 font-mono font-medium">
-                   {mcpError}
-                 </div>
-                 <button
-                   onClick={handleAddMcpServer}
-                   disabled={mcpAdding || !mcpName.trim() || !mcpUrl.trim()}
-                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-[#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)]"
-                 >
-                   {mcpAdding ? <Activity className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                   {mcpAdding ? "Provisioning Server…" : "Register Protocol"}
-                 </button>
-               </div>
-             </div>
+        <section className="flex flex-col gap-5">
+          <SectionHeading icon={KeyRound} eyebrow="Credentials" title="Provider API keys" description="Keys are encrypted before storage and are never included in execution logs." />
+          <div className="grid gap-3">
+            {loading ? [1, 2, 3].map((item) => <div key={item} className="h-36 animate-pulse border border-neutral-800 bg-neutral-900/30" />) : PROVIDERS.map((provider) => <ApiKeyCard key={provider.provider} {...provider} isSaved={provider.provider in savedKeys} savedAt={savedKeys[provider.provider]} onSaved={fetchKeys} />)}
           </div>
         </section>
 
+        <section className="flex flex-col gap-5 pb-8">
+          <SectionHeading icon={Server} eyebrow="Tool registry" title="MCP servers" description="Register the local and remote services that tool nodes can call from a pipeline." />
+          <div className="overflow-hidden border border-neutral-800 bg-neutral-950">
+            <div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900/35 px-4 py-3"><span className="font-mono text-[10px] uppercase tracking-[0.12em] text-neutral-500">Registered servers</span><span className="font-mono text-[10px] text-neutral-600">{mcpLoading ? "Loading" : `${mcpServers.length} total`}</span></div>
+            {mcpLoading ? <div className="space-y-px p-4">{[1, 2].map((item) => <div key={item} className="h-12 animate-pulse bg-neutral-900/40" />)}</div> : mcpServers.length === 0 ? <div className="flex items-start gap-3 px-5 py-7"><Server className="mt-0.5 h-4 w-4 text-neutral-600" /><p className="text-sm text-neutral-500">No MCP servers are registered yet.</p></div> : <div className="divide-y divide-neutral-800">{mcpServers.map((server) => <div key={server.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-800 bg-neutral-900 text-neutral-500"><TerminalSquare className="h-4 w-4" /></div><div className="min-w-0"><div className="flex items-center gap-2"><span className="truncate text-sm font-medium text-neutral-200">{server.name}</span><span className="rounded border border-neutral-700 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-neutral-500">{server.server_type}</span></div><p className="mt-0.5 truncate font-mono text-xs text-neutral-600" title={server.command_or_url}>{server.command_or_url}</p></div></div><button type="button" onClick={() => void handleDeleteMcpServer(server.id)} className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-md px-2.5 py-2 text-xs font-medium text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-400 sm:self-auto"><Trash2 className="h-3.5 w-3.5" />Unregister</button></div>)}</div>}
+          </div>
+
+          <div className="border border-neutral-800 bg-neutral-950">
+            <div className="flex items-center gap-2 border-b border-neutral-800 px-4 py-3"><Plus className="h-3.5 w-3.5 text-indigo-400" /><span className="font-mono text-[10px] uppercase tracking-[0.12em] text-neutral-500">Register server</span></div>
+            <div className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_140px_minmax(0,2fr)_auto] md:items-end">
+              <label className="block space-y-2"><span className={labelClass}>Name</span><input value={mcpName} onChange={(event) => setMcpName(event.target.value)} placeholder="github" className={fieldClass} /></label>
+              <label className="block space-y-2"><span className={labelClass}>Transport</span><select value={mcpType} onChange={(event) => setMcpType(event.target.value as typeof SERVER_TYPES[number])} className={fieldClass}>{SERVER_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select></label>
+              <label className="block space-y-2"><span className={labelClass}>Command or endpoint</span><input value={mcpUrl} onChange={(event) => setMcpUrl(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void handleAddMcpServer(); }} placeholder="npx -y @modelcontextprotocol/server-github" className={`${fieldClass} font-mono`} /></label>
+              <button type="button" onClick={() => void handleAddMcpServer()} disabled={mcpAdding || !mcpName.trim() || !mcpUrl.trim()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-indigo-500 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"><Plus className="h-3.5 w-3.5" />{mcpAdding ? "Registering" : "Register"}</button>
+            </div>
+            {mcpError && <p role="alert" className="border-t border-red-500/20 bg-red-500/5 px-5 py-3 font-mono text-xs text-red-400">{mcpError}</p>}
+          </div>
+        </section>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

@@ -33,7 +33,12 @@ export function RunsPage() {
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="p-6 max-w-5xl mx-auto flex flex-col gap-4">
+      <div className="app-page flex flex-col gap-6">
+        <div className="border-b border-neutral-800 pb-5">
+          <p className="app-eyebrow">Execution archive</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-100">Run history</h1>
+          <p className="mt-1 text-sm text-neutral-500">Inspect completed workflows, live work, and failures without leaving the control plane.</p>
+        </div>
         <RunsTable
           runs={runs}
           loading={loading}

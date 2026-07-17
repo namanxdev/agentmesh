@@ -136,7 +136,7 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
   );
 }
 
-export function PipelineHeader(_props: PipelineHeaderProps = {}) {
+export function PipelineHeader() {
   const {
     mode,
     setMode,
@@ -147,6 +147,8 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
     validationResult,
     validatePipeline,
     runPipeline,
+    nodes,
+    edges,
   } = usePipelineStore();
 
   const savePipeline = usePipelineStore((s) => s.savePipeline);
@@ -228,16 +230,24 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
         : "bg-red-500";
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 w-full text-sm font-sans z-50 relative bg-transparent rounded-lg">
+    <div className="relative z-50 flex h-12 w-full items-center justify-between gap-3 bg-transparent px-3 font-sans text-sm">
       {/* Left Area: Pipeline Name */}
-      <div className="flex items-center gap-3 min-w-0 flex-1 w-full lg:w-auto justify-start">
-        <div className="flex items-center gap-3 flex-1 min-w-0 px-2 py-1.5">
+      <div className="flex min-w-0 flex-1 items-center justify-start gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="hidden font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-600 xl:inline">Pipeline</span>
+          <span className="hidden h-4 w-px bg-neutral-800 xl:block" />
           <input
             value={pipelineName}
             onChange={(e) => setPipelineName(e.target.value)}
             placeholder="Untitled pipeline"
-            className="bg-transparent w-full border-none outline-none text-neutral-300 hover:text-white focus:text-white font-medium text-base tracking-tight placeholder:text-neutral-600 min-w-0 max-w-[360px] truncate transition-colors focus:ring-0 selection:bg-white/20"
+            className="min-w-0 max-w-[220px] truncate border-none bg-transparent text-[13px] font-semibold tracking-tight text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 hover:text-white focus:text-white focus:ring-0 selection:bg-white/20"
           />
+        </div>
+
+        <div className="hidden items-center gap-2 font-mono text-[10px] tabular-nums text-neutral-600 lg:flex">
+          <span>{nodes.length} nodes</span>
+          <span className="text-neutral-800">/</span>
+          <span>{edges.length} edges</span>
         </div>
 
         {/* Runtime Indicator */}
@@ -252,7 +262,7 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
       </div>
 
       {/* Right Area: Actions */}
-      <div className="flex items-center gap-3 flex-1 min-w-0 w-full lg:w-auto justify-end flex-nowrap pb-1 lg:pb-0">
+      <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-2">
         {/* Status Indicators */}
         {connectionStatus !== "connected" && (
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-neutral-800 bg-transparent shrink-0">
@@ -288,7 +298,7 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0 border-l border-neutral-800 pl-3">
+        <div className="flex shrink-0 items-center gap-1.5 border-l border-neutral-800 pl-2">
             {mode === "run" && (
               <button
                 onClick={() => { setMode("build"); setError(null); }}
@@ -299,19 +309,46 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
             )}
 
             {mode === "build" && (
-              <button
-                onClick={handleRunClick}
-                disabled={isValidating || isRunning}
-                title={isRunning ? "Starting…" : "Run pipeline"}
-                className="inline-flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-md h-8 px-3.5 text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isRunning ? (
-                  <Activity className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                )}
-                {isRunning ? "Starting…" : "Run"}
-              </button>
+              <>
+                <button
+                  onClick={handleValidate}
+                  disabled={isValidating}
+                  title="Validate workflow"
+                  className="hidden h-8 items-center gap-1.5 rounded-md border border-neutral-800 px-2.5 text-[12px] font-medium text-neutral-400 transition-colors hover:border-neutral-700 hover:bg-neutral-900 hover:text-neutral-100 disabled:opacity-50 lg:inline-flex"
+                >
+                  {isValidating ? <Activity className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  Validate
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await savePipeline();
+                      toast.success("Pipeline saved successfully");
+                    } catch {
+                      toast.error("Failed to save pipeline");
+                    }
+                  }}
+                  disabled={isSaving}
+                  title="Save pipeline"
+                  className="hidden h-8 items-center gap-1.5 rounded-md border border-neutral-800 px-2.5 text-[12px] font-medium text-neutral-400 transition-colors hover:border-neutral-700 hover:bg-neutral-900 hover:text-neutral-100 disabled:opacity-50 lg:inline-flex"
+                >
+                  {isSaving ? <Activity className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Save
+                </button>
+                <button
+                  onClick={handleRunClick}
+                  disabled={isValidating || isRunning}
+                  title={isRunning ? "Starting pipeline" : "Run pipeline"}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-indigo-500 px-3 text-[12px] font-semibold text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isRunning ? (
+                    <Activity className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5 fill-current" />
+                  )}
+                  {isRunning ? "Starting" : "Run"}
+                </button>
+              </>
             )}
 
             <NavbarMenu

@@ -51,19 +51,20 @@ export function DashboardTopBar() {
             : "Disconnected";
 
   return (
-    <header className="flex items-center justify-between px-4 h-11 border-b border-neutral-800 bg-neutral-950 shrink-0">
-      {/* Left: section name */}
-      <span className="text-sm font-semibold text-neutral-200 tracking-tight">
-        {sectionLabel}
-      </span>
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-5">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-neutral-600 sm:inline">Workspace</span>
+        <span className="hidden text-neutral-700 sm:inline">/</span>
+        <span className="truncate text-sm font-medium tracking-tight text-neutral-200">{sectionLabel}</span>
+      </div>
 
       {/* Right: status indicators */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Run state */}
         {mode === "run" && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/[0.03]">
+          <div className="flex items-center gap-1.5 border-l border-emerald-500/40 pl-2.5">
             <span className={`h-1.5 w-1.5 rounded-full bg-emerald-500 ${isRunning ? "animate-pulse" : ""}`} />
-            <span className="text-[10px] uppercase font-mono font-medium tracking-widest text-emerald-500/80">
+            <span className="text-[10px] font-mono font-medium uppercase tracking-[0.12em] text-emerald-400">
               {isRunning ? "Running" : "Live"}
             </span>
           </div>
@@ -75,7 +76,7 @@ export function DashboardTopBar() {
           title={`WebSocket: ${connectionLabel}`}
         >
           <span className={`h-2 w-2 rounded-full ${connectionColor} ${connectionStatus === "connecting" || connectionStatus === "reconnecting" ? "animate-pulse" : ""}`} />
-          <span className="text-[11px] text-neutral-500 hidden sm:block font-mono">
+          <span className="hidden font-mono text-[11px] text-neutral-500 sm:block">
             {connectionLabel}
           </span>
         </div>

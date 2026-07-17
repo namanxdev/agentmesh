@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowUpRight, GitBranch } from "lucide-react";
 import { ActiveRunStrip } from "./ActiveRunStrip";
 import { LiveEventFeed } from "./LiveEventFeed";
 import { RecentRunsTable } from "./RecentRunsTable";
@@ -8,52 +10,44 @@ import { StatusRow } from "./StatusRow";
 export function OverviewPage() {
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="p-6 max-w-5xl mx-auto flex flex-col gap-5">
-
-        {/* Page header */}
-        <div className="flex items-baseline justify-between gap-4">
+      <div className="app-page flex flex-col gap-8">
+        <div className="flex items-end justify-between gap-5 border-b border-neutral-800 pb-6">
           <div>
-            <h1 className="text-base font-semibold text-neutral-200 tracking-tight">
-              Mission Control
-            </h1>
-            <p className="text-xs text-neutral-600 mt-0.5 font-mono">
-              AgentMesh orchestrator — live execution view
+            <p className="app-eyebrow">Control plane</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-100">Observe execution</h1>
+            <p className="mt-1 max-w-xl text-sm text-neutral-500">
+              The current workflow, its event stream, and the operating state of your local agent system.
             </p>
           </div>
+          <Link
+            href="/dashboard/pipelines"
+            className="hidden shrink-0 items-center gap-1.5 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-medium text-neutral-300 transition-colors hover:border-neutral-700 hover:text-neutral-100 sm:flex"
+          >
+            <GitBranch className="h-3.5 w-3.5 text-indigo-400" />
+            Open pipeline
+            <ArrowUpRight className="h-3.5 w-3.5 text-neutral-500" />
+          </Link>
         </div>
 
-        {/* 1. Active run hero */}
-        <section className="flex flex-col gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
-            Active run
-          </span>
+        <section className="flex flex-col gap-2.5">
+          <span className="app-eyebrow">Active run</span>
           <ActiveRunStrip />
         </section>
 
-        {/* 2. Live event feed */}
-        <section className="flex flex-col gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
-            Event stream
-          </span>
+        <section className="flex flex-col gap-2.5">
+          <span className="app-eyebrow">Event stream</span>
           <LiveEventFeed />
         </section>
 
-        {/* 3. Recent runs */}
-        <section className="flex flex-col gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
-            Recent runs
-          </span>
+        <section className="flex flex-col gap-2.5">
+          <span className="app-eyebrow">Recent runs</span>
           <RecentRunsTable />
         </section>
 
-        {/* 4. Status row */}
-        <section className="flex flex-col gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
-            System status
-          </span>
+        <section className="flex flex-col gap-2.5 pb-3">
+          <span className="app-eyebrow">System status</span>
           <StatusRow />
         </section>
-
       </div>
     </div>
   );

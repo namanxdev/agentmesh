@@ -2,194 +2,105 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { KeyRound, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react";
+import { Check, KeyRound, Trash2 } from "lucide-react";
 
 interface ApiKeyCardProps {
   provider: "gemini" | "groq" | "openai";
   label: string;
   description: string;
-  accentColor: string;
   isSaved: boolean;
   savedAt?: string;
   onSaved: () => void;
 }
 
-export function ApiKeyCard({
-  provider,
-  label,
-  description,
-  accentColor,
-  isSaved,
-  savedAt,
-  onSaved,
-}: ApiKeyCardProps) {
+export function ApiKeyCard({ provider, label, description, isSaved, savedAt, onSaved }: ApiKeyCardProps) {
   const [value, setValue] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  const handleSave = async () => {
+  async function handleSave() {
     if (!value.trim()) return;
-    setLoading(true);
+    setSaving(true);
     setError(null);
-    setSuccess(false);
     try {
-      const res = await fetch("/api/keys", {
+      const response = await fetch("/api/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider, api_key: value.trim() }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        const msg = data.detail ?? "Save failed";
-        setError(msg);
-        toast.error(msg);
-        throw new Error(msg);
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(data.detail ?? "Unable to save key");
       }
-      toast.success(`${label} API key saved and encrypted`);
       setValue("");
-      setSuccess(true);
+      toast.success(`${label} key saved`);
       onSaved();
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Save failed";
-      setError(msg);
-      if (!msg.includes("Save failed")) {
-        toast.error(msg);
-      }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Unable to save key";
+      setError(message);
+      toast.error(message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
-  };
+  }
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     setDeleting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/keys/${provider}`, { method: "DELETE" });
-      if (!res.ok) {
-        const msg = "Delete failed";
-        setError(msg);
-        toast.error(msg);
-        throw new Error(msg);
-      }
-      toast.success(`${label} API key revoked`);
+      const response = await fetch(`/api/keys/${provider}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Unable to revoke key");
+      toast.success(`${label} key revoked`);
       onSaved();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Delete failed";
-      setError(msg);
-      if (!msg.includes("Delete failed")) {
-        toast.error(msg);
-      }
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Unable to revoke key";
+      setError(message);
+      toast.error(message);
     } finally {
       setDeleting(false);
     }
-  };
+  }
 
   return (
-    <div
-      className="group relative flex flex-col gap-4 p-5 md:p-6 rounded-[20px] bg-[#0c0a09]/80 border transition-all duration-300"
-      style={{
-        borderColor: isSaved ? `${accentColor}33` : "rgba(255,255,255,0.06)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.02)",
-        backdropFilter: "blur(12px)"
-      }}
-    >
-      {/* Background glow when saved */}
-      {isSaved && (
-        <div 
-          className="absolute inset-0 rounded-[20px] opacity-10 pointer-events-none transition-opacity duration-500"
-          style={{ background: `radial-gradient(circle at top right, ${accentColor}, transparent 60%)` }}
-        />
-      )}
-
-      {/* Header */}
-      <div className="flex items-start md:items-center justify-between flex-col md:flex-row gap-3 relative z-10">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex items-center justify-center w-10 h-10 rounded-xl"
-            style={{
-              background: `linear-gradient(135deg, ${accentColor}33, ${accentColor}11)`,
-              border: `1px solid ${accentColor}44`,
-              color: accentColor,
-            }}
-          >
-            <KeyRound className="w-5 h-5" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-base font-bold text-neutral-100 tracking-tight">
-              {label}
-            </span>
-            <span className="text-xs text-neutral-500 font-medium">Provider</span>
+    <article className="border border-neutral-800 bg-neutral-950">
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-800 bg-neutral-900 text-neutral-500">
+              <KeyRound className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-neutral-200">{label}</h3>
+              <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
+            </div>
           </div>
         </div>
 
-        <div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono font-bold tracking-widest uppercase"
-          style={{
-            border: `1px solid ${isSaved ? accentColor + "55" : "rgba(255,255,255,0.1)"}`,
-            background: isSaved ? accentColor + "18" : "rgba(255,255,255,0.03)",
-            color: isSaved ? accentColor : "#737373",
-          }}
-        >
-          {isSaved ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
-          {isSaved ? "Secured" : "Not Set"}
+        <div className={`flex shrink-0 items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] ${isSaved ? "text-emerald-400" : "text-neutral-600"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${isSaved ? "bg-emerald-500" : "bg-neutral-700"}`} />
+          {isSaved ? "Stored" : "Missing"}
         </div>
       </div>
 
-      <p className="text-xs text-neutral-400 leading-relaxed font-medium relative z-10">
-        {description}
-      </p>
-
-      {/* Key input */}
-      <div className="flex flex-col sm:flex-row gap-2 relative z-10">
+      <div className="flex flex-col gap-2 border-t border-neutral-800 bg-neutral-900/20 p-4 sm:flex-row">
         <input
           type="password"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSave()}
-          placeholder={isSaved ? "Paste new key to replace…" : "Paste your API key…"}
-          className="flex-1 bg-black/40 border border-white/10 rounded-xl text-white text-sm px-4 py-2.5 outline-none focus:border-white/30 focus:ring-1 focus:ring-white/10 transition-all font-mono placeholder:text-neutral-600 placeholder:font-sans"
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => { if (event.key === "Enter") void handleSave(); }}
+          placeholder={isSaved ? "Paste a replacement key" : "Paste API key"}
+          className="min-w-0 flex-1 rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition-colors placeholder:text-neutral-600 focus:border-neutral-600"
         />
-        <button
-          onClick={handleSave}
-          disabled={!value.trim() || loading}
-          className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap"
-          style={{
-            background: value.trim() && !loading ? accentColor : "rgba(255,255,255,0.05)",
-            color: value.trim() && !loading ? "#000" : "#737373",
-            cursor: value.trim() && !loading ? "pointer" : "not-allowed",
-            boxShadow: value.trim() && !loading ? `0 0 20px ${accentColor}44` : "none"
-          }}
-        >
-          {loading ? "Encrypting…" : "Save Key"}
+        <button type="button" onClick={() => void handleSave()} disabled={!value.trim() || saving} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-neutral-700 bg-neutral-800 px-3 text-xs font-medium text-neutral-200 transition-colors hover:border-neutral-600 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50">
+          <Check className="h-3.5 w-3.5 text-indigo-300" />{saving ? "Saving" : "Save key"}
         </button>
+        {isSaved && <button type="button" onClick={() => void handleDelete()} disabled={deleting} className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />{deleting ? "Revoking" : "Revoke"}</button>}
       </div>
 
-      {/* Status / saved-at row */}
-      <div className="flex items-center justify-between min-h-[24px] gap-2 mt-1 relative z-10">
-        <div className="text-[11px] font-mono flex-1">
-          {error && <span className="text-red-400">{error}</span>}
-          {success && <span style={{ color: accentColor }}>Encrypted uniquely to your account.</span>}
-          {!error && !success && isSaved && savedAt && (
-            <span className="text-neutral-500">
-              Active since {(new Date(savedAt)).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
-            </span>
-          )}
-        </div>
-
-        {isSaved && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-500 font-mono text-[10px] font-bold uppercase tracking-wider hover:bg-red-500/20 hover:border-red-500/40 transition-all disabled:opacity-50"
-          >
-             <Trash2 className="w-3 h-3" />
-            {deleting ? "Removing…" : "Revoke"}
-          </button>
-        )}
+      <div className="min-h-8 border-t border-neutral-800 px-4 py-2 font-mono text-[10px]">
+        {error ? <span className="text-red-400">{error}</span> : isSaved && savedAt ? <span className="text-neutral-600">Stored {new Date(savedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</span> : <span className="text-neutral-700">A provider key is required to run a matching model.</span>}
       </div>
-    </div>
+    </article>
   );
 }

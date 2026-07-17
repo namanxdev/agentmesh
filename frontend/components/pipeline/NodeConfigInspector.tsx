@@ -539,25 +539,51 @@ const FORM_MAP: Record<NodeKind, React.ComponentType<InspectorFormProps>> = {
 };
 
 export function NodeConfigInspector() {
-  const { nodes, selectedNodeId } = usePipelineStore();
+  const { nodes, edges, selectedNodeId } = usePipelineStore();
   const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) : null;
 
   if (!selectedNode?.data) {
     return (
-      <div
-        className="dashboard-panel"
-        style={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          color: "var(--text-muted)",
-        }}
-      >
-        <span style={{ fontSize: 28, opacity: 0.4 }}>◻</span>
-        <span style={{ fontSize: 12 }}>Select a node to configure</span>
+      <div className="flex h-full flex-col bg-neutral-950">
+        <div className="border-b border-neutral-800 p-4">
+          <div className="mb-2 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">Selection</div>
+          <h3 className="text-[13px] font-semibold text-neutral-200">Nothing selected</h3>
+          <p className="mt-1 text-[11px] leading-4 text-neutral-600">Choose a node on the canvas to edit its runtime configuration.</p>
+        </div>
+
+        <div className="grid grid-cols-2 border-b border-neutral-800">
+          <div className="border-r border-neutral-800 p-3">
+            <div className="font-mono text-[18px] font-medium tabular-nums text-neutral-300">{nodes.length}</div>
+            <div className="mt-0.5 text-[10px] text-neutral-600">Nodes</div>
+          </div>
+          <div className="p-3">
+            <div className="font-mono text-[18px] font-medium tabular-nums text-neutral-300">{edges.length}</div>
+            <div className="mt-0.5 text-[10px] text-neutral-600">Connections</div>
+          </div>
+        </div>
+
+        <div className="p-4">
+          <div className="mb-3 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">Inspector guide</div>
+          <div className="space-y-3">
+            {[
+              ["01", "Select", "Pick a node from the canvas"],
+              ["02", "Configure", "Set its model, prompt, or tool"],
+              ["03", "Connect", "Wire handles into an execution path"],
+            ].map(([number, title, copy]) => (
+              <div key={number} className="flex gap-3">
+                <span className="font-mono text-[9px] text-neutral-700">{number}</span>
+                <div>
+                  <div className="text-[11px] font-medium text-neutral-400">{title}</div>
+                  <div className="mt-0.5 text-[10px] leading-4 text-neutral-600">{copy}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-auto border-t border-neutral-800 px-4 py-3 font-mono text-[9px] text-neutral-700">
+          Delete removes the active selection
+        </div>
       </div>
     );
   }
@@ -569,7 +595,7 @@ export function NodeConfigInspector() {
 
   return (
     <div
-      className="dashboard-panel"
+      className="h-full bg-neutral-950"
       style={{
         gridArea: "inspector",
         display: "flex",
@@ -579,28 +605,28 @@ export function NodeConfigInspector() {
     >
       <div
         style={{
-          padding: "16px 18px 14px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          padding: "12px 14px",
+          borderBottom: "1px solid rgb(38,38,38)",
           display: "flex",
           alignItems: "center",
           gap: 8,
-          background: `color-mix(in srgb, ${color} 10%, transparent)`,
+          background: "rgb(10,10,10)",
         }}
       >
         <div
           style={{
-            width: 8,
-            height: 8,
+            width: 6,
+            height: 6,
             borderRadius: "50%",
             background: color,
-            boxShadow: `0 0 6px ${color}88`,
+            boxShadow: "none",
             flexShrink: 0,
           }}
         />
         <span
           style={{
             fontSize: 12,
-            fontWeight: 700,
+            fontWeight: 600,
             color: "var(--text-primary)",
             flex: 1,
           }}
@@ -610,9 +636,9 @@ export function NodeConfigInspector() {
         <span
           style={{
             fontSize: 10,
-            color,
-            background: `${color}22`,
-            border: `1px solid ${color}44`,
+            color: "rgb(115,115,115)",
+            background: "rgb(23,23,23)",
+            border: "1px solid rgb(38,38,38)",
             borderRadius: 4,
             padding: "1px 6px",
             textTransform: "uppercase",
@@ -624,7 +650,7 @@ export function NodeConfigInspector() {
         </span>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div className="custom-scrollbar" style={{ flex: 1, overflowY: "auto", padding: 14 }}>
         <FormComponent id={id} config={config} />
       </div>
     </div>

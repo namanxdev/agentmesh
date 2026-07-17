@@ -2,6 +2,7 @@
 
 import { memo, type CSSProperties, type ReactNode } from "react";
 import { Handle, Position } from "@xyflow/react";
+import { X } from "lucide-react";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { NodeKind } from "@/types/pipeline";
 
@@ -59,20 +60,21 @@ function withAlpha(color: string, alpha: number) {
 }
 
 export function getHandleStyle(
-  _accentColor: string,
+  accentColor: string,
   extra?: CSSProperties
 ): CSSProperties {
   return {
-    background: "rgb(64,64,64)",        // neutral-700
-    width: 8,
-    height: 8,
-    border: "1.5px solid rgb(23,23,23)", // neutral-900
+    background: "rgb(10,10,10)",
+    width: 10,
+    height: 10,
+    border: `2px solid ${withAlpha(accentColor, 0.72)}`,
     borderRadius: "50%",
+    boxShadow: "0 0 0 2px rgb(8,8,8)",
     ...extra,
   };
 }
 
-export function getHandleLabelStyle(_accentColor: string): CSSProperties {
+export function getHandleLabelStyle(accentColor: string): CSSProperties {
   return {
     position: "absolute",
     top: -8,
@@ -89,7 +91,7 @@ export function getHandleLabelStyle(_accentColor: string): CSSProperties {
     letterSpacing: "0.05em",
     whiteSpace: "nowrap",
     pointerEvents: "none",
-    border: "1px solid rgb(38,38,38)",  // neutral-800
+    border: `1px solid ${withAlpha(accentColor, 0.18)}`,
   };
 }
 
@@ -120,7 +122,7 @@ export const NODE_CONTENT_STYLES = {
   stack: {
     display: "flex",
     flexDirection: "column",
-    gap: 6,
+    gap: 8,
   } satisfies CSSProperties,
   chips: {
     display: "flex",
@@ -132,12 +134,12 @@ export const NODE_CONTENT_STYLES = {
     alignItems: "center",
     gap: 4,
     border: "1px solid rgb(38,38,38)",
-    borderRadius: 3,
-    background: "rgba(255,255,255,0.03)",
-    padding: "2px 5px",
+    borderRadius: 4,
+    background: "rgb(15,15,15)",
+    padding: "3px 6px",
     color: "rgb(115,115,115)",
     fontFamily: "var(--font-mono)",
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: 500,
     letterSpacing: "0.03em",
     maxWidth: "100%",
@@ -148,16 +150,16 @@ export const NODE_CONTENT_STYLES = {
   metricGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 4,
+    gap: 6,
   } satisfies CSSProperties,
   metric: {
     display: "flex",
     flexDirection: "column",
-    gap: 2,
-    padding: "5px 6px",
+    gap: 3,
+    padding: "7px 8px",
     border: "1px solid rgb(38,38,38)",
-    borderRadius: 3,
-    background: "rgba(255,255,255,0.02)",
+    borderRadius: 4,
+    background: "rgb(13,13,13)",
   } satisfies CSSProperties,
   metricLabel: {
     color: "rgb(82,82,82)",
@@ -170,23 +172,23 @@ export const NODE_CONTENT_STYLES = {
   metricValue: {
     overflow: "hidden",
     color: "rgb(163,163,163)",
-    fontSize: 10,
-    fontWeight: 500,
+    fontSize: 10.5,
+    fontWeight: 600,
     lineHeight: 1.2,
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   } satisfies CSSProperties,
   preview: {
-    padding: "6px 8px",
+    padding: "8px 9px",
     border: "1px solid rgb(38,38,38)",
-    borderRadius: 3,
-    background: "rgba(0,0,0,0.2)",
+    borderRadius: 4,
+    background: "rgb(8,8,8)",
   } satisfies CSSProperties,
   previewCopy: {
     margin: "0",
-    color: "rgb(82,82,82)",
-    fontSize: 9,
-    lineHeight: 1.4,
+    color: "rgb(115,115,115)",
+    fontSize: 9.5,
+    lineHeight: 1.5,
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
     overflowWrap: "anywhere",
@@ -209,10 +211,12 @@ export const NODE_CONTENT_STYLES = {
 
 /** Accent chip: same neutral chip with an accent-color text — replaces the
  *  old tinted-background colorful pill. The accent color is now text-only. */
-export function getAccentChipStyle(_accentColor: string): CSSProperties {
+export function getAccentChipStyle(accentColor: string): CSSProperties {
   return {
     ...NODE_CONTENT_STYLES.chip,
-    color: "rgb(163,163,163)",
+    color: withAlpha(accentColor, 0.9),
+    borderColor: withAlpha(accentColor, 0.22),
+    background: withAlpha(accentColor, 0.055),
   };
 }
 
@@ -295,17 +299,31 @@ export const BaseNode = memo(function BaseNode({
         {
           "--node-accent": accentColor,
           position: "relative",
-          minWidth: 160,
-          maxWidth: 220,
+          width: 214,
+          maxWidth: 240,
           border: `1px solid ${borderColor}`,
-          borderRadius: 6,
-          background: "rgb(10,10,10)",
+          borderRadius: 8,
+          background: "rgb(11,11,11)",
           color: "var(--text-primary)",
           cursor: "pointer",
-          transition: "border-color 150ms ease",
+          boxShadow: selected
+            ? "0 0 0 2px rgba(99,102,241,0.14), 0 16px 40px rgba(0,0,0,0.4)"
+            : "0 10px 28px rgba(0,0,0,0.28)",
+          transition: "border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease",
         } as CSSProperties
       }
     >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: "0 12px auto",
+          height: 2,
+          borderRadius: "0 0 2px 2px",
+          background: accentColor,
+          opacity: selected ? 0.9 : 0.55,
+        }}
+      />
       {/* Node header */}
       <div
         className="pipeline-node__top"
@@ -313,8 +331,8 @@ export const BaseNode = memo(function BaseNode({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
-          padding: "7px 8px 7px 10px",
+          gap: 10,
+          padding: "10px 9px 9px 10px",
           borderBottom: children ? "1px solid rgb(23,23,23)" : "none",
         }}
       >
@@ -322,33 +340,57 @@ export const BaseNode = memo(function BaseNode({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 6,
+            gap: 8,
             minWidth: 0,
           }}
         >
           {/* Tiny kind dot — the other minimal accent cue */}
           <span
             style={{
-              width: 5,
-              height: 5,
-              borderRadius: 999,
-              background: accentColor,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 28,
+              height: 28,
+              borderRadius: 5,
+              border: `1px solid ${withAlpha(accentColor, 0.22)}`,
+              background: withAlpha(accentColor, 0.06),
+              color: accentColor,
+              fontFamily: "var(--font-mono)",
+              fontSize: 8,
+              fontWeight: 700,
               flexShrink: 0,
-              opacity: 0.7,
-            }}
-          />
-          <div
-            style={{
-              fontFamily: "var(--font-sans)",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "rgb(212,212,212)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
             }}
           >
-            {label}
+            {NODE_ICONS[kind]}
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "rgb(229,229,229)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                marginTop: 1,
+                fontFamily: "var(--font-mono)",
+                fontSize: 8,
+                fontWeight: 600,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                color: "rgb(82,82,82)",
+              }}
+            >
+              {NODE_META[kind].kicker}
+            </div>
           </div>
         </div>
 
@@ -365,17 +407,18 @@ export const BaseNode = memo(function BaseNode({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 16,
-            height: 16,
-            borderRadius: 3,
+            width: 22,
+            height: 22,
+            borderRadius: 4,
             background: "transparent",
             color: "rgb(115,115,115)",
-            fontSize: 9,
+            fontSize: 0,
             cursor: "pointer",
             border: "none",
             flexShrink: 0,
           }}
         >
+          <X style={{ width: 12, height: 12 }} />
           ✕
         </button>
       </div>
@@ -386,8 +429,8 @@ export const BaseNode = memo(function BaseNode({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 6,
-            padding: "7px 10px",
+            gap: 8,
+            padding: "9px 10px 10px",
           }}
         >
           {children}
