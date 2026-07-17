@@ -34,7 +34,29 @@ def test_format_tool_for_llm():
     assert "path" in tool_def["function"]["parameters"]["properties"]
 
 
-from backend.mcp.client import MCPClientWrapper
+from backend.mcp.client import MCPClientWrapper, _build_transport
+
+
+def test_build_transport_uses_streamable_http_for_mcp_endpoint():
+    from fastmcp.client.transports import StreamableHttpTransport
+
+    transport = _build_transport(
+        {"transport": "http", "url": "https://mcp.memestack.ai/mcp"}
+    )
+
+    assert isinstance(transport, StreamableHttpTransport)
+    assert str(transport.url) == "https://mcp.memestack.ai/mcp"
+
+
+def test_build_transport_uses_sse_for_sse_endpoint():
+    from fastmcp.client.transports import SSETransport
+
+    transport = _build_transport(
+        {"transport": "http", "url": "https://example.com/sse"}
+    )
+
+    assert isinstance(transport, SSETransport)
+    assert str(transport.url) == "https://example.com/sse"
 
 
 @pytest.mark.asyncio

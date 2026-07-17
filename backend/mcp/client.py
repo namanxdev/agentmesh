@@ -34,7 +34,9 @@ def _build_transport(config: dict):
 
             return SSETransport(url=url)
         else:
-            from fastmcp.client.transports.streamable_http import StreamableHttpTransport
+            # FastMCP 3 exports this transport from the package namespace; the
+            # old ``transports.streamable_http`` module no longer exists.
+            from fastmcp.client.transports import StreamableHttpTransport
 
             return StreamableHttpTransport(url=url)
     else:
