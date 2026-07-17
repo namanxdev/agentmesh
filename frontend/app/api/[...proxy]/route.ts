@@ -2,12 +2,19 @@ import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 const FASTAPI_URL = process.env.FASTAPI_URL ?? "http://127.0.0.1:8000";
+const DEV_USER = {
+  id: "local-dev-user",
+  email: "dev@agentmesh.local",
+  name: "Local developer",
+  image: null,
+} as const;
 
 async function proxyRequest(
   request: NextRequest,
   { params }: { params: Promise<{ proxy: string[] }> }
 ): Promise<NextResponse> {
   const session = await auth();
+  const user = session?.user ?? (process.env.NODE_ENV === "development" ? DEV_USER : null);
 
   // Reconstruct FastAPI URL: /api/[proxy...] → FASTAPI_URL/api/...
   const { proxy: segments } = await params;
@@ -27,11 +34,11 @@ async function proxyRequest(
   forwardHeaders.set("accept", request.headers.get("accept") ?? "application/json");
 
   // Add BFF identity headers (trusted because this runs server-side)
-  if (session?.user) {
-    forwardHeaders.set("x-user-id", session.user.id ?? "");
-    forwardHeaders.set("x-user-email", session.user.email ?? "");
-    forwardHeaders.set("x-user-name", session.user.name ?? "");
-    if (session.user.image) forwardHeaders.set("x-user-image", session.user.image);
+  if (user) {
+    forwardHeaders.set("x-user-id", user.id ?? "");
+    forwardHeaders.set("x-user-email", user.email ?? "");
+    forwardHeaders.set("x-user-name", user.name ?? "");
+    if (user.image) forwardHeaders.set("x-user-image", user.image);
   }
 
   const fetchOptions: RequestInit = {
