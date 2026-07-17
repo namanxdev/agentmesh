@@ -1,4 +1,5 @@
 "use client";
+
 import { memo } from "react";
 import { getBezierPath, type EdgeProps } from "@xyflow/react";
 
@@ -10,7 +11,7 @@ export const AnimatedEdge = memo(function AnimatedEdge({
   targetY,
   sourcePosition,
   targetPosition,
-  data,
+  animated,
   markerEnd,
 }: EdgeProps) {
   const [edgePath] = getBezierPath({
@@ -21,8 +22,7 @@ export const AnimatedEdge = memo(function AnimatedEdge({
     sourcePosition,
     targetPosition,
   });
-
-  const isActive = Boolean(data?.active);
+  const isActive = Boolean(animated);
 
   return (
     <>
@@ -32,19 +32,19 @@ export const AnimatedEdge = memo(function AnimatedEdge({
         d={edgePath}
         markerEnd={markerEnd}
         style={{
-          stroke: isActive ? "var(--accent-primary)" : "var(--border-default)",
-          strokeWidth: isActive ? 2 : 1.5,
+          stroke: isActive ? "#737373" : "#525252",
+          strokeWidth: 1.5,
           fill: "none",
-          transition: "stroke 0.4s ease, stroke-width 0.4s ease",
+          transition: "stroke 150ms var(--ui-ease-out)",
         }}
       />
-      {isActive && (
-        <circle r={5} fill="var(--accent-primary)" opacity={0.9}>
+      {isActive ? (
+        <circle className="pipeline-edge__packet" r={3} fill="var(--ui-success)">
           <animateMotion dur="1.2s" repeatCount="indefinite">
             <mpath href={`#${id}`} />
           </animateMotion>
         </circle>
-      )}
+      ) : null}
     </>
   );
 });

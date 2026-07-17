@@ -8,7 +8,6 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle, MoreHorizontal } from "lucide-react";
 import { usePipelineStore } from "@/stores/pipelineStore";
-import { useUIStore } from "@/stores/uiStore";
 
 // PipelineHeader no longer owns the analytics/canvas tab-switch.
 // Navigation lives in DashboardSidebar. This header is pipeline-editor-only.
@@ -157,7 +156,6 @@ export function PipelineHeader() {
   const currentPipelineId = usePipelineStore((s) => s.currentPipelineId);
   const listPipelines = usePipelineStore((s) => s.listPipelines);
 
-  const connectionStatus = useUIStore((s) => s.connectionStatus);
   const [showTaskInput, setShowTaskInput] = useState(false);
   const [task, setTask] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -222,19 +220,12 @@ export function PipelineHeader() {
     }
   };
 
-  const connectionColor =
-    connectionStatus === "connected"
-      ? "bg-emerald-500"
-      : connectionStatus === "connecting"
-        ? "bg-amber-500"
-        : "bg-red-500";
-
   return (
     <div className="relative z-50 flex h-12 w-full items-center justify-between gap-3 bg-transparent px-3 font-sans text-sm">
       {/* Left Area: Pipeline Name */}
       <div className="flex min-w-0 flex-1 items-center justify-start gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="hidden font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-600 xl:inline">Pipeline</span>
+          <span className="hidden text-[10px] font-medium text-neutral-500 xl:inline">Pipeline</span>
           <span className="hidden h-4 w-px bg-neutral-800 xl:block" />
           <input
             value={pipelineName}
@@ -250,27 +241,10 @@ export function PipelineHeader() {
           <span>{edges.length} edges</span>
         </div>
 
-        {/* Runtime Indicator */}
-        {mode === "run" && (
-          <div className="flex items-center px-2.5 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/[0.03] gap-2 shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="text-[12px] text-emerald-500/80 hidden sm:block">
-              Live
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Right Area: Actions */}
       <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-2">
-        {/* Status Indicators */}
-        {connectionStatus !== "connected" && (
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-neutral-800 bg-transparent shrink-0">
-            <span className={`h-1.5 w-1.5 rounded-full ${connectionColor}`} />
-            <span className="text-[12px] text-neutral-400 hidden sm:block">{connectionStatus}</span>
-          </div>
-        )}
-
         {noKeys && (
           <Link
             href="/settings"
@@ -374,7 +348,7 @@ export function PipelineHeader() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
+                className="fixed inset-0 bg-black/70"
                 onClick={() => setShowTaskInput(false)}
               />
               <div className="fixed inset-0 flex items-center justify-center pointer-events-none p-4">

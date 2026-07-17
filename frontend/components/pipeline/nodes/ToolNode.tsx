@@ -2,85 +2,34 @@
 
 import { memo } from "react";
 import { type NodeProps } from "@xyflow/react";
-import {
-  BaseNode,
-  NODE_COLORS,
-  NODE_CONTENT_STYLES,
-  getAccentChipStyle,
-} from "./BaseNode";
+import { Badge } from "@/components/ui/Badge";
+import { BaseNode, NodeBrief, NodeMetaRow } from "./BaseNode";
 import type { PipelineNode, ToolNodeConfig } from "@/types/pipeline";
 
 function getParameterCount(parameters: string) {
   try {
     const parsed = JSON.parse(parameters);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return Object.keys(parsed).length;
-    }
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? Object.keys(parsed).length
+      : null;
   } catch {
     return null;
   }
-
-  return null;
 }
 
-export const ToolNode = memo(function ToolNode({
-  id,
-  data,
-  selected,
-}: NodeProps<PipelineNode>) {
+export const ToolNode = memo(function ToolNode({ id, data, selected }: NodeProps<PipelineNode>) {
   const config = data.config as ToolNodeConfig;
   const parameterCount = getParameterCount(config.parameters);
-  const color = NODE_COLORS.tool;
 
   return (
-    <BaseNode id={id} kind="tool" label={data.label} selected={!!selected}>
-      <div className="pipeline-node__stack" style={NODE_CONTENT_STYLES.stack}>
-        <div className="pipeline-node__chips" style={NODE_CONTENT_STYLES.chips}>
-          <span
-            className="pipeline-node__chip pipeline-node__chip--accent"
-            style={getAccentChipStyle(color)}
-          >
-            {config.server || "local"}
-          </span>
-          <span className="pipeline-node__chip" style={NODE_CONTENT_STYLES.chip}>
-            {config.tool_name || "unnamed"}
-          </span>
-        </div>
-
-        <div
-          className="pipeline-node__metric-grid"
-          style={NODE_CONTENT_STYLES.metricGrid}
-        >
-          <div className="pipeline-node__metric" style={NODE_CONTENT_STYLES.metric}>
-            <span
-              className="pipeline-node__metric-label"
-              style={NODE_CONTENT_STYLES.metricLabel}
-            >
-              Server
-            </span>
-            <span
-              className="pipeline-node__metric-value"
-              style={NODE_CONTENT_STYLES.metricValue}
-            >
-              {config.server || "Not assigned"}
-            </span>
-          </div>
-          <div className="pipeline-node__metric" style={NODE_CONTENT_STYLES.metric}>
-            <span
-              className="pipeline-node__metric-label"
-              style={NODE_CONTENT_STYLES.metricLabel}
-            >
-              Params
-            </span>
-            <span
-              className="pipeline-node__metric-value"
-              style={NODE_CONTENT_STYLES.metricValue}
-            >
-              {parameterCount === null ? "Raw JSON" : `${parameterCount} fields`}
-            </span>
-          </div>
-        </div>
-      </div>
+    <BaseNode id={id} kind="tool" label={data.label} selected={Boolean(selected)}>
+      <NodeMetaRow>
+        <Badge>{config.server || "local"}</Badge>
+        <Badge>{config.tool_name || "unnamed"}</Badge>
+      </NodeMetaRow>
+      <NodeBrief label="Parameters">
+        {parameterCount === null ? "Raw JSON parameters" : `${parameterCount} configured field${parameterCount === 1 ? "" : "s"}`}.
+      </NodeBrief>
     </BaseNode>
   );
 });

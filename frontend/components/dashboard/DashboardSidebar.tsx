@@ -35,13 +35,13 @@ export function DashboardSidebar() {
 
   return (
     <aside
-      className={`relative hidden h-screen shrink-0 flex-col border-r border-neutral-800 bg-neutral-950 transition-[width] duration-150 ease-out md:flex ${
+      className={`relative hidden h-screen shrink-0 flex-col border-r border-neutral-800 bg-neutral-900 transition-[width] duration-150 ease-out md:flex ${
         collapsed ? "w-[60px]" : "w-60"
       }`}
     >
       {/* Logo */}
       <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-neutral-800 px-3.5">
-        <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md border border-neutral-800 bg-neutral-900">
+        <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md border border-neutral-700 bg-neutral-800">
           <Image
             src="/agentmesh_logo.png"
             alt="AgentMesh"
@@ -59,7 +59,7 @@ export function DashboardSidebar() {
 
       {/* Nav */}
       <nav aria-label="Primary navigation" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-4">
-        {!collapsed && <span className="mb-1 px-2 text-[10px] font-mono font-medium uppercase tracking-[0.14em] text-neutral-600">Workspace</span>}
+        {!collapsed && <span className="mb-1 px-2 text-[10px] font-medium text-neutral-600">Workspace</span>}
         {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact);
           return (
@@ -68,10 +68,10 @@ export function DashboardSidebar() {
               href={href}
               title={collapsed ? label : undefined}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors ${
+              className={`relative flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors duration-150 ease-out ${
                 active
-                  ? "bg-indigo-500/15 text-indigo-200"
-                  : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100"
+                  ? "bg-indigo-500/[0.08] text-neutral-100 before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-indigo-500"
+                  : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
               }`}
             >
               <Icon
@@ -86,14 +86,14 @@ export function DashboardSidebar() {
       {/* Bottom: Settings + Collapse toggle */}
       <div className="flex shrink-0 flex-col gap-1 border-t border-neutral-800 px-2.5 py-3">
         {!collapsed && (
-          <div className="mb-2 flex items-center gap-2 px-2 text-[10px] font-mono text-neutral-600">
-            <Command className="h-3 w-3" /> LOCAL CONTROL PLANE
+          <div className="mb-2 flex items-center gap-2 px-2 text-[10px] text-neutral-600">
+            <Command className="h-3 w-3" /> Local control plane
           </div>
         )}
         <Link
           href="/settings"
           title={collapsed ? "Settings" : undefined}
-          className="flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-neutral-400 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
+          className="flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
         >
           <Settings className="w-4 h-4 shrink-0 text-neutral-500" />
           {!collapsed && <span>Settings</span>}
@@ -102,7 +102,7 @@ export function DashboardSidebar() {
         <button
           onClick={() => setCollapsed((c) => !c)}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-neutral-500 transition-colors hover:bg-neutral-900 hover:text-neutral-100"
+          className="flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4 shrink-0" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { Badge } from "@/components/ui/Badge";
 import { useUIStore } from "@/stores/uiStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 
@@ -51,9 +52,9 @@ export function DashboardTopBar() {
             : "Disconnected";
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-950 px-5">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-900 px-5">
       <div className="flex min-w-0 items-center gap-2">
-        <span className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-neutral-600 sm:inline">Workspace</span>
+        <span className="hidden text-[10px] font-medium text-neutral-500 sm:inline">Workspace</span>
         <span className="hidden text-neutral-700 sm:inline">/</span>
         <span className="truncate text-sm font-medium tracking-tight text-neutral-200">{sectionLabel}</span>
       </div>
@@ -62,12 +63,12 @@ export function DashboardTopBar() {
       <div className="flex items-center gap-4">
         {/* Run state */}
         {mode === "run" && (
-          <div className="flex items-center gap-1.5 border-l border-emerald-500/40 pl-2.5">
-            <span className={`h-1.5 w-1.5 rounded-full bg-emerald-500 ${isRunning ? "animate-pulse" : ""}`} />
-            <span className="text-[10px] font-mono font-medium uppercase tracking-[0.12em] text-emerald-400">
+          <Badge tone="running" className="hidden md:inline-flex">
+            <span className={`h-1.5 w-1.5 rounded-full bg-current ${isRunning ? "motion-safe:animate-pulse" : ""}`} />
+            <span>
               {isRunning ? "Running" : "Live"}
             </span>
-          </div>
+          </Badge>
         )}
 
         {/* WebSocket status */}
@@ -75,7 +76,7 @@ export function DashboardTopBar() {
           className="flex items-center gap-1.5"
           title={`WebSocket: ${connectionLabel}`}
         >
-          <span className={`h-2 w-2 rounded-full ${connectionColor} ${connectionStatus === "connecting" || connectionStatus === "reconnecting" ? "animate-pulse" : ""}`} />
+          <span className={`h-2 w-2 rounded-full ${connectionColor} ${connectionStatus === "connecting" || connectionStatus === "reconnecting" ? "motion-safe:animate-pulse" : ""}`} />
           <span className="hidden font-mono text-[11px] text-neutral-500 sm:block">
             {connectionLabel}
           </span>

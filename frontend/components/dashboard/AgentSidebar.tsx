@@ -1,87 +1,29 @@
 "use client";
 
-import { useEventStore } from "@/stores/eventStore";
 import { AgentCard } from "@/components/agents/AgentCard";
+import { Badge } from "@/components/ui/Badge";
+import { useEventStore } from "@/stores/eventStore";
 
-interface AgentSidebarProps {
-  agentNames: string[];
-}
-
-export function AgentSidebar({ agentNames }: AgentSidebarProps) {
-  const totalTokens = useEventStore((s) => s.totalTokens);
+export function AgentSidebar({ agentNames }: { agentNames: string[] }) {
+  const totalTokens = useEventStore((store) => store.totalTokens);
 
   return (
-    <aside
-      className="dashboard-panel"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        height: "100%",
-      }}
-    >
-      <div
-        style={{
-          padding: "18px 20px 14px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          flexShrink: 0,
-        }}
-      >
-        <p className="dashboard-kicker" style={{ margin: 0 }}>
-          Run participants
-        </p>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
-          <h2
-            style={{
-              color: "var(--text-primary)",
-              fontSize: 22,
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
-              margin: 0,
-            }}
-          >
-            Active agents
-          </h2>
-          <span
-            className="dashboard-chip text-[11px] uppercase tracking-[0.22em]"
-            style={{ color: "var(--accent-secondary)", fontFamily: "var(--font-mono)" }}
-          >
-            {agentNames.length} loaded
-          </span>
-        </div>
+    <aside className="flex h-full flex-col overflow-hidden bg-neutral-900">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-800 px-3 py-3">
+        <span className="text-xs font-medium text-neutral-400">Run participants</span>
+        <Badge>{agentNames.length} loaded</Badge>
       </div>
-
-      <div style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
-        {agentNames.map((name, index) => (
-          <AgentCard key={name} name={name} index={index} />
-        ))}
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
+        {agentNames.length > 0 ? (
+          agentNames.map((name) => <AgentCard key={name} name={name} />)
+        ) : (
+          <p className="px-2 py-8 text-center text-xs leading-5 text-neutral-500">No agent nodes in this pipeline.</p>
+        )}
       </div>
-
       {totalTokens > 0 ? (
-        <div
-          style={{
-            padding: "14px 20px 18px",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          <span className="dashboard-kicker">Token total</span>
-          <span
-            style={{
-              color: "var(--accent-primary)",
-              fontFamily: "var(--font-display)",
-              fontSize: 22,
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
-            }}
-            role="status"
-            aria-live="polite"
-            aria-label={`Total tokens: ${totalTokens.toLocaleString()}`}
-          >
+        <div className="flex shrink-0 items-center justify-between border-t border-neutral-800 px-3 py-2.5">
+          <span className="text-[11px] text-neutral-500">Token total</span>
+          <span className="font-mono text-xs text-neutral-300" role="status" aria-live="polite" aria-label={`Total tokens: ${totalTokens.toLocaleString()}`}>
             {totalTokens.toLocaleString()}
           </span>
         </div>

@@ -2,131 +2,39 @@
 
 import { memo } from "react";
 import { type NodeProps } from "@xyflow/react";
-import {
-  BaseNode,
-  NODE_COLORS,
-  NODE_CONTENT_STYLES,
-  getAccentChipStyle,
-  getStatusDotStyle,
-} from "./BaseNode";
-import type { PipelineNode, LLMAgentConfig } from "@/types/pipeline";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { BaseNode, NodeBrief, NodeMetaRow } from "./BaseNode";
+import type { LLMAgentConfig, PipelineNode } from "@/types/pipeline";
 
-const STATUS_COLORS: Record<string, string> = {
-  idle: "var(--text-tertiary)",
-  active: "hsl(185, 100%, 50%)",
-  thinking: "hsl(38, 92%, 50%)",
-  completed: "hsl(142, 71%, 45%)",
-  error: "#ef4444",
-};
-
-function compactModelName(model: string) {
-  return model.split("-").slice(0, 3).join("-");
+function getStatusTone(status: PipelineNode["data"]["status"]): BadgeTone {
+  if (status === "active") return "running";
+  if (status === "thinking") return "pending";
+  if (status === "completed") return "success";
+  if (status === "error") return "error";
+  return "neutral";
 }
 
-export const LLMAgentNode = memo(function LLMAgentNode({
-  id,
-  data,
-  selected,
-}: NodeProps<PipelineNode>) {
+export const LLMAgentNode = memo(function LLMAgentNode({ id, data, selected }: NodeProps<PipelineNode>) {
   const config = data.config as LLMAgentConfig;
-  const color = NODE_COLORS.llm_agent;
   const status = data.status;
-  const statusColor = status ? STATUS_COLORS[status] ?? "var(--accent-primary)" : "var(--accent-primary)";
-  const isActive = status === "active" || status === "thinking";
+  const serverCount = config.mcp_servers?.length ?? 0;
 
   return (
-    <BaseNode id={id} kind="llm_agent" label={data.label} selected={!!selected}>
-      <div className="pipeline-node__stack" style={NODE_CONTENT_STYLES.stack}>
-        <div className="pipeline-node__chips" style={NODE_CONTENT_STYLES.chips}>
-          {status ? (
-            <span className="pipeline-node__chip" style={NODE_CONTENT_STYLES.chip}>
-              <span
-                className={`pipeline-node__status-dot${isActive ? " is-live" : ""}`}
-                style={getStatusDotStyle(statusColor, isActive)}
-              />
-              <span style={{ color: statusColor, textTransform: "capitalize" }}>
-                {status}
-              </span>
-            </span>
-          ) : null}
-          <span
-            className="pipeline-node__chip pipeline-node__chip--accent"
-            style={getAccentChipStyle(color)}
-          >
-            {compactModelName(config.model)}
-          </span>
-          <span className="pipeline-node__chip" style={NODE_CONTENT_STYLES.chip}>
-            temp {config.temperature.toFixed(1)}
-          </span>
-        </div>
-
-        <div
-          className="pipeline-node__metric-grid"
-          style={NODE_CONTENT_STYLES.metricGrid}
-        >
-          <div className="pipeline-node__metric" style={NODE_CONTENT_STYLES.metric}>
-            <span
-              className="pipeline-node__metric-label"
-              style={NODE_CONTENT_STYLES.metricLabel}
-            >
-              Model
-            </span>
-            <span
-              className="pipeline-node__metric-value"
-              style={NODE_CONTENT_STYLES.metricValue}
-            >
-              {compactModelName(config.model)}
-            </span>
-          </div>
-          <div className="pipeline-node__metric" style={NODE_CONTENT_STYLES.metric}>
-            <span
-              className="pipeline-node__metric-label"
-              style={NODE_CONTENT_STYLES.metricLabel}
-            >
-              Focus
-            </span>
-            <span
-              className="pipeline-node__metric-value"
-              style={NODE_CONTENT_STYLES.metricValue}
-            >
-              {config.temperature < 0.35
-                ? "Tight"
-                : config.temperature < 0.7
-                  ? "Balanced"
-                  : "Exploratory"}
-            </span>
-          </div>
-        </div>
-
-        <div className="pipeline-node__preview" style={NODE_CONTENT_STYLES.preview}>
-          <span
-            className="pipeline-node__metric-label"
-            style={NODE_CONTENT_STYLES.metricLabel}
-          >
-            System brief
-          </span>
-          <p
-            className="pipeline-node__preview-copy"
-            style={NODE_CONTENT_STYLES.previewCopy}
-          >
-            {config.system_prompt || "No system brief yet. Add guidance to define tone, constraints, and objectives."}
-          </p>
-        </div>
-
-        {(config.mcp_servers ?? []).length > 0 ? (
-          <div style={{ marginTop: 4 }}>
-            <span
-              style={{
-                fontSize: 10,
-                color: "var(--text-muted)",
-                fontFamily: "monospace",
-              }}
-            >
-              {config.mcp_servers!.length} MCP server{config.mcp_servers!.length !== 1 ? "s" : ""}
-            </span>
-          </div>
+    <BaseNode id={id} kind="llm_agent" label={data.label} selected={Boolean(selected)}>
+      <NodeMetaRow>
+        {status && status !== "idle" ? (
+          <Badge tone={getStatusTone(status)}>
+            <span className={`h-1.5 w-1.5 rounded-full bg-current${status === "active" ? " pipeline-live-dot" : ""}`} />
+            {status}
+          </Badge>
         ) : null}
-      </div>
+        <Badge title={config.model}>{config.model}</Badge>
+        <Badge>temp {config.temperature.toFixed(1)}</Badge>
+        {serverCount > 0 ? <Badge>{serverCount} MCP</Badge> : null}
+      </NodeMetaRow>
+      <NodeBrief label="System brief">
+        {config.system_prompt || "No system brief yet. Add guidance to define tone, constraints, and objectives."}
+      </NodeBrief>
     </BaseNode>
   );
 });

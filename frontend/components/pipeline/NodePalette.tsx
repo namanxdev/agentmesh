@@ -5,7 +5,7 @@ import { GripVertical, LayoutTemplate, Plus, RotateCcw, Search } from "lucide-re
 import toast from "react-hot-toast";
 import type { NodeKind, PipelineDefinition } from "@/types/pipeline";
 import { usePipelineStore } from "@/stores/pipelineStore";
-import { NODE_COLORS, NODE_ICONS } from "./nodes/BaseNode";
+import { NODE_ICONS } from "./nodes/BaseNode";
 
 type PaletteItem = {
   kind: NodeKind;
@@ -43,11 +43,6 @@ function isPipelineTemplate(value: unknown): value is PipelineTemplate {
     typeof template.definition === "object" &&
     template.definition !== null
   );
-}
-
-function withAlpha(color: string, alpha: number) {
-  if (!color.startsWith("#") || color.length !== 7) return color;
-  return `${color}${Math.round(alpha * 255).toString(16).padStart(2, "0")}`;
 }
 
 export function NodePalette() {
@@ -92,7 +87,7 @@ export function NodePalette() {
     );
   }, [query]);
 
-  const handleDragStart = (event: DragEvent<HTMLDivElement>, kind: NodeKind) => {
+  const handleDragStart = (event: DragEvent<HTMLButtonElement>, kind: NodeKind) => {
     event.dataTransfer.setData("application/pipeline-node-kind", kind);
     event.dataTransfer.effectAllowed = "copy";
   };
@@ -100,13 +95,13 @@ export function NodePalette() {
   const insertNode = (kind: NodeKind) => {
     const column = nodes.length % 3;
     const row = Math.floor(nodes.length / 3);
-    addNode(kind, { x: 100 + column * 220, y: 110 + row * 160 });
+    addNode(kind, { x: 96 + column * 272, y: 112 + row * 168 });
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-neutral-950">
+    <div className="flex h-full w-full flex-col bg-neutral-900">
       <div className="border-b border-neutral-800 p-2.5">
-        <label className="flex h-8 items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-2.5 text-neutral-500 transition-colors focus-within:border-neutral-700 focus-within:text-neutral-300">
+        <label className="flex h-8 items-center gap-2 rounded-md border border-neutral-700 bg-neutral-950 px-2.5 text-neutral-500 transition-colors duration-150 ease-out focus-within:border-indigo-500 focus-within:text-neutral-300">
           <Search className="h-3.5 w-3.5 shrink-0" />
           <input
             value={query}
@@ -122,7 +117,7 @@ export function NodePalette() {
         {!query && (
           <section className="mb-3 border-b border-neutral-800 pb-3">
             <div className="mb-1.5 flex items-center justify-between px-1">
-              <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">Starters</span>
+              <span className="text-[10px] font-medium text-neutral-500">Starter templates</span>
               {templateError && (
                 <button
                   type="button"
@@ -135,7 +130,7 @@ export function NodePalette() {
             </div>
 
             {isLoadingTemplates ? (
-              <div className="flex h-12 items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-3">
+              <div className="flex h-12 items-center gap-2 rounded-md border border-neutral-800 bg-neutral-950 px-3">
                 <div className="h-6 w-6 animate-pulse rounded bg-neutral-800" />
                 <div className="space-y-1.5">
                   <div className="h-2 w-24 animate-pulse rounded bg-neutral-800" />
@@ -152,9 +147,9 @@ export function NodePalette() {
                       loadTemplate(template.definition);
                       toast.success(`Loaded ${template.name}`);
                     }}
-                    className="group flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-2 text-left transition-colors hover:border-neutral-800 hover:bg-neutral-900"
+                    className="group flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-2 text-left transition-colors duration-150 ease-out hover:border-neutral-700 hover:bg-neutral-800"
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-neutral-800 bg-neutral-900 text-neutral-500">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-800 text-neutral-400">
                       <LayoutTemplate className="h-3.5 w-3.5" />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -179,28 +174,21 @@ export function NodePalette() {
           if (items.length === 0) return null;
           return (
             <section key={group} className="mb-3">
-              <div className="mb-1 px-1 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">{group}</div>
+              <div className="mb-1 px-1 text-[10px] font-medium text-neutral-500">{group}</div>
               <div className="space-y-0.5">
                 {items.map((item) => {
-                  const color = NODE_COLORS[item.kind];
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={item.kind}
                       draggable
                       onDragStart={(event) => handleDragStart(event, item.kind)}
                       onClick={() => insertNode(item.kind)}
-                      className="group flex cursor-grab items-center gap-2 rounded-md border border-transparent px-1.5 py-1.5 transition-colors hover:border-neutral-800 hover:bg-neutral-900 active:cursor-grabbing"
+                      className="group flex w-full cursor-grab items-center gap-2 rounded-md border border-transparent px-1.5 py-1.5 text-left transition-colors duration-150 ease-out hover:border-neutral-700 hover:bg-neutral-800 focus-visible:border-indigo-500 focus-visible:bg-neutral-800 focus-visible:outline-none active:cursor-grabbing"
                       title={`Click to add ${item.name}, or drag it onto the canvas`}
                     >
                       <GripVertical className="h-3.5 w-3.5 shrink-0 text-neutral-800 transition-colors group-hover:text-neutral-600" />
-                      <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded border font-mono text-[8px] font-bold"
-                        style={{
-                          color,
-                          borderColor: withAlpha(color, 0.22),
-                          background: withAlpha(color, 0.07),
-                        }}
-                      >
+                      <span className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-800 px-1 font-mono text-[8px] font-semibold text-indigo-400">
                         {NODE_ICONS[item.kind]}
                       </span>
                       <span className="min-w-0 flex-1">
@@ -208,7 +196,7 @@ export function NodePalette() {
                         <span className="block truncate text-[10px] text-neutral-600">{item.description}</span>
                       </span>
                       <Plus className="h-3.5 w-3.5 shrink-0 text-neutral-800 transition-colors group-hover:text-neutral-300" />
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -221,7 +209,7 @@ export function NodePalette() {
         )}
       </div>
 
-      <div className="flex h-8 shrink-0 items-center justify-center border-t border-neutral-800 font-mono text-[9px] uppercase tracking-[0.12em] text-neutral-700">
+      <div className="flex h-8 shrink-0 items-center justify-center border-t border-neutral-800 text-[10px] text-neutral-600">
         Click to add · drag to position
       </div>
     </div>

@@ -1,307 +1,209 @@
 "use client";
-import { usePipelineStore } from "@/stores/pipelineStore";
-import { NODE_COLORS } from "./nodes/BaseNode";
-import { useCallback, useEffect, useState } from "react";
+
+import { useCallback, useEffect, useState, type ComponentType, type ReactNode } from "react";
+import Link from "next/link";
+import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
 import { LLM_PROVIDERS } from "@/config/llmProviders";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { NODE_ICONS } from "./nodes/BaseNode";
 import type {
-  NodeKind,
   InputNodeConfig,
-  OutputNodeConfig,
   LLMAgentConfig,
-  ToolNodeConfig,
-  TextNodeConfig,
-  RouterNodeConfig,
   MemoryNodeConfig,
-  TransformNodeConfig,
+  NodeKind,
+  OutputNodeConfig,
   ParallelNodeConfig,
+  RouterNodeConfig,
+  TextNodeConfig,
+  ToolNodeConfig,
+  TransformNodeConfig,
 } from "@/types/pipeline";
 
-// Shared field styles
-const fieldStyle: React.CSSProperties = {
-  width: "100%",
-  background: "var(--bg-tertiary)",
-  border: "1px solid var(--border-subtle)",
-  borderRadius: 6,
-  color: "var(--text-primary)",
-  fontSize: 12,
-  padding: "6px 10px",
-  outline: "none",
-  boxSizing: "border-box",
-  fontFamily: "inherit",
-};
+const FIELD_CLASS =
+  "h-9 w-full rounded-md border border-neutral-700 bg-neutral-950 px-2.5 text-xs text-neutral-200 outline-none transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-neutral-600 hover:border-neutral-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50";
+const TEXTAREA_CLASS = `${FIELD_CLASS} h-auto min-h-24 resize-y py-2 leading-5`;
+const SEGMENT_CLASS =
+  "flex h-8 flex-1 items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500";
 
-const labelStyle: React.CSSProperties = {
-  fontSize: 10,
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  color: "var(--text-muted)",
-  marginBottom: 4,
-  display: "block",
-};
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  value,
+  hint,
+  children,
+}: {
+  label: string;
+  value?: ReactNode;
+  hint?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={labelStyle}>{label}</label>
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-[11px] font-medium text-neutral-500">{label}</label>
+        {value ? <span className="font-mono text-[10px] text-neutral-500">{value}</span> : null}
+      </div>
       {children}
+      {hint ? <div className="text-[10px] leading-4 text-neutral-600">{hint}</div> : null}
     </div>
   );
 }
 
 function InputForm({ id, config }: { id: string; config: InputNodeConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
   return (
     <>
       <Field label="Name">
-        <input
-          style={fieldStyle}
-          value={config.name}
-          onChange={(e) => update(id, { name: e.target.value })}
-          placeholder="Pipeline name"
-        />
+        <input className={FIELD_CLASS} value={config.name} onChange={(event) => update(id, { name: event.target.value })} placeholder="Pipeline name" />
       </Field>
-      <Field label="Description / Initial Task">
-        <textarea
-          style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
-          value={config.description}
-          onChange={(e) => update(id, { description: e.target.value })}
-          placeholder="Describe the pipeline task…"
-        />
+      <Field label="Description / initial task">
+        <textarea className={TEXTAREA_CLASS} value={config.description} onChange={(event) => update(id, { description: event.target.value })} placeholder="Describe the pipeline task..." />
       </Field>
     </>
   );
 }
 
-type AgentMCPServer = { id: string; name: string; server_type: string };
+type AgentMcpServer = { id: string; name: string; server_type: string };
 
 function LLMAgentForm({ id, config }: { id: string; config: LLMAgentConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
-  const [mcpServers, setMcpServers] = useState<AgentMCPServer[]>([]);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
+  const [mcpServers, setMcpServers] = useState<AgentMcpServer[]>([]);
   const [mcpLoading, setMcpLoading] = useState(true);
   const [mcpError, setMcpError] = useState<string | null>(null);
-
-  const attachedServers: string[] = config.mcp_servers ?? [];
+  const attachedServers = config.mcp_servers ?? [];
 
   const fetchMcpServers = useCallback(async () => {
     setMcpLoading(true);
     setMcpError(null);
     try {
-      const res = await fetch("/api/mcp/user-servers");
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.detail ?? `Could not load MCP servers (${res.status})`);
+      const response = await fetch("/api/mcp/user-servers");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.detail ?? `Could not load MCP servers (${response.status})`);
       }
-      const data = await res.json();
-      setMcpServers(data.servers ?? []);
-    } catch (err) {
+      const payload = await response.json();
+      setMcpServers(payload.servers ?? []);
+    } catch (error) {
       setMcpServers([]);
-      setMcpError(err instanceof Error ? err.message : "Could not load MCP servers");
+      setMcpError(error instanceof Error ? error.message : "Could not load MCP servers");
     } finally {
       setMcpLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchMcpServers();
+    void fetchMcpServers();
   }, [fetchMcpServers]);
 
   const toggleServer = (name: string) => {
-    const next = attachedServers.includes(name)
-      ? attachedServers.filter((s) => s !== name)
-      : [...attachedServers, name];
-    update(id, { mcp_servers: next });
+    update(id, {
+      mcp_servers: attachedServers.includes(name)
+        ? attachedServers.filter((server) => server !== name)
+        : [...attachedServers, name],
+    });
   };
 
-  // Names already in config that are not in the fetched list (e.g. from templates)
   const orphanedServers = attachedServers.filter(
-    (name) => !mcpServers.some((s) => s.name === name)
+    (name) => !mcpServers.some((server) => server.name === name)
   );
 
   return (
     <>
-      <Field label="Agent Name">
-        <input
-          style={fieldStyle}
-          value={config.name}
-          onChange={(e) => update(id, { name: e.target.value })}
-          placeholder="Agent name"
-        />
+      <Field label="Agent name">
+        <input className={FIELD_CLASS} value={config.name} onChange={(event) => update(id, { name: event.target.value })} placeholder="Agent name" />
       </Field>
       <Field label="Model">
-        <select
-          style={fieldStyle}
-          value={config.model}
-          onChange={(e) => update(id, { model: e.target.value })}
-        >
+        <select className={FIELD_CLASS} value={config.model} onChange={(event) => update(id, { model: event.target.value })}>
           {LLM_PROVIDERS.map((provider) => (
             <optgroup key={provider.provider} label={provider.label}>
-              {provider.models.map((model) => (
-                <option key={model} value={model}>{model}</option>
-              ))}
+              {provider.models.map((model) => <option key={model} value={model}>{model}</option>)}
             </optgroup>
           ))}
         </select>
       </Field>
-      <Field label={`Temperature: ${config.temperature}`}>
+      <Field label="Temperature" value={config.temperature.toFixed(1)}>
         <input
           type="range"
-          min={0} max={1} step={0.1}
-          style={{ width: "100%", accentColor: "var(--accent-primary)" }}
+          min={0}
+          max={1}
+          step={0.1}
+          className="h-5 w-full cursor-pointer accent-indigo-500"
           value={config.temperature}
-          onChange={(e) => update(id, { temperature: parseFloat(e.target.value) })}
+          onChange={(event) => update(id, { temperature: Number(event.target.value) })}
         />
       </Field>
-      <Field label="System Prompt">
-        <textarea
-          style={{ ...fieldStyle, minHeight: 120, resize: "vertical", fontFamily: "monospace", fontSize: 11 }}
-          value={config.system_prompt}
-          onChange={(e) => update(id, { system_prompt: e.target.value })}
-          placeholder="You are a helpful assistant…"
-        />
+      <Field label="System prompt">
+        <textarea className={`${TEXTAREA_CLASS} min-h-32 font-mono text-[11px]`} value={config.system_prompt} onChange={(event) => update(id, { system_prompt: event.target.value })} placeholder="You are a helpful assistant..." />
       </Field>
-      <Field label="MCP Servers">
+      <Field label="MCP servers" hint="Attached servers expose their tools to this agent during execution.">
         {mcpLoading ? (
-          <div
-            style={{
-              height: 22,
-              borderRadius: 4,
-              background: "var(--bg-tertiary)",
-              opacity: 0.5,
-              width: "60%",
-            }}
-          />
+          <div className="space-y-2" aria-label="Loading MCP servers">
+            <div className="h-8 animate-pulse rounded-md bg-neutral-800" />
+            <div className="h-8 animate-pulse rounded-md bg-neutral-800" />
+          </div>
         ) : mcpError ? (
-          <div>
-            <p style={{ margin: "0 0 6px", color: "var(--status-error)", fontSize: 11 }}>
-              {mcpError}
-            </p>
-            <button
-              type="button"
-              onClick={fetchMcpServers}
-              style={{
-                ...fieldStyle,
-                cursor: "pointer",
-                textAlign: "center",
-                color: "var(--accent-primary)",
-                border: "1px dashed var(--accent-primary)44",
-                background: "var(--accent-primary)0a",
-                width: "auto",
-                padding: "4px 10px",
-              }}
-            >
-              Retry
+          <div className="rounded-md border border-red-500/30 bg-neutral-950 p-2.5">
+            <p className="text-[11px] leading-4 text-red-400">{mcpError}</p>
+            <button type="button" onClick={() => void fetchMcpServers()} className="mt-2 inline-flex h-7 items-center gap-1.5 rounded-md border border-neutral-700 px-2 text-[11px] text-neutral-300 hover:bg-neutral-800">
+              <RefreshCw className="h-3 w-3" /> Retry
             </button>
           </div>
         ) : mcpServers.length === 0 && orphanedServers.length === 0 ? (
-          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 11 }}>
-            No MCP servers registered.{" "}
-            <a
-              href="/settings"
-              style={{ color: "var(--accent-primary)", textDecoration: "none" }}
-            >
-              Add one in Settings.
-            </a>
+          <p className="text-[11px] leading-4 text-neutral-500">
+            No MCP servers registered. <Link href="/settings" className="text-indigo-400 hover:text-indigo-300">Add one in Settings.</Link>
           </p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {mcpServers.map((s) => (
-              <label
-                key={s.name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  cursor: "pointer",
-                  padding: "4px 0",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={attachedServers.includes(s.name)}
-                  onChange={() => toggleServer(s.name)}
-                  style={{ accentColor: "var(--accent-primary)", flexShrink: 0 }}
-                />
-                <span style={{ fontSize: 12, color: "var(--text-primary)", flex: 1 }}>
-                  {s.name}
-                </span>
-                <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                  {s.server_type}
-                </span>
+          <div className="divide-y divide-neutral-800 rounded-md border border-neutral-800 bg-neutral-950">
+            {mcpServers.map((server) => (
+              <label key={server.name} className="flex min-h-9 cursor-pointer items-center gap-2 px-2.5 hover:bg-neutral-900">
+                <input type="checkbox" checked={attachedServers.includes(server.name)} onChange={() => toggleServer(server.name)} className="accent-indigo-500" />
+                <span className="min-w-0 flex-1 truncate text-xs text-neutral-300">{server.name}</span>
+                <span className="font-mono text-[9px] text-neutral-600">{server.server_type}</span>
               </label>
             ))}
             {orphanedServers.map((name) => (
-              <label
-                key={name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  cursor: "pointer",
-                  padding: "4px 0",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked
-                  onChange={() => toggleServer(name)}
-                  style={{ accentColor: "var(--accent-primary)", flexShrink: 0 }}
-                />
-                <span style={{ fontSize: 12, color: "var(--text-primary)", flex: 1 }}>
-                  {name}
-                </span>
-                <span style={{ fontSize: 10, color: "var(--status-warning)" }}>
-                  not in your registry
-                </span>
+              <label key={name} className="flex min-h-9 cursor-pointer items-center gap-2 px-2.5 hover:bg-neutral-900">
+                <input type="checkbox" checked onChange={() => toggleServer(name)} className="accent-indigo-500" />
+                <span className="min-w-0 flex-1 truncate text-xs text-neutral-300">{name}</span>
+                <span className="text-[9px] text-amber-400">Missing from registry</span>
               </label>
             ))}
           </div>
         )}
-        <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: 11 }}>
-          Attached servers expose their tools to this agent during execution.
-        </p>
       </Field>
     </>
   );
 }
 
 function OutputForm({ id, config }: { id: string; config: OutputNodeConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
   const formats: OutputNodeConfig["output_format"][] = ["text", "json", "markdown"];
   return (
-    <Field label="Output Format">
-      <div style={{ display: "flex", gap: 6 }}>
-        {formats.map((fmt) => (
-          <button
-            key={fmt}
-            onClick={() => update(id, { output_format: fmt })}
-            style={{
-              flex: 1,
-              padding: "5px",
-              borderRadius: 5,
-              border: `1px solid ${config.output_format === fmt ? "var(--accent-primary)" : "var(--border-subtle)"}`,
-              background: config.output_format === fmt ? "var(--accent-primary)22" : "var(--bg-tertiary)",
-              color: config.output_format === fmt ? "var(--accent-primary)" : "var(--text-secondary)",
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: "pointer",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-            }}
-          >
-            {fmt}
-          </button>
-        ))}
+    <Field label="Output format">
+      <div className="flex gap-1.5">
+        {formats.map((format) => {
+          const active = config.output_format === format;
+          return (
+            <button
+              type="button"
+              key={format}
+              onClick={() => update(id, { output_format: format })}
+              className={`${SEGMENT_CLASS} ${active ? "border-indigo-500 bg-indigo-500/10 text-indigo-300" : "border-neutral-700 bg-neutral-950 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"}`}
+            >
+              {format}
+            </button>
+          );
+        })}
       </div>
     </Field>
   );
 }
 
-type MCPServerOption = { id: string; name: string };
+type McpServerOption = { id: string; name: string };
 
 function ToolForm({ id, config }: { id: string; config: ToolNodeConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
-  const [mcpServers, setMcpServers] = useState<MCPServerOption[]>([]);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
+  const [mcpServers, setMcpServers] = useState<McpServerOption[]>([]);
   const [mcpLoading, setMcpLoading] = useState(true);
   const [mcpError, setMcpError] = useState<string | null>(null);
 
@@ -309,150 +211,104 @@ function ToolForm({ id, config }: { id: string; config: ToolNodeConfig }) {
     setMcpLoading(true);
     setMcpError(null);
     try {
-      const res = await fetch("/api/mcp/user-servers");
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.detail ?? `Could not load MCP servers (${res.status})`);
+      const response = await fetch("/api/mcp/user-servers");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.detail ?? `Could not load MCP servers (${response.status})`);
       }
-      const data = await res.json();
-      setMcpServers(data.servers ?? []);
-    } catch (err) {
+      const payload = await response.json();
+      setMcpServers(payload.servers ?? []);
+    } catch (error) {
       setMcpServers([]);
-      setMcpError(err instanceof Error ? err.message : "Could not load MCP servers");
+      setMcpError(error instanceof Error ? error.message : "Could not load MCP servers");
     } finally {
       setMcpLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchMcpServers();
+    void fetchMcpServers();
   }, [fetchMcpServers]);
+
+  const serverMissing = Boolean(config.server && !mcpServers.some((server) => server.name === config.server));
 
   return (
     <>
-      <Field label="Server">
-        <div style={{ display: "flex", gap: 6 }}>
+      <Field
+        label="Server"
+        hint={mcpError ? <span className="text-red-400">{mcpError}</span> : serverMissing ? <span className="text-amber-400">This server is not in your saved registry.</span> : !mcpLoading && mcpServers.length === 0 ? "No saved servers. Add one in Settings, or enter a registered server name." : undefined}
+      >
+        <div className="flex gap-1.5">
           {mcpServers.length > 0 ? (
-            <select
-              style={{ ...fieldStyle, minWidth: 0 }}
-              value={config.server}
-              onChange={(e) => update(id, { server: e.target.value })}
-            >
+            <select className={FIELD_CLASS} value={config.server} onChange={(event) => update(id, { server: event.target.value })}>
               <option value="">Select server</option>
-              {mcpServers.map((s) => (
-                <option key={s.id} value={s.name}>{s.name}</option>
-              ))}
+              {mcpServers.map((server) => <option key={server.id} value={server.name}>{server.name}</option>)}
             </select>
           ) : (
-            <input
-              style={{ ...fieldStyle, minWidth: 0 }}
-              value={config.server}
-              onChange={(e) => update(id, { server: e.target.value })}
-              placeholder={mcpLoading ? "Loading servers..." : "mcp-server-name"}
-            />
+            <input className={FIELD_CLASS} value={config.server} onChange={(event) => update(id, { server: event.target.value })} placeholder={mcpLoading ? "Loading servers..." : "mcp-server-name"} />
           )}
-          <button
-            type="button"
-            onClick={fetchMcpServers}
-            disabled={mcpLoading}
-            style={{
-              width: 34,
-              flexShrink: 0,
-              borderRadius: 6,
-              border: "1px solid var(--border-subtle)",
-              background: "var(--bg-tertiary)",
-              color: "var(--text-secondary)",
-              cursor: mcpLoading ? "default" : "pointer",
-              opacity: mcpLoading ? 0.55 : 1,
-            }}
-            title="Refresh MCP servers"
-          >
-            R
+          <button type="button" onClick={() => void fetchMcpServers()} disabled={mcpLoading} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-950 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-50" title="Refresh MCP servers">
+            <RefreshCw className={`h-3.5 w-3.5${mcpLoading ? " animate-spin" : ""}`} />
           </button>
         </div>
-        {mcpError ? (
-          <p style={{ margin: "6px 0 0", color: "var(--status-error)", fontSize: 11 }}>
-            {mcpError}
-          </p>
-        ) : !mcpLoading && mcpServers.length === 0 ? (
-          <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: 11 }}>
-            No saved MCP servers. Add one in Settings, or type a registered server name.
-          </p>
-        ) : null}
-        {config.server && !mcpServers.some((s) => s.name === config.server) ? (
-          <p style={{ margin: "6px 0 0", color: "var(--status-warning)", fontSize: 11 }}>
-            This server is not in your saved MCP registry.
-          </p>
-        ) : null}
       </Field>
-      <Field label="Tool Name">
-        <input style={fieldStyle} value={config.tool_name} onChange={(e) => update(id, { tool_name: e.target.value })} placeholder="tool_function_name" />
+      <Field label="Tool name">
+        <input className={FIELD_CLASS} value={config.tool_name} onChange={(event) => update(id, { tool_name: event.target.value })} placeholder="tool_function_name" />
       </Field>
       <Field label="Parameters (JSON)">
-        <textarea style={{ ...fieldStyle, minHeight: 80, fontFamily: "monospace", fontSize: 11 }} value={config.parameters} onChange={(e) => update(id, { parameters: e.target.value })} placeholder="{}" />
+        <textarea className={`${TEXTAREA_CLASS} font-mono text-[11px]`} value={config.parameters} onChange={(event) => update(id, { parameters: event.target.value })} placeholder="{}" />
       </Field>
     </>
   );
 }
 
 function TextForm({ id, config }: { id: string; config: TextNodeConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
+  const variables = config.variables ?? [];
   return (
     <>
-      <Field label="Template Content">
-        <textarea
-          style={{ ...fieldStyle, minHeight: 100, fontFamily: "monospace", fontSize: 11, resize: "vertical" }}
-          value={config.content}
-          onChange={(e) => update(id, { content: e.target.value })}
-          placeholder="Use {{variable}} for dynamic handles…"
-        />
+      <Field label="Template content">
+        <textarea className={`${TEXTAREA_CLASS} min-h-28 font-mono text-[11px]`} value={config.content} onChange={(event) => update(id, { content: event.target.value })} placeholder="Use {{variable}} for dynamic handles..." />
       </Field>
-      {(config.variables ?? []).length > 0 && (
-        <Field label="Detected Variables">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {(config.variables ?? []).map((v) => (
-              <span key={v} style={{ background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)", borderRadius: 4, padding: "2px 8px", fontSize: 10, fontFamily: "monospace", color: NODE_COLORS.text }}>
-                {`{{${v}}}`}
-              </span>
-            ))}
+      {variables.length > 0 ? (
+        <Field label="Detected variables">
+          <div className="flex flex-wrap gap-1.5">
+            {variables.map((variable) => <Badge key={variable}>{`{{${variable}}}`}</Badge>)}
           </div>
         </Field>
-      )}
+      ) : null}
     </>
   );
 }
 
 function RouterForm({ id, config }: { id: string; config: RouterNodeConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
   const conditions = config.conditions ?? [];
 
-  const updateCondition = (i: number, field: "key" | "target", value: string) => {
-    const updated = conditions.map((c, idx) => idx === i ? { ...c, [field]: value } : c);
-    update(id, { conditions: updated });
+  const updateCondition = (index: number, field: "key" | "target", value: string) => {
+    update(id, { conditions: conditions.map((condition, conditionIndex) => conditionIndex === index ? { ...condition, [field]: value } : condition) });
   };
-  const addCondition = () => update(id, { conditions: [...conditions, { key: "", target: "" }] });
-  const removeCondition = (i: number) => update(id, { conditions: conditions.filter((_, idx) => idx !== i) });
 
   return (
     <>
-      <Field label="Routing Key">
-        <input style={fieldStyle} value={config.routing_key} onChange={(e) => update(id, { routing_key: e.target.value })} placeholder="route" />
+      <Field label="Routing key">
+        <input className={FIELD_CLASS} value={config.routing_key} onChange={(event) => update(id, { routing_key: event.target.value })} placeholder="route" />
       </Field>
       <Field label="Conditions">
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {conditions.map((cond, i) => (
-            <div key={i} style={{ display: "flex", gap: 4, alignItems: "center" }}>
-              <input style={{ ...fieldStyle, flex: 1 }} value={cond.key} onChange={(e) => updateCondition(i, "key", e.target.value)} placeholder="condition" />
-              <span style={{ color: "var(--text-muted)", fontSize: 11 }}>→</span>
-              <input style={{ ...fieldStyle, flex: 1 }} value={cond.target} onChange={(e) => updateCondition(i, "target", e.target.value)} placeholder="agent name" />
-              <button onClick={() => removeCondition(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 2px" }}>×</button>
+        <div className="space-y-2">
+          {conditions.map((condition, index) => (
+            <div key={index} className="rounded-md border border-neutral-800 bg-neutral-950 p-2">
+              <div className="flex gap-1.5">
+                <input className={FIELD_CLASS} value={condition.key} onChange={(event) => updateCondition(index, "key", event.target.value)} placeholder="condition" />
+                <button type="button" onClick={() => update(id, { conditions: conditions.filter((_, conditionIndex) => conditionIndex !== index) })} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-800 hover:text-red-400" title="Remove condition">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <input className={`${FIELD_CLASS} mt-1.5`} value={condition.target} onChange={(event) => updateCondition(index, "target", event.target.value)} placeholder="Target agent name" />
             </div>
           ))}
-          <button
-            onClick={addCondition}
-            style={{ ...fieldStyle, cursor: "pointer", textAlign: "center", color: "var(--accent-primary)", border: "1px dashed var(--accent-primary)44", background: "var(--accent-primary)0a" }}
-          >
-            + Add Condition
+          <button type="button" onClick={() => update(id, { conditions: [...conditions, { key: "", target: "" }] })} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-neutral-700 text-xs text-neutral-400 transition-colors hover:border-indigo-500 hover:text-indigo-300">
+            <Plus className="h-3.5 w-3.5" /> Add condition
           </button>
         </div>
       </Field>
@@ -461,38 +317,41 @@ function RouterForm({ id, config }: { id: string; config: RouterNodeConfig }) {
 }
 
 function MemoryForm({ id, config }: { id: string; config: MemoryNodeConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
   return (
     <>
-      <Field label="Memory Type">
-        <div style={{ display: "flex", gap: 6 }}>
-          {(["context", "vector"] as const).map((t) => (
-            <button key={t} onClick={() => update(id, { memory_type: t })} style={{ flex: 1, padding: "5px", borderRadius: 5, border: `1px solid ${config.memory_type === t ? NODE_COLORS.memory : "var(--border-subtle)"}`, background: config.memory_type === t ? `${NODE_COLORS.memory}22` : "var(--bg-tertiary)", color: config.memory_type === t ? NODE_COLORS.memory : "var(--text-secondary)", fontSize: 11, fontWeight: 600, cursor: "pointer", textTransform: "uppercase" }}>
-              {t}
-            </button>
-          ))}
+      <Field label="Memory type">
+        <div className="flex gap-1.5">
+          {(["context", "vector"] as const).map((type) => {
+            const active = config.memory_type === type;
+            return (
+              <button type="button" key={type} onClick={() => update(id, { memory_type: type })} className={`${SEGMENT_CLASS} ${active ? "border-indigo-500 bg-indigo-500/10 text-indigo-300" : "border-neutral-700 bg-neutral-950 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"}`}>
+                {type}
+              </button>
+            );
+          })}
         </div>
       </Field>
       <Field label="Key">
-        <input style={fieldStyle} value={config.key} onChange={(e) => update(id, { key: e.target.value })} placeholder="memory_key" />
+        <input className={FIELD_CLASS} value={config.key} onChange={(event) => update(id, { key: event.target.value })} placeholder="memory_key" />
       </Field>
     </>
   );
 }
 
 function TransformForm({ id, config }: { id: string; config: TransformNodeConfig }) {
-  const update = usePipelineStore((s) => s.updateNodeConfig);
+  const update = usePipelineStore((state) => state.updateNodeConfig);
   return (
     <>
-      <Field label="Transform Type">
-        <select style={fieldStyle} value={config.transform_type} onChange={(e) => update(id, { transform_type: e.target.value as TransformNodeConfig["transform_type"] })}>
+      <Field label="Transform type">
+        <select className={FIELD_CLASS} value={config.transform_type} onChange={(event) => update(id, { transform_type: event.target.value as TransformNodeConfig["transform_type"] })}>
           <option value="json_parse">json_parse</option>
           <option value="extract">extract</option>
           <option value="format">format</option>
         </select>
       </Field>
       <Field label="Expression">
-        <input style={{ ...fieldStyle, fontFamily: "monospace" }} value={config.expression} onChange={(e) => update(id, { expression: e.target.value })} placeholder="$.data.result" />
+        <input className={`${FIELD_CLASS} font-mono text-[11px]`} value={config.expression} onChange={(event) => update(id, { expression: event.target.value })} placeholder="$.data.result" />
       </Field>
     </>
   );
@@ -500,21 +359,10 @@ function TransformForm({ id, config }: { id: string; config: TransformNodeConfig
 
 function ParallelForm({ config }: { id: string; config: ParallelNodeConfig }) {
   void config;
-
   return (
     <Field label="Execution">
-      <div
-        style={{
-          ...fieldStyle,
-          minHeight: 72,
-          display: "flex",
-          alignItems: "center",
-          padding: "10px 12px",
-          color: "var(--text-secondary)",
-          lineHeight: 1.5,
-        }}
-      >
-        Parallel nodes fan out to multiple downstream branches. Configure branching by wiring each output handle to the agents you want to run concurrently.
+      <div className="rounded-md border border-neutral-800 bg-neutral-950 p-3 text-xs leading-5 text-neutral-400">
+        Parallel nodes fan out to multiple downstream branches. Wire each output handle to the agents that should run concurrently.
       </div>
     </Field>
   );
@@ -522,44 +370,42 @@ function ParallelForm({ config }: { id: string; config: ParallelNodeConfig }) {
 
 type InspectorFormProps = { id: string; config: unknown };
 
-const FORM_MAP: Record<NodeKind, React.ComponentType<InspectorFormProps>> = {
-  input: InputForm as React.ComponentType<InspectorFormProps>,
-  output: OutputForm as React.ComponentType<InspectorFormProps>,
-  llm_agent: LLMAgentForm as React.ComponentType<InspectorFormProps>,
-  tool: ToolForm as React.ComponentType<InspectorFormProps>,
-  text: TextForm as React.ComponentType<InspectorFormProps>,
-  router: RouterForm as React.ComponentType<InspectorFormProps>,
-  memory: MemoryForm as React.ComponentType<InspectorFormProps>,
-  transform: TransformForm as React.ComponentType<InspectorFormProps>,
-  parallel: ParallelForm as React.ComponentType<InspectorFormProps>,
+const FORM_MAP: Record<NodeKind, ComponentType<InspectorFormProps>> = {
+  input: InputForm as ComponentType<InspectorFormProps>,
+  output: OutputForm as ComponentType<InspectorFormProps>,
+  llm_agent: LLMAgentForm as ComponentType<InspectorFormProps>,
+  tool: ToolForm as ComponentType<InspectorFormProps>,
+  text: TextForm as ComponentType<InspectorFormProps>,
+  router: RouterForm as ComponentType<InspectorFormProps>,
+  memory: MemoryForm as ComponentType<InspectorFormProps>,
+  transform: TransformForm as ComponentType<InspectorFormProps>,
+  parallel: ParallelForm as ComponentType<InspectorFormProps>,
 };
 
 export function NodeConfigInspector() {
-  const { nodes, edges, selectedNodeId } = usePipelineStore();
-  const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) : null;
+  const nodes = usePipelineStore((state) => state.nodes);
+  const edges = usePipelineStore((state) => state.edges);
+  const selectedNodeId = usePipelineStore((state) => state.selectedNodeId);
+  const selectedNode = selectedNodeId ? nodes.find((node) => node.id === selectedNodeId) : null;
 
   if (!selectedNode?.data) {
     return (
-      <div className="flex h-full flex-col bg-neutral-950">
+      <div className="flex h-full flex-col bg-neutral-900">
         <div className="border-b border-neutral-800 p-4">
-          <div className="mb-2 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">Selection</div>
-          <h3 className="text-[13px] font-semibold text-neutral-200">Nothing selected</h3>
-          <p className="mt-1 text-[11px] leading-4 text-neutral-600">Choose a node on the canvas to edit its runtime configuration.</p>
+          <h3 className="text-sm font-semibold text-neutral-100">Nothing selected</h3>
+          <p className="mt-1 text-xs leading-5 text-neutral-500">Choose a node on the canvas to edit its runtime configuration.</p>
         </div>
-
         <div className="grid grid-cols-2 border-b border-neutral-800">
           <div className="border-r border-neutral-800 p-3">
-            <div className="font-mono text-[18px] font-medium tabular-nums text-neutral-300">{nodes.length}</div>
-            <div className="mt-0.5 text-[10px] text-neutral-600">Nodes</div>
+            <div className="font-mono text-lg tabular-nums text-neutral-300">{nodes.length}</div>
+            <div className="mt-0.5 text-[10px] text-neutral-500">Nodes</div>
           </div>
           <div className="p-3">
-            <div className="font-mono text-[18px] font-medium tabular-nums text-neutral-300">{edges.length}</div>
-            <div className="mt-0.5 text-[10px] text-neutral-600">Connections</div>
+            <div className="font-mono text-lg tabular-nums text-neutral-300">{edges.length}</div>
+            <div className="mt-0.5 text-[10px] text-neutral-500">Connections</div>
           </div>
         </div>
-
         <div className="p-4">
-          <div className="mb-3 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-neutral-600">Inspector guide</div>
           <div className="space-y-3">
             {[
               ["01", "Select", "Pick a node from the canvas"],
@@ -567,87 +413,33 @@ export function NodeConfigInspector() {
               ["03", "Connect", "Wire handles into an execution path"],
             ].map(([number, title, copy]) => (
               <div key={number} className="flex gap-3">
-                <span className="font-mono text-[9px] text-neutral-700">{number}</span>
+                <span className="font-mono text-[9px] text-neutral-600">{number}</span>
                 <div>
-                  <div className="text-[11px] font-medium text-neutral-400">{title}</div>
-                  <div className="mt-0.5 text-[10px] leading-4 text-neutral-600">{copy}</div>
+                  <div className="text-xs font-medium text-neutral-300">{title}</div>
+                  <div className="mt-0.5 text-[10px] leading-4 text-neutral-500">{copy}</div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="mt-auto border-t border-neutral-800 px-4 py-3 font-mono text-[9px] text-neutral-700">
-          Delete removes the active selection
         </div>
       </div>
     );
   }
 
   const { id, data } = selectedNode;
-  const { kind, label, config } = data;
-  const color = NODE_COLORS[kind];
-  const FormComponent = FORM_MAP[kind];
+  const FormComponent = FORM_MAP[data.kind];
 
   return (
-    <div
-      className="h-full bg-neutral-950"
-      style={{
-        gridArea: "inspector",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          padding: "12px 14px",
-          borderBottom: "1px solid rgb(38,38,38)",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          background: "rgb(10,10,10)",
-        }}
-      >
-        <div
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            background: color,
-            boxShadow: "none",
-            flexShrink: 0,
-          }}
-        />
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            flex: 1,
-          }}
-        >
-          {label}
+    <div className="flex h-full flex-col overflow-hidden bg-neutral-900">
+      <div className="flex items-center gap-2.5 border-b border-neutral-800 px-3 py-3">
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-md border border-neutral-700 bg-neutral-800 px-1 font-mono text-[9px] font-semibold text-indigo-400">
+          {NODE_ICONS[data.kind]}
         </span>
-        <span
-          style={{
-            fontSize: 10,
-            color: "rgb(115,115,115)",
-            background: "rgb(23,23,23)",
-            border: "1px solid rgb(38,38,38)",
-            borderRadius: 4,
-            padding: "1px 6px",
-            textTransform: "uppercase",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-          }}
-        >
-          {kind}
-        </span>
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-neutral-200">{data.label}</span>
+        <Badge>{data.kind.replace("_", " ")}</Badge>
       </div>
-
-      <div className="custom-scrollbar" style={{ flex: 1, overflowY: "auto", padding: 14 }}>
-        <FormComponent id={id} config={config} />
+      <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-3.5">
+        <FormComponent id={id} config={data.config} />
       </div>
     </div>
   );
