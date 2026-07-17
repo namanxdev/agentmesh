@@ -5,8 +5,8 @@ import { Handle, Position } from "@xyflow/react";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { NodeKind } from "@/types/pipeline";
 
-// Identity accent colors — one per kind. Used only for the 2px left border
-// and the tiny kind dot. Not for gradients, chips, or icon backgrounds.
+// Identity accent colors — used only for the tiny kind dot. Not for borders,
+// gradients, chips, or icon backgrounds.
 export const NODE_COLORS: Record<NodeKind, string> = {
   input: "#4ADE80",
   output: "#F472B6",
@@ -80,8 +80,7 @@ export function getHandleLabelStyle(_accentColor: string): CSSProperties {
     display: "inline-flex",
     alignItems: "center",
     borderRadius: 999,
-    background: "rgba(10,10,10,0.9)",
-    backdropFilter: "blur(4px)",
+    background: "rgba(10,10,10,0.95)",
     padding: "2px 6px",
     color: "rgb(163,163,163)",          // neutral-400
     fontFamily: "var(--font-mono)",
@@ -299,13 +298,11 @@ export const BaseNode = memo(function BaseNode({
           minWidth: 160,
           maxWidth: 220,
           border: `1px solid ${borderColor}`,
-          // 2px left accent bar is the ONLY color identity cue
-          borderLeft: `2px solid ${accentColor}`,
           borderRadius: 6,
           background: "rgb(10,10,10)",
           color: "var(--text-primary)",
           cursor: "pointer",
-          transition: "border-color 250ms ease",
+          transition: "border-color 150ms ease",
         } as CSSProperties
       }
     >

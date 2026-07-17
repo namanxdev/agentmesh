@@ -134,7 +134,7 @@ export function NodePalette() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 pl-2">
             <FolderHeart className="w-4 h-4 text-neutral-500" />
-            <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500 font-semibold">
+            <span className="text-[11px] font-medium text-neutral-500">
               Templates
             </span>
           </div>
@@ -185,7 +185,7 @@ export function NodePalette() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 pl-2">
             <div className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
-            <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500 font-semibold">
+            <span className="text-[11px] font-medium text-neutral-500">
               Components
             </span>
           </div>

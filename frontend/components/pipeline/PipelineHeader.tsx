@@ -6,10 +6,9 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle } from "lucide-react";
+import { Play, CheckCircle2, Save, FolderOpen, Settings, LogOut, Check, Activity, AlertTriangle, MoreHorizontal } from "lucide-react";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useUIStore } from "@/stores/uiStore";
-import { MagicButton } from "@/components/ui/magic-button";
 
 // PipelineHeader no longer owns the analytics/canvas tab-switch.
 // Navigation lives in DashboardSidebar. This header is pipeline-editor-only.
@@ -44,23 +43,24 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1 px-[9px] h-8 rounded-lg text-[11px] font-mono tracking-widest font-medium text-neutral-400 hover:text-white bg-transparent hover:bg-neutral-900 transition-all duration-300 flex items-center justify-center gap-2 group active:scale-95"
+        title="More actions"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-800 text-neutral-500 transition-colors hover:border-neutral-700 hover:bg-neutral-900 hover:text-neutral-200"
       >
-        <span className="hidden md:block">MENU</span>
+        <MoreHorizontal className="w-4 h-4" />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.98, y: 8, filter: "blur(4px)" }}
-            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 0.96, y: 4, filter: "blur(2px)" }}
-            transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.5 }}
-            className="absolute right-0 top-full mt-3 w-56 bg-neutral-950 border border-neutral-800 rounded-lg shadow-sm overflow-hidden z-[200] flex flex-col p-1.5"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute right-0 top-full mt-2 w-56 bg-neutral-950 border border-neutral-800 rounded-lg shadow-sm overflow-hidden z-[200] flex flex-col p-1.5"
             style={{ transformOrigin: "top right" }}
           >
-            <div className="px-3 py-2 border-b border-white/[0.04] mb-1 z-10 flex items-center justify-between">
-              <span className="text-[9px] uppercase font-mono font-medium tracking-[0.2em] text-neutral-500">Actions</span>
+            <div className="px-3 py-2 border-b border-neutral-800 mb-1 z-10">
+              <span className="text-[11px] font-medium text-neutral-500">Actions</span>
             </div>
 
             <button
@@ -74,27 +74,27 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
                 }
               }}
               disabled={isSaving || mode === "run"}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 disabled:opacity-50 z-10 hover:-translate-y-[1px] active:translate-y-0"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-colors duration-150 disabled:opacity-50"
             >
-              {isSaving ? <Activity className="w-3.5 h-3.5 animate-spin text-neutral-400" /> : currentPipelineId ? <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" /> : <Save className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />}
-              {isSaving ? "Saving..." : currentPipelineId ? "Saved" : "Save Pipeline"}
+              {isSaving ? <Activity className="w-3.5 h-3.5 animate-spin text-neutral-400" /> : currentPipelineId ? <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" /> : <Save className="w-3.5 h-3.5 text-neutral-500" />}
+              {isSaving ? "Saving..." : currentPipelineId ? "Saved" : "Save pipeline"}
             </button>
 
             {mode === "build" && (
               <button
                 onClick={() => { handleValidate(); setIsOpen(false); }}
                 disabled={isValidating}
-                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 disabled:opacity-50 z-10 hover:-translate-y-[1px] active:translate-y-0"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-colors duration-150 disabled:opacity-50"
               >
-                {isValidating ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />}
-                {isValidating ? "Checking..." : "Validate Workflow"}
+                {isValidating ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 text-neutral-500" />}
+                {isValidating ? "Checking..." : "Validate workflow"}
               </button>
             )}
 
-            <div className="h-[1px] w-full bg-neutral-800 my-1 z-10" />
+            <div className="h-px w-full bg-neutral-800 my-1" />
 
-            <div className="px-3 py-2 border-b border-white/[0.04] mb-1 z-10 mt-1 flex items-center">
-              <span className="text-[9px] uppercase font-mono font-medium tracking-[0.2em] text-neutral-500">Workspace</span>
+            <div className="px-3 py-2 border-b border-neutral-800 mb-1 z-10">
+              <span className="text-[11px] font-medium text-neutral-500">Workspace</span>
             </div>
 
             <button
@@ -107,26 +107,26 @@ function NavbarMenu({ isSaving, currentPipelineId, savePipeline, listPipelines, 
                   toast.error("Failed to load pipelines");
                 }
               }}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 z-10 hover:-translate-y-[1px] active:translate-y-0"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-colors duration-150"
             >
-              <FolderOpen className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />
-              My Pipelines
+              <FolderOpen className="w-3.5 h-3.5 text-neutral-500" />
+              My pipelines
             </button>
 
             <Link
               href="/settings"
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-all duration-200 z-10 hover:-translate-y-[1px] active:translate-y-0"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-neutral-300 hover:text-white hover:bg-neutral-900 transition-colors duration-150"
             >
-              <Settings className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white transition-colors" />
+              <Settings className="w-3.5 h-3.5 text-neutral-500" />
               Settings
             </Link>
 
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-red-500/10 transition-all duration-200 mt-1 z-10"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-red-500/10 transition-colors duration-150 mt-1"
             >
-              <LogOut className="w-3.5 h-3.5 text-neutral-500 group-hover:text-red-400 transition-colors" />
+              <LogOut className="w-3.5 h-3.5 text-neutral-500" />
               Sign out
             </button>
           </motion.div>
@@ -228,7 +228,7 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
         : "bg-red-500";
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 w-full text-sm font-sans z-50 relative bg-transparent rounded-lg transition-all">
+    <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4 w-full text-sm font-sans z-50 relative bg-transparent rounded-lg">
       {/* Left Area: Pipeline Name */}
       <div className="flex items-center gap-3 min-w-0 flex-1 w-full lg:w-auto justify-start">
         <div className="flex items-center gap-3 flex-1 min-w-0 px-2 py-1.5">
@@ -244,7 +244,7 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
         {mode === "run" && (
           <div className="flex items-center px-2.5 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/[0.03] gap-2 shrink-0">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="text-[10px] uppercase font-mono font-medium tracking-widest text-emerald-500/80 hidden sm:block">
+            <span className="text-[12px] text-emerald-500/80 hidden sm:block">
               Live
             </span>
           </div>
@@ -255,58 +255,63 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
       <div className="flex items-center gap-3 flex-1 min-w-0 w-full lg:w-auto justify-end flex-nowrap pb-1 lg:pb-0">
         {/* Status Indicators */}
         {connectionStatus !== "connected" && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 bg-transparent shrink-0">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-neutral-800 bg-transparent shrink-0">
             <span className={`h-1.5 w-1.5 rounded-full ${connectionColor}`} />
-            <span className="text-[10px] uppercase font-mono font-medium tracking-widest text-neutral-500 hidden sm:block">{connectionStatus}</span>
+            <span className="text-[12px] text-neutral-400 hidden sm:block">{connectionStatus}</span>
           </div>
         )}
 
         {noKeys && (
           <Link
             href="/settings"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-500/20 bg-transparent text-amber-500/80 text-[10px] uppercase font-mono font-medium tracking-widest hover:bg-amber-500/[0.03] hover:text-amber-400 hover:border-amber-500/40 transition-all shrink-0"
+            className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-amber-500/20 bg-transparent text-amber-500/80 text-[12px] hover:bg-amber-500/[0.03] hover:text-amber-400 hover:border-amber-500/40 transition-colors shrink-0"
           >
             <AlertTriangle className="w-3.5 h-3.5" /> {noKeys}
           </Link>
         )}
 
         {error && !noKeys && (
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-red-500/20 bg-transparent text-red-500/80 text-[10px] uppercase font-mono font-medium tracking-widest shrink-0">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-red-500/20 bg-transparent text-red-400/80 text-[12px] shrink-0">
             <AlertTriangle className="w-3.5 h-3.5" /> {error}
           </div>
         )}
 
         {validationResult && !error && (
-           <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] uppercase font-mono font-medium tracking-widest shrink-0 transition-colors ${
-             validationResult.is_dag ? "text-neutral-500 border-white/[0.04]" : "text-red-500/80 border-red-500/20 bg-red-500/[0.02]"
+           <div className={`hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md border text-[12px] shrink-0 transition-colors ${
+             validationResult.is_dag ? "text-neutral-400 border-neutral-800" : "text-red-400/80 border-red-500/20 bg-red-500/[0.02]"
            }`}>
              {validationResult.is_dag ? <Check className="w-3 h-3 opacity-60" /> : <AlertTriangle className="w-3.5 h-3.5" />}
              {validationResult.is_dag
-              ? `${validationResult.num_nodes} Nodes`
-              : "Invalid Graph"}
+              ? `${validationResult.num_nodes} nodes`
+              : "Invalid graph"}
            </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0 border-l border-white/[0.04] pl-3">
+        <div className="flex items-center gap-2 shrink-0 border-l border-neutral-800 pl-3">
             {mode === "run" && (
               <button
                 onClick={() => { setMode("build"); setError(null); }}
-                className="px-4 py-1.5 rounded-lg text-[11px] font-mono font-medium text-neutral-400 hover:text-white bg-transparent hover:bg-neutral-900 transition-all uppercase tracking-widest hidden sm:block active:scale-95"
+                className="px-3.5 h-8 rounded-md text-[13px] font-medium text-neutral-400 hover:text-white bg-transparent hover:bg-neutral-900 transition-colors duration-150 hidden sm:block border border-neutral-800 hover:border-neutral-700"
               >
-                End Run
+                End run
               </button>
             )}
 
             {mode === "build" && (
-              <div className="block" title={isRunning ? "Running..." : "Deploy Pipeline"}>
-                <MagicButton
-                  title={isRunning ? "Deploying..." : "Deploy"}
-                  handleClick={handleRunClick}
-                  disabled={isValidating || isRunning}
-                  className="rounded-lg h-8 px-4 text-xs shadow-none border border-transparent hover:border-white/10"
-                />
-              </div>
+              <button
+                onClick={handleRunClick}
+                disabled={isValidating || isRunning}
+                title={isRunning ? "Starting…" : "Run pipeline"}
+                className="inline-flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-md h-8 px-3.5 text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRunning ? (
+                  <Activity className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                )}
+                {isRunning ? "Starting…" : "Run"}
+              </button>
             )}
 
             <NavbarMenu
@@ -322,7 +327,7 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
           </div>
       </div>
 
-      {/* Task Prompt Modal (Minimal Premium) */}
+      {/* Task Prompt Modal */}
       {mounted && typeof document !== "undefined" && createPortal(
         <AnimatePresence>
           {showTaskInput && (
@@ -331,22 +336,22 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.15 }}
                 className="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
                 onClick={() => setShowTaskInput(false)}
               />
               <div className="fixed inset-0 flex items-center justify-center pointer-events-none p-4">
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98, y: 10 }}
-                  transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
                   className="w-full max-w-[480px] bg-neutral-950 border border-neutral-800 shadow-sm rounded-lg overflow-hidden pointer-events-auto flex flex-col relative"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="p-7 flex flex-col gap-6 z-10">
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-[22px] font-semibold text-white tracking-tight">Deploy Pipeline</h3>
+                      <h3 className="text-[22px] font-semibold text-white tracking-tight">Run pipeline</h3>
                       <p className="text-[13px] text-neutral-400">Enter the initial task prompt to begin execution.</p>
                     </div>
 
@@ -363,7 +368,7 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
                             }
                           }}
                           placeholder="What needs to be done?"
-                          className="relative w-full bg-neutral-900 border border-neutral-800 rounded-md px-4 py-3 outline-none text-white text-[15px] placeholder:text-neutral-500 min-h-[140px] resize-none focus:border-neutral-700 transition-all hover:border-neutral-700"
+                          className="relative w-full bg-neutral-900 border border-neutral-800 rounded-md px-4 py-3 outline-none text-white text-[15px] placeholder:text-neutral-500 min-h-[140px] resize-none focus:border-neutral-600 transition-colors hover:border-neutral-700"
                         />
                       </div>
                     </div>
@@ -371,18 +376,22 @@ export function PipelineHeader(_props: PipelineHeaderProps = {}) {
                     <div className="flex items-center justify-end gap-2 pt-2">
                       <button
                         onClick={() => setShowTaskInput(false)}
-                        className="px-5 py-2.5 rounded-lg text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all"
+                        className="px-3.5 h-8 rounded-md text-[13px] font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors duration-150 border border-neutral-800 hover:border-neutral-700"
                       >
                         Cancel
                       </button>
-                      <MagicButton
-                        title={isRunning ? "Starting..." : "Start Run"}
-                        icon={isRunning ? <Activity className="w-4 h-4 animate-spin text-black" /> : <Play className="w-4 h-4 fill-black text-black" />}
-                        position="right"
-                        handleClick={handleGo}
+                      <button
+                        onClick={handleGo}
                         disabled={!task.trim() || isRunning}
-                        className="rounded-lg h-[38px] px-6 text-[13px] shadow-none ml-2 border border-transparent"
-                      />
+                        className="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-md h-8 px-4 text-[13px] font-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isRunning ? (
+                          <Activity className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                        )}
+                        {isRunning ? "Starting…" : "Start run"}
+                      </button>
                     </div>
                   </div>
                 </motion.div>
