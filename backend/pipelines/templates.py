@@ -336,4 +336,78 @@ PIPELINE_TEMPLATES = [
             ],
         },
     },
+    {
+        "id": "mcp-knowledge-research",
+        "name": "MCP Knowledge Research",
+        "description": (
+            "Docs + repo research using free remote MCP servers. Requires two MCP"
+            " servers registered in Settings: 'context7' (http, https://mcp.context7.com/mcp)"
+            " and 'deepwiki' (http, https://mcp.deepwiki.com/mcp). No API keys needed."
+        ),
+        "definition": {
+            "name": "MCP Knowledge Research",
+            "nodes": [
+                {
+                    "id": "input-1",
+                    "kind": "input",
+                    "config": {
+                        "name": "MCP Knowledge Research",
+                        "description": (
+                            "Ask a technical question. Name the library/framework and"
+                            " GitHub repo where relevant for best results."
+                        ),
+                    },
+                    "position": {"x": 0, "y": 200},
+                },
+                {
+                    "id": "agent-docs",
+                    "kind": "llm_agent",
+                    "config": {
+                        "name": "DocsResearcher",
+                        "system_prompt": (
+                            "You research official library documentation and source-repo"
+                            " knowledge. Use Context7 to resolve the library and pull"
+                            " version-accurate API docs, and use DeepWiki to ask questions"
+                            " about the relevant GitHub repository's architecture and usage."
+                            " Cite the library/repo you pulled from. Return concise, factual"
+                            " findings with code snippets where useful."
+                        ),
+                        "model": "gemini-2.5-flash",
+                        "temperature": 0.3,
+                        "mcp_servers": ["context7", "deepwiki"],
+                    },
+                    "position": {"x": 400, "y": 200},
+                },
+                {
+                    "id": "agent-synthesis",
+                    "kind": "llm_agent",
+                    "config": {
+                        "name": "SynthesisAgent",
+                        "system_prompt": (
+                            "You have received documentation and source-repo findings from"
+                            " a DocsResearcher. Turn them into a single grounded answer with:"
+                            " **Answer** (direct response), **Key Details**, **Code / Usage**"
+                            " (if applicable), and **Sources** (deduplicated list of docs and"
+                            " repos). Be concise and accurate."
+                        ),
+                        "model": "gemini-2.5-flash",
+                        "temperature": 0.4,
+                        "mcp_servers": [],
+                    },
+                    "position": {"x": 700, "y": 200},
+                },
+                {
+                    "id": "output-1",
+                    "kind": "output",
+                    "config": {"output_format": "markdown"},
+                    "position": {"x": 1000, "y": 200},
+                },
+            ],
+            "edges": [
+                {"id": "e-input-docs", "source": "input-1", "target": "agent-docs"},
+                {"id": "e-docs-synthesis", "source": "agent-docs", "target": "agent-synthesis"},
+                {"id": "e-synthesis-output", "source": "agent-synthesis", "target": "output-1"},
+            ],
+        },
+    },
 ]

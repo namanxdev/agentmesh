@@ -131,7 +131,10 @@ async def _load_user_mcp_registry(
             },
         )
 
-    await registry.connect_all()
+    # Remote streamable-HTTP MCP servers (e.g. Context7) can take ~5s on a cold
+    # connect — the old 5s default put them right on the deadline, so they
+    # intermittently timed out and attached zero tools. Give generous headroom.
+    await registry.connect_all(timeout_seconds=15.0)
     return registry
 
 
@@ -798,52 +801,69 @@ def create_app(
                         "error": result.error,
                     }
                 )
-                # Write final status, tokens, and duration back to DB
-                if pid:
-                    try:
-                        async with _ASL() as run_db:
-                            await run_db.execute(
-                                text(
-                                    "UPDATE pipeline_runs"
-                                    " SET status=:status, total_tokens=:tokens,"
-                                    " duration_seconds=:dur"
-                                    " WHERE id=:rid"
-                                ),
-                                {
-                                    "status": status,
-                                    "tokens": result.total_tokens,
-                                    "dur": result.total_duration,
-                                    "rid": run_db_id,
-                                },
-                            )
-                            await run_db.commit()
-                    except Exception as e:
-                        _log.warning("Non-critical error updating pipeline run status: %s", e)
-            except Exception as exc:
-                err_msg = f"{type(exc).__name__}: {exc}"
-                _log.exception("Pipeline run %s raised an unhandled exception", workflow_id)
+                # Write final status, tokens, duration, and error back to DB.
+                # Unconditional: the run row is always inserted (pipeline_id may be
+                # NULL for unsaved/template runs), so it must always be moved out of
+                # 'running' — otherwise failed runs stay stuck at 'running' forever.
+                try:
+                    async with _ASL() as run_db:
+                        await run_db.execute(
+                            text(
+                                "UPDATE pipeline_runs"
+                                " SET status=:status, total_tokens=:tokens,"
+                                " duration_seconds=:dur, error=:error"
+                                " WHERE id=:rid"
+                            ),
+                            {
+                                "status": status,
+                                "tokens": result.total_tokens,
+                                "dur": result.total_duration,
+                                "error": result.error,
+                                "rid": run_db_id,
+                            },
+                        )
+                        await run_db.commit()
+                except Exception as e:
+                    _log.warning("Non-critical error updating pipeline run status: %s", e)
+            except BaseException as exc:
+                # BaseException (not just Exception) so asyncio.CancelledError —
+                # raised when the server shuts down mid-run — also marks the run
+                # failed instead of leaving it stuck at 'running'. CancelledError
+                # is re-raised after persisting so cancellation still propagates.
+                if isinstance(exc, asyncio.CancelledError):
+                    err_msg = "Run cancelled (server shutdown or timeout)."
+                else:
+                    err_msg = f"{type(exc).__name__}: {exc}"
+                _log.exception("Pipeline run %s failed", workflow_id)
+                run_duration = time.time() - _runs[workflow_id]["started_at"]
                 _runs[workflow_id].update({"status": "error", "error": err_msg})
-                await event_bus.emit(
-                    {
-                        "type": "workflow.error",
-                        "workflow_id": workflow_id,
-                        "error": err_msg,
-                        "failedAgent": "orchestrator",
-                    }
-                )
-                if pid:
-                    try:
-                        async with _ASL() as run_db:
-                            await run_db.execute(
-                                text(
-                                    "UPDATE pipeline_runs SET status='error'"
-                                    " WHERE id=:rid"
-                                ),
-                                {"rid": run_db_id},
-                            )
-                            await run_db.commit()
-                    except Exception as e:
-                        _log.warning("Non-critical error marking pipeline run as error: %s", e)
+                try:
+                    await event_bus.emit(
+                        {
+                            "type": "workflow.error",
+                            "workflow_id": workflow_id,
+                            "error": err_msg,
+                            "failedAgent": "orchestrator",
+                        }
+                    )
+                except Exception:
+                    pass
+                # Unconditional DB write — see success-path note above.
+                try:
+                    async with _ASL() as run_db:
+                        await run_db.execute(
+                            text(
+                                "UPDATE pipeline_runs"
+                                " SET status='error', error=:error, duration_seconds=:dur"
+                                " WHERE id=:rid"
+                            ),
+                            {"error": err_msg, "dur": run_duration, "rid": run_db_id},
+                        )
+                        await run_db.commit()
+                except Exception as e:
+                    _log.warning("Non-critical error marking pipeline run as error: %s", e)
+                if isinstance(exc, asyncio.CancelledError):
+                    raise
             finally:
                 await run_mcp_registry.disconnect_all()
 

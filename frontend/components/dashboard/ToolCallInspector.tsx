@@ -163,8 +163,8 @@ function OutputPanel({ lastOutput }: { lastOutput: string | null }) {
                   <ActionButton onClick={() => setIsExpanded(false)}><X className="h-3.5 w-3.5" /> Close</ActionButton>
                 </div>
               </header>
-              <div className="custom-scrollbar flex flex-1 justify-center overflow-y-auto">
-                <article className="document-view w-full px-6 py-8 md:px-10"><ReactMarkdown remarkPlugins={[remarkGfm]}>{displayOutput}</ReactMarkdown></article>
+              <div className="custom-scrollbar flex min-h-0 flex-1 justify-center overflow-y-auto">
+                <article className="document-view w-full max-w-[920px] px-6 py-8 md:px-10"><ReactMarkdown remarkPlugins={[remarkGfm]}>{displayOutput}</ReactMarkdown></article>
               </div>
             </motion.div>
           </motion.div>

@@ -139,7 +139,7 @@ export function NodePalette() {
               </div>
             ) : templates.length > 0 ? (
               <div className="space-y-1">
-                {templates.slice(0, 2).map((template) => (
+                {templates.map((template) => (
                   <button
                     key={template.id}
                     type="button"
