@@ -378,6 +378,100 @@ class TestPipelineToWorkflowConfig:
         agent = result["agent_registry"].get("searcher")
         assert "brave_search" in agent.config.mcp_servers
 
+    def test_agent_config_mcp_servers_land_on_agent_config(self):
+        """mcp_servers declared in the llm_agent node config are passed to AgentConfig."""
+        mock_llm, event_bus = self._make_registry_and_bus()
+        nodes = [
+            _make_node("n1", "input"),
+            {
+                "id": "n2",
+                "kind": "llm_agent",
+                "config": {
+                    "name": "researcher",
+                    "system_prompt": "Research things.",
+                    "model": "gemini-2.5-flash",
+                    "temperature": 0.5,
+                    "mcp_servers": ["filesystem", "github"],
+                },
+            },
+            _make_node("n3", "output"),
+        ]
+        edges = [_make_edge("e1", "n1", "n2"), _make_edge("e2", "n2", "n3")]
+        definition = {"name": "test", "nodes": nodes, "edges": edges}
+        result = pipeline_to_workflow_config(definition, mock_llm, event_bus)
+
+        agent = result["agent_registry"].get("researcher")
+        assert "filesystem" in agent.config.mcp_servers
+        assert "github" in agent.config.mcp_servers
+
+    def test_agent_config_and_tool_node_servers_merge_deduped(self):
+        """Config-declared servers + downstream tool-node servers merge without duplication."""
+        mock_llm, event_bus = self._make_registry_and_bus()
+        nodes = [
+            _make_node("n1", "input"),
+            {
+                "id": "n2",
+                "kind": "llm_agent",
+                "config": {
+                    "name": "worker",
+                    "system_prompt": "Do work.",
+                    "model": "gemini-2.5-flash",
+                    "temperature": 0.7,
+                    "mcp_servers": ["filesystem", "brave_search"],
+                },
+            },
+            # tool node references brave_search — already in config above
+            _make_node("n3", "tool", {"server": "brave_search"}),
+            # tool node references a new server not in config
+            _make_node("n4", "tool", {"server": "github"}),
+            _make_node("n5", "output"),
+        ]
+        edges = [
+            _make_edge("e1", "n1", "n2"),
+            _make_edge("e2", "n2", "n3"),
+            _make_edge("e3", "n3", "n4"),
+            _make_edge("e4", "n4", "n5"),
+        ]
+        definition = {"name": "test", "nodes": nodes, "edges": edges}
+        result = pipeline_to_workflow_config(definition, mock_llm, event_bus)
+
+        agent = result["agent_registry"].get("worker")
+        servers = agent.config.mcp_servers
+        # All three unique names must be present
+        assert set(servers) == {"filesystem", "brave_search", "github"}
+        # No duplicates
+        assert len(servers) == len(set(servers))
+        # Config-declared ones come first
+        assert servers.index("filesystem") < servers.index("github")
+        assert servers.index("brave_search") < servers.index("github")
+
+    def test_agent_config_mcp_servers_invalid_types_ignored(self):
+        """Non-string / non-list values in config.mcp_servers don't crash the validator."""
+        mock_llm, event_bus = self._make_registry_and_bus()
+        nodes = [
+            _make_node("n1", "input"),
+            {
+                "id": "n2",
+                "kind": "llm_agent",
+                "config": {
+                    "name": "agent",
+                    "system_prompt": "",
+                    "model": "gemini-2.5-flash",
+                    "temperature": 0.7,
+                    # Malformed: not a list
+                    "mcp_servers": "should_be_a_list",
+                },
+            },
+            _make_node("n3", "output"),
+        ]
+        edges = [_make_edge("e1", "n1", "n2"), _make_edge("e2", "n2", "n3")]
+        definition = {"name": "test", "nodes": nodes, "edges": edges}
+        result = pipeline_to_workflow_config(definition, mock_llm, event_bus)
+
+        agent = result["agent_registry"].get("agent")
+        # Malformed config.mcp_servers silently yields an empty list
+        assert agent.config.mcp_servers == []
+
     def test_parallel_fan_out_sets_list_start(self):
         """input → parallel → [A, B] → C should start with ["A", "B"] in parallel."""
         mock_llm, event_bus = self._make_registry_and_bus()

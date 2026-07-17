@@ -204,7 +204,20 @@ def pipeline_to_workflow_config(
                 q.append(child)
         return None
 
-    # Tool nodes: attach MCP server to the nearest upstream llm_agent
+    # Agent-config declared MCP servers: seed mcp_servers_map from the node's own
+    # config.mcp_servers list (list of server-name strings).  These go first so
+    # config-declared servers appear before tool-node-derived ones in the final list.
+    for nid in llm_agent_ids:
+        cfg = node_map[nid]["config"]
+        raw = cfg.get("mcp_servers", [])
+        # Coerce defensively: accept list of strings; ignore anything else.
+        if isinstance(raw, list):
+            for entry in raw:
+                if isinstance(entry, str) and entry and entry not in mcp_servers_map[nid]:
+                    mcp_servers_map[nid].append(entry)
+
+    # Tool nodes: attach MCP server to the nearest upstream llm_agent (appended,
+    # deduped against what config-declared servers already seeded above).
     for n in nodes:
         if n["kind"] == "tool":
             agent_id = find_nearest_llm_agent_upstream(n["id"])

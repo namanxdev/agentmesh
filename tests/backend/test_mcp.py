@@ -267,3 +267,151 @@ async def test_load_user_mcp_registry_rejects_missing_referenced_server():
 
     assert exc.value.status_code == 422
     assert exc.value.detail["error"] == "missing_mcp_servers"
+
+
+# ---------------------------------------------------------------------------
+# _referenced_mcp_servers — agent-level mcp_servers support
+# ---------------------------------------------------------------------------
+
+def test_referenced_mcp_servers_collects_tool_node_servers():
+    """Tool-node servers are still collected (existing behaviour preserved)."""
+    from backend.api.routes import _referenced_mcp_servers
+
+    definition = {
+        "nodes": [
+            {"id": "a", "kind": "llm_agent", "config": {"name": "A"}},
+            {"id": "t", "kind": "tool", "config": {"server": "brave_search"}},
+        ],
+        "edges": [],
+    }
+    assert _referenced_mcp_servers(definition) == {"brave_search"}
+
+
+def test_referenced_mcp_servers_collects_agent_config_servers():
+    """mcp_servers declared directly on llm_agent nodes are collected."""
+    from backend.api.routes import _referenced_mcp_servers
+
+    definition = {
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "llm_agent",
+                "config": {"name": "A", "mcp_servers": ["filesystem", "github"]},
+            },
+        ],
+        "edges": [],
+    }
+    assert _referenced_mcp_servers(definition) == {"filesystem", "github"}
+
+
+def test_referenced_mcp_servers_deduplicates_across_sources():
+    """A server named in both an llm_agent config and a tool node appears once."""
+    from backend.api.routes import _referenced_mcp_servers
+
+    definition = {
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "llm_agent",
+                "config": {"name": "A", "mcp_servers": ["filesystem"]},
+            },
+            {"id": "t", "kind": "tool", "config": {"server": "filesystem"}},
+        ],
+        "edges": [],
+    }
+    refs = _referenced_mcp_servers(definition)
+    assert refs == {"filesystem"}
+    assert len(refs) == 1
+
+
+def test_referenced_mcp_servers_ignores_malformed_agent_config():
+    """A non-list mcp_servers value on an llm_agent node doesn't crash or contribute."""
+    from backend.api.routes import _referenced_mcp_servers
+
+    definition = {
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "llm_agent",
+                "config": {"name": "A", "mcp_servers": "not-a-list"},
+            },
+        ],
+        "edges": [],
+    }
+    assert _referenced_mcp_servers(definition) == set()
+
+
+@pytest.mark.asyncio
+async def test_load_user_mcp_registry_rejects_missing_agent_config_server():
+    """A pipeline whose llm_agent declares an unregistered server gets a 422."""
+    from backend.api.routes import _load_user_mcp_registry
+    from backend.events.bus import EventBus
+
+    result = MagicMock()
+    result.fetchall.return_value = []
+    db = MagicMock()
+    db.execute = AsyncMock(return_value=result)
+
+    definition = {
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "llm_agent",
+                "config": {"name": "A", "mcp_servers": ["unregistered_server"]},
+            },
+        ],
+        "edges": [],
+    }
+
+    with pytest.raises(HTTPException) as exc:
+        await _load_user_mcp_registry(
+            user_id="user-1",
+            db=db,
+            event_bus=EventBus(),
+            definition=definition,
+        )
+
+    assert exc.value.status_code == 422
+    assert exc.value.detail["error"] == "missing_mcp_servers"
+    assert "unregistered_server" in exc.value.detail["message"]
+
+
+@pytest.mark.asyncio
+async def test_load_user_mcp_registry_registers_agent_config_servers():
+    """Servers declared in llm_agent config are registered (not just tool-node servers)."""
+    from backend.api.routes import _load_user_mcp_registry
+    from backend.events.bus import EventBus
+
+    result = MagicMock()
+    result.fetchall.return_value = [
+        SimpleNamespace(
+            name="filesystem",
+            server_type="stdio",
+            command_or_url="mcp-server-filesystem E:/Projects",
+            env_vars={},
+        ),
+    ]
+    db = MagicMock()
+    db.execute = AsyncMock(return_value=result)
+
+    definition = {
+        "nodes": [
+            {
+                "id": "a",
+                "kind": "llm_agent",
+                "config": {"name": "A", "mcp_servers": ["filesystem"]},
+            },
+        ],
+        "edges": [],
+    }
+
+    with patch("backend.api.routes.MCPRegistry.connect_all", new_callable=AsyncMock):
+        registry = await _load_user_mcp_registry(
+            user_id="user-1",
+            db=db,
+            event_bus=EventBus(),
+            definition=definition,
+        )
+
+    info = registry.get_server_info()
+    assert [s["name"] for s in info["servers"]] == ["filesystem"]

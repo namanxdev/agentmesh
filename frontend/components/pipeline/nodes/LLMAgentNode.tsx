@@ -112,6 +112,20 @@ export const LLMAgentNode = memo(function LLMAgentNode({
             {config.system_prompt || "No system brief yet. Add guidance to define tone, constraints, and objectives."}
           </p>
         </div>
+
+        {(config.mcp_servers ?? []).length > 0 ? (
+          <div style={{ marginTop: 4 }}>
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-muted)",
+                fontFamily: "monospace",
+              }}
+            >
+              {config.mcp_servers!.length} MCP server{config.mcp_servers!.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        ) : null}
       </div>
     </BaseNode>
   );

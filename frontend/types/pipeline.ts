@@ -22,6 +22,7 @@ export type LLMAgentConfig = {
   system_prompt: string;
   model: string;
   temperature: number;
+  mcp_servers?: string[];
 };
 export type ToolNodeConfig = { tool_name: string; server: string; parameters: string };
 export type TextNodeConfig = { content: string; variables?: string[] };

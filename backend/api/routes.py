@@ -66,11 +66,28 @@ def _mcp_transport_config_from_row(row: object) -> dict:
 
 
 def _referenced_mcp_servers(definition: dict) -> set[str]:
-    return {
-        n.get("config", {}).get("server", "")
-        for n in definition.get("nodes", [])
-        if n.get("kind") == "tool" and n.get("config", {}).get("server")
-    }
+    """Return the set of MCP server names that the pipeline depends on.
+
+    Two sources are combined:
+    1. ``tool`` nodes whose ``config.server`` names a server.
+    2. ``llm_agent`` nodes whose ``config.mcp_servers`` lists server names
+       directly (agent-level tool calling).
+    """
+    servers: set[str] = set()
+    for n in definition.get("nodes", []):
+        kind = n.get("kind")
+        cfg = n.get("config") or {}
+        if kind == "tool":
+            server = cfg.get("server", "")
+            if server:
+                servers.add(server)
+        elif kind == "llm_agent":
+            raw = cfg.get("mcp_servers", [])
+            if isinstance(raw, list):
+                for entry in raw:
+                    if isinstance(entry, str) and entry:
+                        servers.add(entry)
+    return servers
 
 
 async def _load_user_mcp_registry(

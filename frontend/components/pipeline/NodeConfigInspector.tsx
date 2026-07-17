@@ -81,8 +81,51 @@ const MODELS = [
   "gpt-4o-mini",
 ];
 
+type AgentMCPServer = { id: string; name: string; server_type: string };
+
 function LLMAgentForm({ id, config }: { id: string; config: LLMAgentConfig }) {
   const update = usePipelineStore((s) => s.updateNodeConfig);
+  const [mcpServers, setMcpServers] = useState<AgentMCPServer[]>([]);
+  const [mcpLoading, setMcpLoading] = useState(true);
+  const [mcpError, setMcpError] = useState<string | null>(null);
+
+  const attachedServers: string[] = config.mcp_servers ?? [];
+
+  const fetchMcpServers = useCallback(async () => {
+    setMcpLoading(true);
+    setMcpError(null);
+    try {
+      const res = await fetch("/api/mcp/user-servers");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail ?? `Could not load MCP servers (${res.status})`);
+      }
+      const data = await res.json();
+      setMcpServers(data.servers ?? []);
+    } catch (err) {
+      setMcpServers([]);
+      setMcpError(err instanceof Error ? err.message : "Could not load MCP servers");
+    } finally {
+      setMcpLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMcpServers();
+  }, [fetchMcpServers]);
+
+  const toggleServer = (name: string) => {
+    const next = attachedServers.includes(name)
+      ? attachedServers.filter((s) => s !== name)
+      : [...attachedServers, name];
+    update(id, { mcp_servers: next });
+  };
+
+  // Names already in config that are not in the fetched list (e.g. from templates)
+  const orphanedServers = attachedServers.filter(
+    (name) => !mcpServers.some((s) => s.name === name)
+  );
+
   return (
     <>
       <Field label="Agent Name">
@@ -120,6 +163,107 @@ function LLMAgentForm({ id, config }: { id: string; config: LLMAgentConfig }) {
           onChange={(e) => update(id, { system_prompt: e.target.value })}
           placeholder="You are a helpful assistant…"
         />
+      </Field>
+      <Field label="MCP Servers">
+        {mcpLoading ? (
+          <div
+            style={{
+              height: 22,
+              borderRadius: 4,
+              background: "var(--bg-tertiary)",
+              opacity: 0.5,
+              width: "60%",
+            }}
+          />
+        ) : mcpError ? (
+          <div>
+            <p style={{ margin: "0 0 6px", color: "var(--status-error)", fontSize: 11 }}>
+              {mcpError}
+            </p>
+            <button
+              type="button"
+              onClick={fetchMcpServers}
+              style={{
+                ...fieldStyle,
+                cursor: "pointer",
+                textAlign: "center",
+                color: "var(--accent-primary)",
+                border: "1px dashed var(--accent-primary)44",
+                background: "var(--accent-primary)0a",
+                width: "auto",
+                padding: "4px 10px",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        ) : mcpServers.length === 0 && orphanedServers.length === 0 ? (
+          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 11 }}>
+            No MCP servers registered.{" "}
+            <a
+              href="/settings"
+              style={{ color: "var(--accent-primary)", textDecoration: "none" }}
+            >
+              Add one in Settings.
+            </a>
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {mcpServers.map((s) => (
+              <label
+                key={s.name}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  padding: "4px 0",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={attachedServers.includes(s.name)}
+                  onChange={() => toggleServer(s.name)}
+                  style={{ accentColor: "var(--accent-primary)", flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 12, color: "var(--text-primary)", flex: 1 }}>
+                  {s.name}
+                </span>
+                <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                  {s.server_type}
+                </span>
+              </label>
+            ))}
+            {orphanedServers.map((name) => (
+              <label
+                key={name}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  padding: "4px 0",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked
+                  onChange={() => toggleServer(name)}
+                  style={{ accentColor: "var(--accent-primary)", flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 12, color: "var(--text-primary)", flex: 1 }}>
+                  {name}
+                </span>
+                <span style={{ fontSize: 10, color: "var(--status-warning)" }}>
+                  not in your registry
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+        <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: 11 }}>
+          Attached servers expose their tools to this agent during execution.
+        </p>
       </Field>
     </>
   );
